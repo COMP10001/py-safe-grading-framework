@@ -7,37 +7,43 @@ from safetestingframework import *
 
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
-    
+
+RELEASE_TEST_CASES = False
+
+TEST_FILE = "runtestsubprocess.py"
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
 
-class SimpleTestCase(unittest.TestCase):
+# IMPORTANT: Check Time limit (s) is higher than the sum of all testcase function timeouts
+# AND that Per-testcase Scores is selected
+class SafeTesting(unittest.TestCase):
+    def testPEP8(self):
+        run_pep8_test(STUDENT_FILE_NAME)
+        
     def testVis1(self):
-        ''' #name(Test 1)'''
+        ''' #name(Test 1) '''
         # Function Input must be wrapped in a tuple
         # Eg for testfunction(1), function_input = (1,)
-        run_test(test_file="runtestsubprocess.py", 
+        run_function_test(test_file=TEST_FILE, 
                 student_file_name=STUDENT_FILE_NAME,
                 function_name=STUDENT_FUNCTION, 
-                function_input=(1,), 
-                function_expected=2, 
-                function_timeout_seconds=10
-        )
-        
-    def testHidd1(self):
-        ''' #name(Hidden 1) #hidden ''' 
-        run_test(test_file="runtestsubprocess.py", 
-                student_file_name=STUDENT_FILE_NAME,
-                function_name=STUDENT_FUNCTION, 
-                function_input=(1,), 
+                function_input=([1,2,3],), 
                 function_expected=2, 
                 function_timeout_seconds=10,
-        )
-
-    def testPriv1(self):
-        ''' #name(Private 1) #private #score(2)''' 
-        run_test_as_script(test_file="program.py", 
-                expected_stdout="Hello World\n",
-                timeout_seconds=1
+                check_mutate=True,
         )
         
+    @hidden(RELEASE_TEST_CASES)
+    @score(2)
+    def testHid1(self):
+        ''' #name(Hidden 1) '''
+        # Function Input must be wrapped in a tuple
+        # Eg for testfunction(1), function_input = (1,)
+        run_function_test(test_file=TEST_FILE, 
+                student_file_name=STUDENT_FILE_NAME,
+                function_name=STUDENT_FUNCTION, 
+                function_input=([1,2,3],), 
+                function_expected=2, 
+                function_timeout_seconds=10,
+                check_mutate=True,
+        )
