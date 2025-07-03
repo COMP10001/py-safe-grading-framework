@@ -1,52 +1,49 @@
-# Safe Ed Assignment Unit Testing Framework V0.3.0 safetestingframework.py
-# Depends on: runtestsubprocess.py
-# Author: Kacie Beckett <kacie.beckett@unimelb.edu> 2025/04/01
+# Safe Ed Assignment Unit Testing Framework V0.3.0 safetestingframework.py 
+# Last Updated: 2025/06/03
+# Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
 # https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+
+# Note: be careful if developing locally, as importing this code will cause it to be 
+# irreplaceably removed, unlike on Ed.
+
 import unittest
 import os
 import subprocess
 import pickle
-import base64
 import ast
 import traceback
 
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
 
-####################################################################
-# Encode/decode the python objects passed for checking program correctness
-# into a object file so it can be passed to a subprocess and loaded directly.
-# All testing happens on the subprocess to avoid the main testing code from crashing.
-
-def encode_obj_data(input_data, filename):
-    with open(filename,"wb") as f:
-        pickle.dump(input_data, f)
-
-def decode_obj_data(filename):
-    with open(filename,"rb") as f:
-        data = pickle.load(f)
-    return data
-
+# The runtestsubprocess file must be removed from path before running student code, so it is convient to store it directly
+# in here, to avoid version control inconvenience.
 ####################################################################
 
-def verify_program_output(proc_ret, expected_stdout, expected_stderr):
-    assert proc_ret.stderr == expected_stderr, f"Your program produced the following errors:\n{proc_ret.stderr}"
-    assert proc_ret.stdout == expected_stdout, f"Your program produced the following output:\n{proc_ret.stdout}\n\nThe expected output is:\n{expected_stdout}"
-
-####################################################################
-
-def run_function_test(test_file=None, student_file_name=None, function_name=None, function_input=None, function_expected = None, 
-        function_timeout_seconds = 1, check_mutate=False, expected_stdout="", expected_stderr="", non_allowed_nodes = (), 
-        non_allowed_functions=(), non_allowed_imports = ("sys", "os", "subprocess", "signal"), required_nodes=()
+def run_function_test(
+        student_file_name=None,                                      # File to test function from
+        function_name=None,                                          # Function to test
+        function_input=(),                                           # Input to function, must be wrapped in a tuple
+        function_expected = None,                                    # Expected value for function
+        function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
+        check_mutate=False,                                          # Check if the function input was mutated
+        expected_stdout="",                                          # Expected value in stdout
+        expected_stderr="",                                          # Expected value in stderr
+        non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+        non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+        non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+        required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+        files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+        hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
     '''
     Test the return value, stdout, stderr of a student defined function. Includes the ability to check for mutated input. 
     By default OS and other imports are blocked to mitigate attempts to bypass testing. Other nodes to check for via the 
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
-    run_astcheck_test(student_file_name, test_file_path_prefix='/home/', 
+    run_astcheck_test(student_file_name,
                       non_allowed_nodes=non_allowed_nodes, 
                       non_allowed_functions=non_allowed_functions, 
                       non_allowed_imports=non_allowed_imports, 
@@ -55,19 +52,32 @@ def run_function_test(test_file=None, student_file_name=None, function_name=None
 
     encode_obj_data(function_input, "subproc-func-input")
     encode_obj_data(function_expected, "subproc-func-expected")
-
-    proc_ret = subprocess.run(
-                        ("python", test_file, student_file_name, function_name, str(function_timeout_seconds), str(int(check_mutate))),
-                        text=True,
-                        capture_output=True,
-                    )
+    
+    with open(RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
+        fp.write(RUN_TEST_SUBPROCESS_FILE)
+        
+    with HiddenFileManager(hidden_file_dict, files_to_reveal):
+        proc_ret = subprocess.run(
+                            ("python", RUN_TEST_SUBPROCESS_FILENAME, student_file_name, function_name, str(function_timeout_seconds), str(int(check_mutate))),
+                            text=True,
+                            capture_output=True,
+                        )
 
     verify_program_output(proc_ret, expected_stdout, expected_stderr)
     
 ####################################################################
 
-def run_script_test(student_file_name=None, student_file_path="/home/", timeout_seconds = 1, expected_stdout="", expected_stderr="", 
-        non_allowed_nodes = (), non_allowed_functions=(), non_allowed_imports = ("sys", "os", "subprocess", "signal"), required_nodes=()
+def run_script_test(
+        student_file_name=None,                                      # File to test function from
+        student_file_path_prefix="/home/",                           # File path prefix, could change by Ed
+        expected_stdout="",                                          # Expected value in stdout
+        expected_stderr="",                                          # Expected value in stderr
+        non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+        non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+        non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+        required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+        files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+        hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
     '''
     Test the stdout, stderr of a student defined python script. 
@@ -75,18 +85,19 @@ def run_script_test(student_file_name=None, student_file_path="/home/", timeout_
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
 
-    run_astcheck_test(student_file_name, test_file_path_prefix='/home/', 
+    run_astcheck_test(student_file_name,
                       non_allowed_nodes=non_allowed_nodes, 
                       non_allowed_functions=non_allowed_functions, 
                       non_allowed_imports=non_allowed_imports, 
                       required_nodes=required_nodes
                     )
-
-    proc_ret = subprocess.run(
-                            ("python", student_file_path + student_file_name),
-                            text=True,
-                            capture_output=True, 
-                        )
+    
+    with HiddenFileManager(hidden_file_dict, files_to_reveal):
+        proc_ret = subprocess.run(
+                                ("python", student_file_path_prefix + student_file_name),
+                                text=True,
+                                capture_output=True, 
+                            )
 
     verify_program_output(proc_ret, expected_stdout, expected_stderr)
 
@@ -94,11 +105,15 @@ def run_script_test(student_file_name=None, student_file_path="/home/", timeout_
 
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 
-def run_pep8_test(test_file=None, test_file_path_prefix = "/home/", ignored_tests=PEP8_IGNORED):
+def run_pep8_test(
+        student_file_name=None,             # File to test function from
+        student_file_path_prefix="/home/",  # File path prefix, could change by Ed
+        ignored_tests=PEP8_IGNORED          # Names of tests to ignore, see flake8 documentation.
+    ):
     '''
-    Run PEP8 style checks on the student submission file.
+    Run PEP8 style checks on the student submission file, and any local imports
     '''
-    filename = test_file_path_prefix + test_file
+    filename = student_file_path_prefix + student_file_name
     local_import_paths = recursive_find_local_import_paths(filename)
     files_to_check = [filename] + local_import_paths 
     
@@ -116,32 +131,49 @@ def run_pep8_test(test_file=None, test_file_path_prefix = "/home/", ignored_test
                                     
     assert pep8_violations == "", "The following style errors were found:\n" + pep8_violations
 
-####################################################################
-
-def cache_hidden_test_files(files):
-    file_dict = {}
-    for file in files:
-        with open(file, 'r') as fp:
-            file_dict[file] = fp.read()
-        os.remove(file)
-    return file_dict
-
-class hidden_file_manager:
-    def __init__(self, hidden_file_dict, files_to_reveal):
-        self.hidden_file_dict = hidden_file_dict
-        self.files_to_reveal = files_to_reveal
-        for file in files_to_reveal:
-            with open(file, 'w') as fp:
-                fp.write(self.hidden_file_dict[file])
-        
-    def __enter__(self):
-        pass
-            
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for file in self.files_to_reveal:
-            os.remove(file)
             
 ####################################################################
+
+def run_astcheck_test(
+        student_file_name=None,             # File to test function from
+        student_file_path_prefix="/home/",  # File path prefix, could change by Ed
+        non_allowed_nodes = (),             # Eg ast.Name, see run_astcheck_test and ast library
+        non_allowed_functions=(),           # Function names of any specific functions to disallow
+        non_allowed_imports = (),           # Imports that are not allowed anywhere in student file or any local imports
+        required_nodes=(),                  # Eg ast.Name, see ast library
+    ):
+    '''
+    Run abstract syntax tree checks on the student submission file, and any local imports
+    '''
+    filename = student_file_path_prefix + student_file_name
+    local_import_paths = recursive_find_local_import_paths(filename)
+    files_to_check = [filename] + local_import_paths 
+
+    for student_file in files_to_check:
+        tree = create_ast_object(student_file)
+
+        # Run the AST node type visitor over the tree to search for forbidden nodes.
+        visitor = NodeTypeVisitor(non_allowed_nodes)
+        visitor.visit(tree)
+        if visitor.nodes:
+            node = visitor.nodes[0]
+            assert False, 'Your program is not allowed to use a {}. This occurred on line {} of {}.'.format(type(node).__name__, node.lineno, student_file)
+
+        # Run the AST node type visitor over the tree to search for specific functions
+        visitor = NodeTypeVisitor((ast.Name,))
+        visitor.visit(tree)
+        for node in required_nodes:
+            if node.id not in visitor.nodes:
+                assert False, f'Your program must include {node.id}.'
+
+        for node in visitor.nodes:
+            if node.id in non_allowed_functions:
+                assert False, 'Your program is not allowed to use the {} function. This occurred on line {} of {}.'.format(node.id, node.lineno, student_file)
+
+        student_imports = find_imports(tree)
+        for lib in student_imports:
+            if lib in non_allowed_imports:
+                assert False, f'Your program is not allowed to import {lib}. Occured in file {student_file}.'
 
 class NodeTypeVisitor(ast.NodeVisitor):
     def __init__(self, types, *args, **kwargs):
@@ -162,7 +194,9 @@ def create_ast_object(filename):
         assert False, traceback.format_exc(limit=-1)
 
     return tree
-     
+
+####################################################################
+
 def find_imports(ast_tree):
     visitor = NodeTypeVisitor((ast.Import, ast.ImportFrom))
     visitor.visit(ast_tree)
@@ -201,67 +235,104 @@ def recursive_find_local_import_paths(filename):
     return files_checked
             
 
-def run_astcheck_test(test_file=None, test_file_path_prefix="/home/", non_allowed_nodes = (), non_allowed_functions=(), non_allowed_imports = (), required_nodes=()):
-    # Parse program.py.
-    filename = test_file_path_prefix + test_file
-    local_import_paths = recursive_find_local_import_paths(filename)
-    files_to_check = [filename] + local_import_paths 
+####################################################################
+# Test Case Decorators for controlling Ed Integration
+# use @hidden(), @private(), @score(), @setname()
+# above unit test to control behaviour
 
-    for student_file in files_to_check:
-        tree = create_ast_object(student_file)
-
-        # Run the AST node type visitor over the tree to search for forbidden nodes.
-        visitor = NodeTypeVisitor(non_allowed_nodes)
-        visitor.visit(tree)
-        if visitor.nodes:
-            node = visitor.nodes[0]
-            assert False, 'Your program is not allowed to use a {}. This occurred on line {} of {}.'.format(type(node).__name__, node.lineno, student_file)
-
-        # Run the AST node type visitor over the tree to search for specific functions
-        visitor = NodeTypeVisitor((ast.Name,))
-        visitor.visit(tree)
-        for node in required_nodes:
-            if node.id not in visitor.nodes:
-                assert False, f'Your program must include {node.id}.'
-
-        for node in visitor.nodes:
-            if node.id in non_allowed_functions:
-                assert False, 'Your program is not allowed to use the {} function. This occurred on line {} of {}.'.format(node.id, node.lineno, student_file)
-
-        student_imports = find_imports(tree)
-        for lib in student_imports:
-            if lib in non_allowed_imports:
-                assert False, f'Your program is not allowed to import {lib}. Occured in file {student_file}.'
-                
-
-def hidden(release_test_cases: bool):
-    hidden = '#hidden ' if release_test_cases == False else ''
+def hidden(release_test_cases = False):
+    hidden = '#hidden' if release_test_cases == False else ''
     def dec(obj):
         obj.__doc__ = obj.__doc__ + hidden
         return obj
     return dec
 
-def private(release_test_cases: bool):
-    private = '#private ' if release_test_cases == False else ''
+def private(release_test_cases = False):
+    private = '#private' if release_test_cases == False else ''
     def dec(obj):
+        if (obj.__doc__) == None:
+            obj.__doc__ = " "
         obj.__doc__ = obj.__doc__ + private
         return obj
     return dec
 
 def score(score):
     def dec(obj):
+        if (obj.__doc__) == None:
+            obj.__doc__ = " "
         obj.__doc__ = obj.__doc__ + f"#score({score})"
+        return obj
+    return dec
+
+def setname(name_override=None):
+    def dec(obj):
+        name = obj.__name__ if name_override == None else name_override
+        if (obj.__doc__) == None:
+            obj.__doc__ = " "
+        obj.__doc__ = obj.__doc__ + f"#name({name.strip('test').strip('_').replace('_',' ')})"
         return obj
     return dec
 
 
 ####################################################################
+# Encode/decode the python objects passed for checking program correctness
+# into a object file so it can be passed to a subprocess and loaded directly.
+# All testing happens on the subprocess to avoid the main testing code from crashing.
 
-RUN_TEST_SUBPROCESS = \
+def encode_obj_data(input_data, filename):
+    with open(filename,"wb") as f:
+        pickle.dump(input_data, f)
+
+def decode_obj_data(filename):
+    with open(filename,"rb") as f:
+        data = pickle.load(f)
+    return data
+
+####################################################################
+
+def verify_program_output(proc_ret, expected_stdout, expected_stderr):
+    assert proc_ret.stderr == expected_stderr, f"Your program produced the following errors:\n{proc_ret.stderr}"
+    assert proc_ret.stdout == expected_stdout, f"Your program produced the following output:\n{proc_ret.stdout}\n\nThe expected output is:\n{expected_stdout}"
+
+####################################################################
+
+def cache_hidden_test_files(files):
+    '''
+    Create a dictionary of Key, Value = Filename, File Content String
+    for each file and remove it from path
+    '''
+    file_dict = {}
+    for file in files:
+        with open(file, 'r') as fp:
+            file_dict[file] = fp.read()
+        os.remove(file)
+    return file_dict
+
+class HiddenFileManager:
+    def __init__(self, hidden_file_dict, files_to_reveal):
+        self.hidden_file_dict = hidden_file_dict
+        self.files_to_reveal = files_to_reveal
+        for file in files_to_reveal:
+            if file not in hidden_file_dict:
+                raise Exception(f"Setup Issue: File to reveal '{file}' not in hidden_file_dict! Contact the Course Cooordinator to fix this.")
+            with open(file, 'w') as fp:
+                fp.write(self.hidden_file_dict[file])
+        
+    def __enter__(self):
+        pass
+            
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for file in self.files_to_reveal:
+            os.remove(file)
+
+####################################################################
+# Note: All occurances of \n replaced with \\n.
+RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
+RUN_TEST_SUBPROCESS_FILE = \
 '''
 import sys
 import pickle
-import os 
+import os
 import ast
 import signal
 import traceback
@@ -270,7 +341,7 @@ import copy
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
 
-# Object data is encoded and decoded to be passed in python object format 
+# Object data is encoded and decoded to be passed in python object format
 # between processes
 def decode_obj_data(filename):
     with open(filename,"rb") as f:
@@ -289,15 +360,11 @@ FUNCTION_INPUT_COPY = copy.deepcopy(FUNCTION_INPUT)
 os.remove("subproc-func-input")
 os.remove("subproc-func-expected")
 
-####################################################################
-
 # Try import function from student code
 try:
     exec("from %s import %s" % (STUDENT_FILE_NAME.removesuffix(".py"), FUNCTION_NAME))
 except:
     exit(traceback.format_exc(limit=-1))
-
-####################################################################
 
 def handle_timeout(signum, frame):
         raise TimeoutError
@@ -305,7 +372,6 @@ def handle_timeout(signum, frame):
 signal.signal(signal.SIGALRM, handle_timeout)
 signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
 
-####################################################################
 # Run the function and check for timeout and mutating input 
 try: 
     got = globals()[FUNCTION_NAME](*FUNCTION_INPUT)
@@ -317,20 +383,15 @@ except Exception:
 finally:
     signal.alarm(0)
 
-####################################################################
-
 # Check for mutated input if desired.
 if FUNCTION_CHECK_MUTATE and FUNCTION_INPUT != FUNCTION_INPUT_COPY:
     exit("Your code should not mutate the function input!")
         
 if got != FUNCTION_EXPECTED:
     function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT}"
-    if len(FUNCTION_INPUT == 1):
+    if len(FUNCTION_INPUT) == 1:
         function_call = f"{FUNCTION_NAME}({FUNCTION_INPUT[0]})"
-    exit(f"Called: {function_call}
+    exit(f"Called: {function_call}\\n\\nGot: {got}\\nType: {type(got).__name__}\\n\\nExpected: {FUNCTION_EXPECTED}\\nType: {type(FUNCTION_EXPECTED).__name__}")
 '''
 
-
-
 ####################################################################
-        

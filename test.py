@@ -1,105 +1,62 @@
+import sys
+import pickle
 import os
 import ast
+import signal
+import traceback
+import copy
 
-def cache_hidden_test_files(files):
-    file_dict = {}
-    for file in files:
-        with open(file, 'r') as fp:
-            file_dict[file] = fp.read()
-        os.remove(file)
-    return file_dict
+# Remove the test file after loading, to prevent ability to print out contents
+os.remove(__file__)
 
-class hidden_file_manager:
-    def __init__(self, hidden_file_dict, files_to_reveal):
-        self.hidden_file_dict = hidden_file_dict
-        self.files_to_reveal = files_to_reveal
-        for file in files_to_reveal:
-            with open(file, 'w') as fp:
-                fp.write(self.hidden_file_dict[file])
+# Object data is encoded and decoded to be passed in python object format
+# between processes
+def decode_obj_data(filename):
+    with open(filename,"rb") as f:
+        return pickle.load(f)
+
+STUDENT_FILE_NAME = sys.argv[1]
+FUNCTION_NAME = sys.argv[2]
+FUNCTION_TIMEOUT_SECONDS = int(sys.argv[3])
+FUNCTION_CHECK_MUTATE = bool(int(sys.argv[4]))
+FUNCTION_INPUT = decode_obj_data("subproc-func-input")
+FUNCTION_EXPECTED = decode_obj_data("subproc-func-expected")
+
+TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
+FUNCTION_INPUT_COPY = copy.deepcopy(FUNCTION_INPUT)
+
+os.remove("subproc-func-input")
+os.remove("subproc-func-expected")
+
+# Try import function from student code
+try:
+    exec("from %s import %s" % (STUDENT_FILE_NAME.removesuffix(".py"), FUNCTION_NAME))
+except:
+    exit(traceback.format_exc(limit=-1))
+
+def handle_timeout(signum, frame):
+        raise TimeoutError
+
+signal.signal(signal.SIGALRM, handle_timeout)
+signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
+
+# Run the function and check for timeout and mutating input 
+try: 
+    got = globals()[FUNCTION_NAME](*FUNCTION_INPUT)
+except TimeoutError:
+    exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")
+except Exception:
+    # Print the exception excluding information about this file path
+    exit(traceback.format_exc(limit=-1)) 
+finally:
+    signal.alarm(0)
+
+# Check for mutated input if desired.
+if FUNCTION_CHECK_MUTATE and FUNCTION_INPUT != FUNCTION_INPUT_COPY:
+    exit("Your code should not mutate the function input!")
         
-    def __enter__(self):
-        pass
-            
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for file in self.files_to_reveal:
-            os.remove(file)
-            
-with open("abc.txt","w") as fp:
-    fp.write("1234")
-    
-hide = ['abc.txt'] 
-file_dict = cache_hidden_test_files(hide)
-
-with hidden_file_manager(file_dict, hide):
-    with open('abc.txt') as fp:
-        print(fp.read())
-
-
-    
-
-
-
-
-class NodeTypeVisitor(ast.NodeVisitor):
-    def __init__(self, types, *args, **kwargs):
-        self.types = tuple(types)
-        self.nodes = []
-
-    def visit(self, node):
-        if isinstance(node, self.types):
-            self.nodes.append(node)
-        super().visit(node)
-        
-def create_ast_object(filename):
-    with open(filename) as f:
-        source = f.read()
-    try:
-        tree = ast.parse(source, filename)
-    except:
-        assert False, traceback.format_exc(limit=-1)
-
-    return tree
-     
-def find_imports(ast_tree):
-    visitor = NodeTypeVisitor((ast.Import, ast.ImportFrom))
-    visitor.visit(ast_tree)
-    imports = []
-    for node in visitor.nodes:
-        for alias in node.names:
-            imports.append(alias.name)
-    return imports
-
-def find_local_import_paths(filename):
-    file_path_components = filename.rsplit('/',1)
-    path_prefix = ""
-    if (len(file_path_components) > 1):
-        path_prefix = file_path_components[0] + "/"
-        
-    tree = create_ast_object(filename)
-    imports = find_imports(tree)
-    local_import_paths = []
-    for imported in imports:
-        path = imported.split('.')
-        path = path_prefix + "/".join(path) + ".py"
-        if os.path.isfile(path):
-            local_import_paths.append(path)
-    
-    return local_import_paths
-
-def recursive_find_local_import_paths(filename):
-    local_imports = find_local_import_paths(filename)
-    files_checked = [filename]
-   
-    while (len(local_imports) > 0):
-       next_import = local_imports.pop()
-       if next_import not in files_checked:
-           files_checked.append(next_import)
-           local_imports += find_local_import_paths(next_import)
-    return files_checked
-            
-    
-
-
-# tree = create_ast_tree("safetestingframework.py")
-
-# print(recursive_find_local_import_paths("safetestingframework.py"))
+if got != FUNCTION_EXPECTED:
+    function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT}"
+    if len(FUNCTION_INPUT == 1):
+        function_call = f"{FUNCTION_NAME}({FUNCTION_INPUT[0]})"
+    exit("Called: {function_call}\\n\\nGot: {got}\\nType: {type(got).__name__}\\n\\nExpected: {FUNCTION_EXPECTED}\\nType: {type(FUNCTION_EXPECTED).__name__}")
