@@ -256,7 +256,7 @@ def private(release_test_cases = False):
         return obj
     return dec
 
-def score(score):
+def score(score = 0):
     def dec(obj):
         if (obj.__doc__) == None:
             obj.__doc__ = " "
