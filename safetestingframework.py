@@ -3,7 +3,7 @@
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
-# https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+# https://edstem.org/au/courses/20912/lessons/79913/slides/539891
 
 # Note: be careful if developing locally, as importing this code will cause it to be 
 # irreplaceably removed, unlike on Ed.
@@ -18,8 +18,6 @@ import traceback
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
 
-# The runtestsubprocess file must be removed from path before running student code, so it is convient to store it directly
-# in here, to avoid version control inconvenience.
 ####################################################################
 
 def run_function_test(
@@ -59,7 +57,6 @@ def run_function_test(
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
         proc_ret = subprocess.run(
                             ("python", RUN_TEST_SUBPROCESS_FILENAME, student_file_name, function_name, str(function_timeout_seconds), str(int(check_mutate))),
-                            text=True,
                             capture_output=True,
                         )
 
@@ -95,7 +92,6 @@ def run_script_test(
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
         proc_ret = subprocess.run(
                                 ("python", student_file_path_prefix + student_file_name),
-                                text=True,
                                 capture_output=True, 
                             )
 
@@ -170,7 +166,7 @@ def run_astcheck_test(
             if node.id in non_allowed_functions:
                 assert False, 'Your program is not allowed to use the {} function. This occurred on line {} of {}.'.format(node.id, node.lineno, student_file)
 
-        student_imports = find_imports(tree)
+        student_imports = find_imports(student_file)
         for lib in student_imports:
             if lib in non_allowed_imports:
                 assert False, f'Your program is not allowed to import {lib}. Occured in file {student_file}.'
@@ -196,8 +192,13 @@ def create_ast_object(filename):
     return tree
 
 ####################################################################
+# In order for safety checks to work properly all local imports from the 
+# file being tested must be found and checked accordingly for non allowed
+# features or libraries, formatting etc.
 
-def find_imports(ast_tree):
+def find_imports(filename):
+    ''' Generate a list of import names from a given file '''
+    ast_tree = create_ast_object(filename)
     visitor = NodeTypeVisitor((ast.Import, ast.ImportFrom))
     visitor.visit(ast_tree)
     imports = []
@@ -207,13 +208,13 @@ def find_imports(ast_tree):
     return imports
 
 def find_local_import_paths(filename):
+    ''' Create a list of relative local import paths '''
     file_path_components = filename.rsplit('/',1)
     path_prefix = ""
     if (len(file_path_components) > 1):
         path_prefix = file_path_components[0] + "/"
         
-    tree = create_ast_object(filename)
-    imports = find_imports(tree)
+    imports = find_imports(filename)
     local_import_paths = []
     for imported in imports:
         path = imported.split('.')
@@ -224,6 +225,7 @@ def find_local_import_paths(filename):
     return local_import_paths
 
 def recursive_find_local_import_paths(filename):
+    ''' Create a list of every local import in the import tree '''
     local_imports = find_local_import_paths(filename)
     files_checked = [filename]
    
@@ -241,6 +243,13 @@ def recursive_find_local_import_paths(filename):
 # above unit test to control behaviour
 
 def hidden(release_test_cases = False):
+    ''' 
+    Having #hidden in the docstring of a unit test causes the test to 
+    be set as hidden in Ed's backend when using PyUnit testing.
+    Boolean control variable means tests can be easily 
+    realeased after the duedate by setting it to True, and rerunning
+    the testcases for all students to set it as visible.
+    '''
     hidden = '#hidden' if release_test_cases == False else ''
     def dec(obj):
         obj.__doc__ = obj.__doc__ + hidden
@@ -248,6 +257,13 @@ def hidden(release_test_cases = False):
     return dec
 
 def private(release_test_cases = False):
+    ''' 
+    Having #private in the docstring of a unit test causes the test to 
+    be set as private in Ed's backend when using PyUnit testing.
+    Boolean control variable means tests can be easily 
+    realeased after the duedate by setting it to True, and rerunning
+    the testcases for all students to set it as visible.
+    '''
     private = '#private' if release_test_cases == False else ''
     def dec(obj):
         if (obj.__doc__) == None:
@@ -256,7 +272,12 @@ def private(release_test_cases = False):
         return obj
     return dec
 
-def score(score = 0):
+def score(score):
+    ''' 
+    Having #score(value) in the docstring of a unit test sets the per
+    testcase score to value when per-testcase scoring is enabled.
+    Score can be an integer or a floating pointer number.
+    '''
     def dec(obj):
         if (obj.__doc__) == None:
             obj.__doc__ = " "
@@ -265,6 +286,14 @@ def score(score = 0):
     return dec
 
 def setname(name_override=None):
+    ''' 
+    Having #name(value) in the docstring of a unit test 
+    sets the student visible testcase name to be value instead of 
+    the function name. This function formats the name nicer by 
+    removing test or test_ from the name and replacing '_' with ' ' 
+    for example testVisible_1 shows as "Visible 1" or allows
+    a direct override.
+    '''
     def dec(obj):
         name = obj.__name__ if name_override == None else name_override
         if (obj.__doc__) == None:
@@ -290,16 +319,38 @@ def decode_obj_data(filename):
 
 ####################################################################
 
-def verify_program_output(proc_ret, expected_stdout, expected_stderr):
-    assert proc_ret.stderr == expected_stderr, f"Your program produced the following errors:\n{proc_ret.stderr}"
-    assert proc_ret.stdout == expected_stdout, f"Your program produced the following output:\n{proc_ret.stdout}\n\nThe expected output is:\n{expected_stdout}"
+def format_invis_chars(data):
+    if type(data) == str:
+        return str((data,))[2:-3].replace("\\n", "\\n\n")
+    return str(data)
 
+
+def verify_program_output(proc_ret, expected_stdout, expected_stderr):
+    ''' 
+    Produce the errors displayed to students when a test fails. In a unit test
+    assert is used to say the test failed, before moving onto the next.
+    '''
+    
+    if proc_ret.stderr.decode() != expected_stderr:
+        if expected_stderr == "":
+            raise Exception("Your program produced the following errors:\n{0}" \
+            .format(proc_ret.stderr.decode()))
+        else:
+            raise Exception("Your program produced the following errors:\n{0}\n\nThe expected errors are:{1}" \
+                .format(proc_ret.stderr.decode(), expected_stderr))
+            
+    if proc_ret.stdout.decode() != expected_stdout: 
+        raise Exception("\n► Your program printed the following output:\n{0}\n► The expected printed output is:\n{1}" \
+            .format(format_invis_chars(proc_ret.stdout.decode()), format_invis_chars(expected_stdout)))
+        
 ####################################################################
 
 def cache_hidden_test_files(files):
     '''
     Create a dictionary of Key, Value = Filename, File Content String
-    for each file and remove it from path
+    for each file and remove it from path. The files can then be revealed
+    only when running a given test, with HiddenFileManager, or its integration
+    into run_function_test or run_script_test, to avoid data leakage. 
     '''
     file_dict = {}
     for file in files:
@@ -309,12 +360,16 @@ def cache_hidden_test_files(files):
     return file_dict
 
 class HiddenFileManager:
+    ''' 
+    Allow easy revealing and automatic removal of files from a hidden file dictionary
+    by using the with keyword scope.
+    '''
     def __init__(self, hidden_file_dict, files_to_reveal):
         self.hidden_file_dict = hidden_file_dict
         self.files_to_reveal = files_to_reveal
         for file in files_to_reveal:
             if file not in hidden_file_dict:
-                raise Exception(f"Setup Issue: File to reveal '{file}' not in hidden_file_dict! Contact the Course Cooordinator to fix this.")
+                raise Exception(f"Setup Issue: File to reveal '{file}' not in hidden_file_dict!")
             with open(file, 'w') as fp:
                 fp.write(self.hidden_file_dict[file])
         
@@ -326,7 +381,10 @@ class HiddenFileManager:
             os.remove(file)
 
 ####################################################################
-# Note: All occurances of \n replaced with \\n.
+# The runtestsubprocess file must be removed from path before running student code, so it is convient to store it directly
+# in here, to avoid version control inconvenience.
+
+# Note: All occurances of \ need to be escaped as \\
 RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
 RUN_TEST_SUBPROCESS_FILE = \
 '''
@@ -386,12 +444,18 @@ finally:
 # Check for mutated input if desired.
 if FUNCTION_CHECK_MUTATE and FUNCTION_INPUT != FUNCTION_INPUT_COPY:
     exit("Your code should not mutate the function input!")
-        
+
+def format_invis_chars(data):
+    if type(data) == str:
+        # This forces it to show characters as being escaped and wrapped in quotation marks for consistency
+        return str((data,))[1:-2]
+    return str(data)
+  
 if got != FUNCTION_EXPECTED:
     function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT}"
     if len(FUNCTION_INPUT) == 1:
-        function_call = f"{FUNCTION_NAME}({FUNCTION_INPUT[0]})"
-    exit(f"Called: {function_call}\\n\\nGot: {got}\\nType: {type(got).__name__}\\n\\nExpected: {FUNCTION_EXPECTED}\\nType: {type(FUNCTION_EXPECTED).__name__}")
+        function_call = function_call.strip(",)") + ")"
+    exit(f"► Called: {function_call}\\n\\n► Got <{type(got).__name__}>:\\n{format_invis_chars(got)}\\n► Expected <{type(FUNCTION_EXPECTED).__name__}>:\\n{format_invis_chars(FUNCTION_EXPECTED)}")
 '''
 
 ####################################################################

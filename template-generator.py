@@ -1,6 +1,6 @@
 # Setup for V.0.3.0 Safe Testing Framework
 # Choose from these options to generate a testbench file template
- 
+ASSIGNMENT_DESC = "2025s2 COMP10001 Assignment 1 Testbench"
 INCLUDE_PEP8_CHECK = True
 INCLUDE_AST_CHECK = True
 NUM_VISIBLE_FUNCTION_TESTS = 1
@@ -9,15 +9,17 @@ NUM_HIDDEN_FUNCTION_TESTS = 1
 NUM_HIDDEN_SCRIPT_TESTS = 1
 NUM_PRIVATE_FUNCTION_TESTS = 1
 NUM_PRIVATE_SCRIPT_TESTS = 1
+STUDENT_FILE_NAME = "program.py"
+STUDENT_FUNCTION = "test"
 
 
 ############################################################################################
 
 PREAMBLE = \
 '''
-# Testbench for: 
+# {0}
 #
-# Safe Ed Assignment Unit Testing Framework V0.3.0 testbench.py
+# Depends on Safe Ed Assignment Unit Testing Framework V0.3.0
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu> 2025/04/01
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
@@ -35,14 +37,13 @@ os.remove(__file__)
 # Need to re-run test cases for all students for it to work
 RELEASE_TEST_CASES = False 
 
-STUDENT_FUNCTION = "test"
-STUDENT_FILE_NAME = "program.py"
+STUDENT_FUNCTION = "{1}"
+STUDENT_FILE_NAME = "{2}"
 
 FILES_TO_HIDE = [] # eg ["abc.txt"]
 HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
 
-class SafeTesting(unittest.TestCase):
-'''
+class SafeTesting(unittest.TestCase):'''.format(ASSIGNMENT_DESC, STUDENT_FUNCTION, STUDENT_FILE_NAME)
 
 TEST_PEP8 = \
 '''
@@ -51,9 +52,9 @@ TEST_PEP8 = \
     def test_PEP8_Check(self):
         PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
         run_pep8_test(
-            student_file_name=STUDENT_FILE_NAME, 
-            student_file_path_prefix="/home/",   
-            ignored_tests=PEP8_IGNORED          
+            student_file_name=STUDENT_FILE_NAME, # File to test function from
+            student_file_path_prefix="/home/",   # File path prefix, could change by Ed, but otherwise does not need to be touched
+            ignored_tests=PEP8_IGNORED           # Modify as desired, this is the default value set in the framework.
         )
 '''
 
@@ -64,7 +65,7 @@ TEST_ASTCHECK = \
     def testAST_Check(self): 
         run_astcheck_test(
             student_file_name=STUDENT_FILE_NAME,    # File to test function from
-            student_file_path_prefix="/home/",      # File path prefix, could change by Ed
+            student_file_path_prefix="/home/",      # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (ast.And, ast.For), # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),               # Function names of any specific functions to disallow
             non_allowed_imports = (),               # Imports that are not allowed anywhere in student file or any local imports
@@ -77,7 +78,7 @@ RUN_FUNCTION_TEST = \
         run_function_test(
                     student_file_name=STUDENT_FILE_NAME,                        
                     function_name=STUDENT_FUNCTION,                              
-                    function_input=(),                                           
+                    function_input=(), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
                     function_expected = None,                                   
                     function_timeout_seconds = 1,                                
                     check_mutate=False,                                          
@@ -113,26 +114,24 @@ TEST_VISIBLE = \
 '''
     @setname()
     @score(0)
-    def testVisible_{0}(self):
-'''
+    def testVisible_{0}(self):'''
 
 TEST_HIDDEN = \
 '''
     @setname()
     @hidden(RELEASE_TEST_CASES) # Set the test case as hidden, override to become visible by setting RELEASE_TEST_CASES = True
     @score(0)
-    def testHidden_{0}(self):
-'''
+    def testHidden_{0}(self):'''
 
 TEST_PRIVATE = \
 '''
     @setname()
     @private(RELEASE_TEST_CASES) # Set the test case as private, override to become visible by setting RELEASE_TEST_CASES = True
     @score(0)
-    def testPrivate_{0}(self):
-'''
+    def testPrivate_{0}(self):'''
 
-with open("testbench.py", "w") as fp:
+# .txt because on ed it wont allow access to the file unless it ends in txt
+with open("testbench.txt", "w") as fp:
     fp.write(PREAMBLE)
     if INCLUDE_PEP8_CHECK:
         fp.write(TEST_PEP8 + '\n')
@@ -140,25 +139,25 @@ with open("testbench.py", "w") as fp:
         fp.write(TEST_ASTCHECK+ '\n')
     
     for i in range(NUM_VISIBLE_FUNCTION_TESTS):
-        fp.write(TEST_VISIBLE.format(i))
+        fp.write(TEST_VISIBLE.format(i+1))
         fp.write(RUN_FUNCTION_TEST + '\n')
 
     for i in range(NUM_VISIBLE_SCRIPT_TESTS):
-        fp.write(TEST_VISIBLE.format(i+NUM_VISIBLE_FUNCTION_TESTS))
+        fp.write(TEST_VISIBLE.format(i+NUM_VISIBLE_FUNCTION_TESTS+1))
         fp.write(RUN_SCRIPT_TEST + '\n')
 
     for i in range(NUM_HIDDEN_FUNCTION_TESTS):
-        fp.write(TEST_HIDDEN.format(i))
+        fp.write(TEST_HIDDEN.format(i+1))
         fp.write(RUN_FUNCTION_TEST + '\n')
 
     for i in range(NUM_HIDDEN_SCRIPT_TESTS):
-        fp.write(TEST_HIDDEN.format(i+NUM_HIDDEN_FUNCTION_TESTS))
+        fp.write(TEST_HIDDEN.format(i+NUM_HIDDEN_FUNCTION_TESTS+1))
         fp.write(RUN_SCRIPT_TEST + '\n')
         
     for i in range(NUM_PRIVATE_FUNCTION_TESTS):
-        fp.write(TEST_PRIVATE.format(i))
+        fp.write(TEST_PRIVATE.format(i+1))
         fp.write(RUN_FUNCTION_TEST + '\n')
 
     for i in range(NUM_PRIVATE_SCRIPT_TESTS):
-        fp.write(TEST_PRIVATE.format(i+NUM_PRIVATE_FUNCTION_TESTS))
+        fp.write(TEST_PRIVATE.format(i+NUM_PRIVATE_FUNCTION_TESTS+1))
         fp.write(RUN_SCRIPT_TEST + '\n')
