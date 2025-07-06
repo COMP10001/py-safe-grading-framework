@@ -1,16 +1,17 @@
 # Setup for V.0.3.0 Safe Testing Framework
 # Choose from these options to generate a testbench file template
-ASSIGNMENT_DESC = "2025s2 COMP10001 Assignment 1 Testbench"
-INCLUDE_PEP8_CHECK = True
-INCLUDE_AST_CHECK = True
+ASSIGNMENT_DESC = "Assignment 1"
+INCLUDE_PEP8_CHECK = False
+INCLUDE_AST_CHECK = False
 NUM_VISIBLE_FUNCTION_TESTS = 1
-NUM_VISIBLE_SCRIPT_TESTS = 1
+NUM_VISIBLE_SCRIPT_TESTS = 0
 NUM_HIDDEN_FUNCTION_TESTS = 1
-NUM_HIDDEN_SCRIPT_TESTS = 1
-NUM_PRIVATE_FUNCTION_TESTS = 1
-NUM_PRIVATE_SCRIPT_TESTS = 1
-STUDENT_FILE_NAME = "program.py"
+NUM_HIDDEN_SCRIPT_TESTS = 0
+NUM_PRIVATE_FUNCTION_TESTS = 0
+NUM_PRIVATE_SCRIPT_TESTS = 0
 STUDENT_FUNCTION = "test"
+STUDENT_FILE_NAME = "program.py"
+STUDENT_FILE_PATH_PREFIX = "/home/" 
 
 
 ############################################################################################
@@ -39,11 +40,12 @@ RELEASE_TEST_CASES = False
 
 STUDENT_FUNCTION = "{1}"
 STUDENT_FILE_NAME = "{2}"
+STUDENT_FILE_PATH_PREFIX = os.getcwd()
 
 FILES_TO_HIDE = [] # eg ["abc.txt"]
 HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
 
-class SafeTesting(unittest.TestCase):'''.format(ASSIGNMENT_DESC, STUDENT_FUNCTION, STUDENT_FILE_NAME)
+class SafeTesting(unittest.TestCase):'''.format(ASSIGNMENT_DESC, STUDENT_FUNCTION, STUDENT_FILE_NAME, STUDENT_FILE_PATH_PREFIX)
 
 TEST_PEP8 = \
 '''
@@ -64,32 +66,33 @@ TEST_ASTCHECK = \
     @score(0)
     def testAST_Check(self): 
         run_astcheck_test(
-            student_file_name=STUDENT_FILE_NAME,    # File to test function from
-            student_file_path_prefix="/home/",      # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (ast.And, ast.For), # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),               # Function names of any specific functions to disallow
-            non_allowed_imports = (),               # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                      # Eg ast.Name, see ast library
+            student_file_name=STUDENT_FILE_NAME,               # File to test function from
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
+            non_allowed_nodes = (ast.And, ast.For),            # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                          # Function names of any specific functions to disallow
+            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                 # Eg ast.Name, see ast library
         )
 '''
 
 RUN_FUNCTION_TEST = \
 '''
         run_function_test(
-                    student_file_name=STUDENT_FILE_NAME,                        
-                    function_name=STUDENT_FUNCTION,                              
-                    function_input=(), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
-                    function_expected = None,                                   
-                    function_timeout_seconds = 1,                                
-                    check_mutate=False,                                          
-                    expected_stdout="",                                          
-                    expected_stderr="",                                          
-                    non_allowed_nodes = (),                                      
-                    non_allowed_functions=(),                                    
-                    non_allowed_imports = ("sys", "os", "subprocess", "signal"), 
-                    required_nodes=(),                                           
-                    files_to_reveal = [],                                        
-                    hidden_file_dict = HIDDEN_FILE_DICT,                         
+            student_file_name=STUDENT_FILE_NAME,
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                  
+            function_name=STUDENT_FUNCTION,                              
+            function_input=(), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
+            function_expected = None,                                   
+            function_timeout_seconds = 1,                                
+            check_mutate=False,                                          
+            expected_stdout="",                                          
+            expected_stderr="",                                          
+            non_allowed_nodes = (),                                      
+            non_allowed_functions=(),                                    
+            non_allowed_imports = ("sys", "os", "subprocess", "signal"), 
+            required_nodes=(),                                           
+            files_to_reveal = [],                                        
+            hidden_file_dict = HIDDEN_FILE_DICT,                         
         )
 '''
 
@@ -97,7 +100,7 @@ RUN_SCRIPT_TEST = \
 '''
         run_script_test(
             student_file_name=STUDENT_FILE_NAME,                        
-            student_file_path_prefix="/home/",                          
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                          
             expected_stdout="",                                        
             expected_stderr="",                                          
             non_allowed_nodes = (),                                      

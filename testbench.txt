@@ -6,15 +6,11 @@
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
 # https://edstem.org/au/courses/20911/lessons/79913/slides/539891
-
 from safetestingframework import *
 
 ### ENSURE PER TESTCASE SCORING IS ENABLED!
 ### ENSURE TIMEOUT (s) IS SET HIGHER THAN THE SUM OF 'function_timeout_seconds' FOR EACH TEST!
 ### SEE TESTBENCH EXAMPLE FOR MORE EXPLANATION
-
-# To run locally use `python -m unittest testbench.py`
-# DANGER: Unlike Ed you do NOT want to remove the testbench when developing locally
 
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
@@ -23,9 +19,8 @@ os.remove(__file__)
 # Need to re-run test cases for all students for it to work
 RELEASE_TEST_CASES = False 
 
-STUDENT_FUNCTION = "remove_player"
+STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
-STUDENT_FILE_PATH_PREFIX = os.getcwd() + '/'
 
 FILES_TO_HIDE = [] # eg ["abc.txt"]
 HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
@@ -35,11 +30,10 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testVisible_1(self):
         run_function_test(
-                    student_file_name=STUDENT_FILE_NAME,
-                    student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                  
+                    student_file_name=STUDENT_FILE_NAME,                        
                     function_name=STUDENT_FUNCTION,                              
-                    function_input=([['|x','|'], ['|', ' ']],(1,1)), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
-                    function_expected = [['|', '|'], ['|', ' ']],                                   
+                    function_input=(), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
+                    function_expected = None,                                   
                     function_timeout_seconds = 1,                                
                     check_mutate=False,                                          
                     expected_stdout="",                                          
@@ -57,11 +51,10 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testVisible_2(self):
         run_function_test(
-                    student_file_name=STUDENT_FILE_NAME,
-                    student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                     
+                    student_file_name=STUDENT_FILE_NAME,                        
                     function_name=STUDENT_FUNCTION,                              
-                    function_input=([['|x','|','|','|','|'],['|',' ',' ','|','|'],['|','|','|',' ','|']],(1,1)), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
-                    function_expected = [['|', '|', '|', '|', '|'], ['|', ' ', ' ', '|', '|'], ['|', '|', '|', ' ', '|']],                                   
+                    function_input=(), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
+                    function_expected = None,                                   
                     function_timeout_seconds = 1,                                
                     check_mutate=False,                                          
                     expected_stdout="",                                          
@@ -79,11 +72,10 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testVisible_3(self):
         run_function_test(
-                    student_file_name=STUDENT_FILE_NAME,
-                    student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                        
+                    student_file_name=STUDENT_FILE_NAME,                        
                     function_name=STUDENT_FUNCTION,                              
-                    function_input=([['|','|','|','|','|'],['|',' ',' ','|','|'],['|','|','|',' ','|'],['|','|','|x',' ','|']],(4,3)), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
-                    function_expected = [['|', '|', '|', '|', '|'], ['|', ' ', ' ', '|', '|'], ['|', '|', '|', ' ', '|'], ['|', '|', '|', ' ', '|']],                                   
+                    function_input=(), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
+                    function_expected = None,                                   
                     function_timeout_seconds = 1,                                
                     check_mutate=False,                                          
                     expected_stdout="",                                          

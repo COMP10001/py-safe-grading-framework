@@ -18,10 +18,14 @@ import traceback
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
 
+PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
+DEFAULT_STUDENT_FILE_PATH_PREFIX = os.getcwd() + '/'
+DEFAULT_NON_ALLOWED_IMPORTS = ("sys", "os", "subprocess", "signal")
 ####################################################################
 
 def run_function_test(
         student_file_name=None,                                      # File to test function from
+        student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
         function_name=None,                                          # Function to test
         function_input=(),                                           # Input to function, must be wrapped in a tuple
         function_expected = None,                                    # Expected value for function
@@ -31,7 +35,7 @@ def run_function_test(
         expected_stderr="",                                          # Expected value in stderr
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
         non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-        non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+        non_allowed_imports = DEFAULT_NON_ALLOWED_IMPORTS,           # Imports that are not allowed anywhere in student file or any local imports
         required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
         files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
         hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -42,6 +46,7 @@ def run_function_test(
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
     run_astcheck_test(student_file_name,
+                      student_file_path_prefix=student_file_path_prefix,
                       non_allowed_nodes=non_allowed_nodes, 
                       non_allowed_functions=non_allowed_functions, 
                       non_allowed_imports=non_allowed_imports, 
@@ -66,12 +71,12 @@ def run_function_test(
 
 def run_script_test(
         student_file_name=None,                                      # File to test function from
-        student_file_path_prefix="/home/",                           # File path prefix, could change by Ed
+        student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
         non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-        non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+        non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
         required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
         files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
         hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -83,6 +88,7 @@ def run_script_test(
     '''
 
     run_astcheck_test(student_file_name,
+                      student_file_path_prefix=student_file_path_prefix,
                       non_allowed_nodes=non_allowed_nodes, 
                       non_allowed_functions=non_allowed_functions, 
                       non_allowed_imports=non_allowed_imports, 
@@ -99,19 +105,17 @@ def run_script_test(
 
 ####################################################################
 
-PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
-
 def run_pep8_test(
-        student_file_name=None,             # File to test function from
-        student_file_path_prefix="/home/",  # File path prefix, could change by Ed
-        ignored_tests=PEP8_IGNORED          # Names of tests to ignore, see flake8 documentation.
+        student_file_name=None,                                      # File to test function from
+        student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
+        ignored_tests=PEP8_IGNORED                                   # Names of tests to ignore, see flake8 documentation.
     ):
     '''
     Run PEP8 style checks on the student submission file, and any local imports
     '''
-    filename = student_file_path_prefix + student_file_name
-    local_import_paths = recursive_find_local_import_paths(filename)
-    files_to_check = [filename] + local_import_paths 
+    filepath = student_file_path_prefix + student_file_name
+    local_import_paths = recursive_find_local_import_paths(filepath)
+    files_to_check = [filepath] + local_import_paths 
     
     pep8_violations = ""
     for file in files_to_check:
@@ -131,19 +135,19 @@ def run_pep8_test(
 ####################################################################
 
 def run_astcheck_test(
-        student_file_name=None,             # File to test function from
-        student_file_path_prefix="/home/",  # File path prefix, could change by Ed
-        non_allowed_nodes = (),             # Eg ast.Name, see run_astcheck_test and ast library
-        non_allowed_functions=(),           # Function names of any specific functions to disallow
-        non_allowed_imports = (),           # Imports that are not allowed anywhere in student file or any local imports
-        required_nodes=(),                  # Eg ast.Name, see ast library
+        student_file_name=None,                                      # File to test function from
+        student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
+        non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+        non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+        non_allowed_imports = (),                                    # Imports that are not allowed anywhere in student file or any local imports
+        required_nodes=(),                                           # Eg ast.Name, see ast library
     ):
     '''
     Run abstract syntax tree checks on the student submission file, and any local imports
     '''
-    filename = student_file_path_prefix + student_file_name
-    local_import_paths = recursive_find_local_import_paths(filename)
-    files_to_check = [filename] + local_import_paths 
+    filepath = student_file_path_prefix + student_file_name
+    local_import_paths = recursive_find_local_import_paths(filepath)
+    files_to_check = [filepath] + local_import_paths 
 
     for student_file in files_to_check:
         tree = create_ast_object(student_file)
@@ -196,9 +200,9 @@ def create_ast_object(filename):
 # file being tested must be found and checked accordingly for non allowed
 # features or libraries, formatting etc.
 
-def find_imports(filename):
+def find_imports(filepath):
     ''' Generate a list of import names from a given file '''
-    ast_tree = create_ast_object(filename)
+    ast_tree = create_ast_object(filepath)
     visitor = NodeTypeVisitor((ast.Import, ast.ImportFrom))
     visitor.visit(ast_tree)
     imports = []
@@ -207,14 +211,14 @@ def find_imports(filename):
             imports.append(alias.name)
     return imports
 
-def find_local_import_paths(filename):
+def find_local_import_paths(filepath):
     ''' Create a list of relative local import paths '''
-    file_path_components = filename.rsplit('/',1)
+    file_path_components = filepath.rsplit('/',1)
     path_prefix = ""
     if (len(file_path_components) > 1):
         path_prefix = file_path_components[0] + "/"
         
-    imports = find_imports(filename)
+    imports = find_imports(filepath)
     local_import_paths = []
     for imported in imports:
         path = imported.split('.')
@@ -224,10 +228,10 @@ def find_local_import_paths(filename):
     
     return local_import_paths
 
-def recursive_find_local_import_paths(filename):
+def recursive_find_local_import_paths(filepath):
     ''' Create a list of every local import in the import tree '''
-    local_imports = find_local_import_paths(filename)
-    files_checked = [filename]
+    local_imports = find_local_import_paths(filepath)
+    files_checked = [filepath]
    
     while (len(local_imports) > 0):
        next_import = local_imports.pop()
@@ -330,18 +334,25 @@ def verify_program_output(proc_ret, expected_stdout, expected_stderr):
     Produce the errors displayed to students when a test fails. In a unit test
     assert is used to say the test failed, before moving onto the next.
     '''
-    
+    errors = ""
     if proc_ret.stderr.decode() != expected_stderr:
         if expected_stderr == "":
-            raise Exception("Your program produced the following errors:\n{0}" \
-            .format(proc_ret.stderr.decode()))
+            errors += "\n► Your program produced the following errors:\n{0}" \
+            .format(proc_ret.stderr.decode())
         else:
-            raise Exception("Your program produced the following errors:\n{0}\n\nThe expected errors are:{1}" \
-                .format(proc_ret.stderr.decode(), expected_stderr))
+            errors +="\n► Your program produced the following errors:\n{0}\n► The expected errors are:{1}" \
+                .format(proc_ret.stderr.decode(), expected_stderr)
             
     if proc_ret.stdout.decode() != expected_stdout: 
-        raise Exception("\n► Your program printed the following output:\n{0}\n► The expected printed output is:\n{1}" \
-            .format(format_invis_chars(proc_ret.stdout.decode()), format_invis_chars(expected_stdout)))
+        if expected_stdout == "":
+            errors += "\n► Your program printed the following output when no printing was expected:\n{0}" \
+            .format(format_invis_chars(proc_ret.stdout.decode()), format_invis_chars(expected_stdout))
+        else:
+            errors += "\n► Your program printed the following output:\n{0}\n► The expected printed output is:\n{1}" \
+            .format(format_invis_chars(proc_ret.stdout.decode()), format_invis_chars(expected_stdout))
+        
+    if errors != "":
+        raise Exception(errors)
         
 ####################################################################
 
@@ -405,7 +416,7 @@ def decode_obj_data(filename):
     with open(filename,"rb") as f:
         return pickle.load(f)
 
-STUDENT_FILE_NAME = sys.argv[1]
+STUDENT_FILE_PATH = sys.argv[1]
 FUNCTION_NAME = sys.argv[2]
 FUNCTION_TIMEOUT_SECONDS = int(sys.argv[3])
 FUNCTION_CHECK_MUTATE = bool(int(sys.argv[4]))
@@ -420,7 +431,7 @@ os.remove("subproc-func-expected")
 
 # Try import function from student code
 try:
-    exec("from %s import %s" % (STUDENT_FILE_NAME.removesuffix(".py"), FUNCTION_NAME))
+    exec("from %s import %s" % (STUDENT_FILE_PATH.removesuffix(".py"), FUNCTION_NAME))
 except:
     exit(traceback.format_exc(limit=-1))
 
@@ -455,7 +466,7 @@ if got != FUNCTION_EXPECTED:
     function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT}"
     if len(FUNCTION_INPUT) == 1:
         function_call = function_call.strip(",)") + ")"
-    exit(f"► Called: {function_call}\\n\\n► Got <{type(got).__name__}>:\\n{format_invis_chars(got)}\\n► Expected <{type(FUNCTION_EXPECTED).__name__}>:\\n{format_invis_chars(FUNCTION_EXPECTED)}")
+    exit(f"► Called: {function_call}\\n► Returned <{type(got).__name__}>:\\n{format_invis_chars(got)}\\n► Expected <{type(FUNCTION_EXPECTED).__name__}>:\\n{format_invis_chars(FUNCTION_EXPECTED)}")
 '''
 
 ####################################################################
