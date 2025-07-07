@@ -81,7 +81,7 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testAST_Check_Non_Allowed_Imports_Pass(self): 
         run_astcheck_test(
-            student_file_name="astcheck_non_allowed_functions.py",
+            student_file_name="astcheck_non_allowed_imports.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
@@ -93,7 +93,7 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testAST_Check_Non_Allowed_Imports_Fail(self): 
         run_astcheck_test(
-            student_file_name="astcheck_non_allowed_functions.py",
+            student_file_name="astcheck_non_allowed_imports.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
@@ -105,11 +105,11 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testAST_Check_Non_Allowed_Imports_Recursive_Check_Pass(self): 
         run_astcheck_test(
-            student_file_name="astcheck_non_allowed_functions.py",
+            student_file_name="astcheck_recursive_import_test.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = ("sys",),                          # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                 # Eg ast.Name, see ast library
         )
     
@@ -121,7 +121,7 @@ class SafeTesting(unittest.TestCase):
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys"),                          # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = ("signal","subprocess"),                          # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                 # Eg ast.Name, see ast library
         )
         
@@ -129,7 +129,7 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testAST_Check_Non_Allowed_Nodes_Pass(self): 
         run_astcheck_test(
-            student_file_name="astcheck_non_allowed_functions.py",
+            student_file_name="astcheck_non_allowed_nodes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (ast.While,),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
@@ -141,7 +141,7 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testAST_Check_Non_Allowed_Nodes_Fail(self): 
         run_astcheck_test(
-            student_file_name="astcheck_recursive_import_test.py",
+            student_file_name="astcheck_non_allowed_nodes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (ast.For,),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
@@ -153,7 +153,7 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testAST_Check_Required_Nodes_Pass(self): 
         run_astcheck_test(
-            student_file_name="astcheck_non_allowed_functions.py",
+            student_file_name="astcheck_required_nodes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
@@ -163,9 +163,9 @@ class SafeTesting(unittest.TestCase):
     
     @setname()
     @score(0)
-    def testAST_Check_Non_Allowed_Nodes_Fail(self): 
+    def testAST_Check_Required_Nodes_Fail(self): 
         run_astcheck_test(
-            student_file_name="astcheck_recursive_import_test.py",
+            student_file_name="astcheck_required_nodes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
@@ -190,7 +190,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -213,7 +213,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -236,7 +236,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -259,7 +259,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -282,7 +282,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -305,7 +305,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -328,7 +328,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -342,7 +342,7 @@ class SafeTesting(unittest.TestCase):
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_list",                                          # Function to test
             function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "abc\ndefgh\t\r\nhello",                                    # Expected value for function
+            function_expected = [1, 1.0, "abc", ("hi", 123)],                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
             check_mutate=False,                                          # Check if the function input was mutated
             input="",                                                    # Input that can be read by input() seperated by newlines
@@ -351,7 +351,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -364,7 +364,7 @@ class SafeTesting(unittest.TestCase):
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_list",                                          # Function to test
-            function_input=([1, 1.0, "abc", ("hi", 123)],),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = [1,2,3,"abc"],                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
             check_mutate=False,                                          # Check if the function input was mutated
@@ -374,7 +374,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -397,7 +397,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -410,7 +410,7 @@ class SafeTesting(unittest.TestCase):
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_tuple",                                          # Function to test
-            function_input=([1, 1.0, "abc", ("hi", 123)],),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = (1,2,3,"abc"),                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
             check_mutate=False,                                          # Check if the function input was mutated
@@ -420,7 +420,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -444,7 +444,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -467,7 +467,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -490,7 +490,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="Fake Error has occurred.\n",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -513,7 +513,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="Error",                                    # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -533,10 +533,10 @@ class SafeTesting(unittest.TestCase):
             input="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="Error",                                          # Expected value in stderr
+            expected_stderr='Traceback (most recent call last):\n  File "/home/function_tests.py", line 28, in expected_stderr_exception\n    raise Exception("An error occured")\nException: An error occured\n\n',                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -559,7 +559,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="Error",                                    # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -582,7 +582,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -605,7 +605,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -628,7 +628,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -651,34 +651,12 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
 
-    @setname()
-    @score(0)
-    def testFunction_Spam_Print(self):
-        run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="spam_print",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
 
     @setname()
     @score(0)
@@ -686,18 +664,18 @@ class SafeTesting(unittest.TestCase):
         run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name=None,                                          # Function to test
+            function_name="hidden_files_access",                                          # Function to test
             function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
             check_mutate=False,                                          # Check if the function input was mutated
             input="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
+            expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -709,21 +687,21 @@ class SafeTesting(unittest.TestCase):
         run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name=None,                                          # Function to test
+            function_name="hidden_files_access",                                          # Function to test
             function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
             check_mutate=False,                                          # Check if the function input was mutated
             input="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
+            expected_stdout="verysecretfilecontents\n",                 # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
         
     
@@ -740,11 +718,11 @@ class SafeTesting(unittest.TestCase):
             check_mutate=False,                                          # Check if the function input was mutated
             input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
+            expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -767,7 +745,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -786,11 +764,11 @@ class SafeTesting(unittest.TestCase):
             check_mutate=False,                                          # Check if the function input was mutated
             input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
+            expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -815,7 +793,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -829,11 +807,11 @@ class SafeTesting(unittest.TestCase):
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
             input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
+            expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -851,7 +829,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -865,11 +843,11 @@ class SafeTesting(unittest.TestCase):
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
             input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
+            expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -888,7 +866,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -907,7 +885,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -926,7 +904,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -945,7 +923,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -964,7 +942,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -983,7 +961,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="hello\n1234\t\r\nsdfsfds\n",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -1002,7 +980,7 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="1234",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -1018,10 +996,10 @@ class SafeTesting(unittest.TestCase):
             input="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="Test exception",                                          # Expected value in stderr
+            expected_stderr='Traceback (most recent call last):\n  File "/home/script_expected_stderr_exception.py", line 1, in <module>\n    raise Exception("Test exception")\nException: Test exception\n\n',                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -1040,11 +1018,51 @@ class SafeTesting(unittest.TestCase):
             expected_stderr="1234",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
+    
+    @setname()
+    @score(0)
+    def testScript_Hidden_File_Valid_Access(self):
+        run_script_test(
+            student_file_name="script_hidden_files.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+        
+    @setname()
+    @score(0)
+    def testScript_Hidden_File_Invalid_Access(self):
+        run_script_test(
+            student_file_name="script_hidden_files.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+        
+    
         
     @setname()
     @hidden()
@@ -1067,3 +1085,27 @@ class SafeTesting(unittest.TestCase):
     @score(0.5)
     def testFloat_Score(self):
         pass
+
+    # @setname()
+    # @score(0)
+    # def testFunction_Spam_Print(self):
+    #     run_function_test(
+    #         student_file_name="function_tests.py",
+    #         student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+    #         function_name="spam_print",                                          # Function to test
+    #         function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+    #         function_expected = None,                                    # Expected value for function
+    #         function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
+    #         check_mutate=False,                                          # Check if the function input was mutated
+    #         input="",                                                    # Input that can be read by input() seperated by newlines
+    #         input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+    #         expected_stdout="",                                          # Expected value in stdout
+    #         expected_stderr="",                                          # Expected value in stderr
+    #         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+    #         non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+    #         non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
+    #         required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+    #         files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+    #         hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+    #     )
+

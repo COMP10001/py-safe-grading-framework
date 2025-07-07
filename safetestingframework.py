@@ -20,6 +20,7 @@ os.remove(__file__)
 
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 DEFAULT_STUDENT_FILE_PATH_PREFIX = "/home/"
+DEFAULT_NON_ALLOWED_FUNCTIONS = ("exec",)
 DEFAULT_NON_ALLOWED_IMPORTS = ("sys", "os", "subprocess", "signal")
 ####################################################################
 
@@ -36,8 +37,8 @@ def run_function_test(
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-        non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-        non_allowed_imports = DEFAULT_NON_ALLOWED_IMPORTS,           # Imports that are not allowed anywhere in student file or any local imports
+        non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
+        non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
         required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
         files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
         hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
@@ -88,7 +89,7 @@ def run_script_test(
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-        non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+        non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
         non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
         required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
         files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
@@ -114,11 +115,13 @@ def run_script_test(
     if input_echoing:
         file_path_to_run = student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME
         with open(student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
-            fp.write(INPUT_WITH_ECHOING_SUBPROCESS_FILE.format(student_file_name.removesuffix(".py"), script_timeout_seconds))
+            fp.write(INPUT_WITH_ECHOING_SUBPROCESS_FILE)
 
     command = (
         "python", 
-        file_path_to_run
+        file_path_to_run,
+        student_file_name,
+        str(script_timeout_seconds)
     )
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
         proc_ret = subprocess.run(
@@ -140,8 +143,7 @@ def run_pep8_test(
     Run PEP8 style checks on the student submission file, and any local imports
     '''
     filepath = student_file_path_prefix + student_file_name
-    local_import_paths = recursive_find_local_import_paths(filepath)
-    files_to_check = [filepath] + local_import_paths 
+    files_to_check = recursive_find_local_import_paths(filepath)
     
     pep8_violations = ""
     for file in files_to_check:
@@ -154,10 +156,11 @@ def run_pep8_test(
                             text=True
                         )
         pep8_violations += proc_ret.stdout.replace('/home/', '')
-                                    
-    assert pep8_violations == "", "The following style errors were found:\n" + pep8_violations
+        
+    if pep8_violations != "":
+        raise Exception("\nhe following style errors were found:\n" + pep8_violations)                                   
+    
 
-            
 ####################################################################
 
 def run_astcheck_test(
@@ -172,35 +175,41 @@ def run_astcheck_test(
     Run abstract syntax tree checks on the student submission file, and any local imports
     '''
     filepath = student_file_path_prefix + student_file_name
-    local_import_paths = recursive_find_local_import_paths(filepath)
-    files_to_check = [filepath] + local_import_paths 
-
+    files_to_check = recursive_find_local_import_paths(filepath)
+ 
+    output = ""
     for student_file in files_to_check:
         tree = create_ast_object(student_file)
 
         # Run the AST node type visitor over the tree to search for forbidden nodes.
-        visitor = NodeTypeVisitor(non_allowed_nodes)
-        visitor.visit(tree)
-        if visitor.nodes:
-            node = visitor.nodes[0]
-            assert False, 'Your program is not allowed to use a {}. This occurred on line {} of {}.'.format(type(node).__name__, node.lineno, student_file)
-
-        # Run the AST node type visitor over the tree to search for specific functions
-        visitor = NodeTypeVisitor((ast.Name,))
-        visitor.visit(tree)
+        forbidden_node_visitor = NodeTypeVisitor(non_allowed_nodes)
+        forbidden_node_visitor.visit(tree)
+        for node in forbidden_node_visitor.nodes:
+            output += "Your program is not allowed to use a '{}'. This occurred on line {} of {}.\n".format(type(node).__name__, node.lineno, student_file)
+            
+            
+        required_node_visitor = NodeTypeVisitor(required_nodes)
+        required_node_visitor.visit(tree)
+        required_nodes_found = [type(x) for x in required_node_visitor.nodes]
         for node in required_nodes:
-            if node.id not in visitor.nodes:
-                assert False, f'Your program must include {node.id}.'
-
-        for node in visitor.nodes:
+            if node not in required_nodes_found:
+                output += f"Your program must use a '{node.__name__}'.\n"
+                
+        # Run the AST node type visitor over the tree to search for specific functions
+        name_visitor = NodeTypeVisitor((ast.Name,))
+        name_visitor.visit(tree)
+        for node in name_visitor.nodes:
             if node.id in non_allowed_functions:
-                assert False, 'Your program is not allowed to use the {} function. This occurred on line {} of {}.'.format(node.id, node.lineno, student_file)
+                output += 'Your program is not allowed to use the {} function. This occurred on line {} of {}.\n'.format(node.id, node.lineno, student_file)
 
         student_imports = find_imports(student_file)
         for lib in student_imports:
             if lib in non_allowed_imports:
-                assert False, f'Your program is not allowed to import {lib}. Occured in file {student_file}.'
+                output += f'Your program is not allowed to import {lib}. Occured in file {student_file}.\n'
 
+    if output != "":
+        raise Exception("\n" + output)
+    
 class NodeTypeVisitor(ast.NodeVisitor):
     def __init__(self, types, *args, **kwargs):
         self.types = tuple(types)
@@ -366,8 +375,8 @@ def verify_program_output(proc_ret, expected_stdout, expected_stderr):
             errors += "\n► Your program produced the following errors:\n{0}" \
             .format(proc_ret.stderr.decode())
         else:
-            errors +="\n► Your program produced the following errors:\n{0}\n► The expected errors are:{1}" \
-                .format(proc_ret.stderr.decode(), expected_stderr)
+            errors +="\n► Your program produced the following errors:\n{0}\n► The expected errors are:\n{1}" \
+                .format(format_invis_chars(proc_ret.stderr.decode()), format_invis_chars(expected_stderr))
             
     if proc_ret.stdout.decode() != expected_stdout: 
         if expected_stdout == "":
@@ -430,6 +439,7 @@ RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
 INPUT_WITH_ECHOING_SUBPROCESS_FILE = \
 '''
 import os
+import sys
 import signal
 import traceback
 import builtins
@@ -438,7 +448,8 @@ from builtins import input
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
 
-FUNCTION_TIMEOUT_SECONDS = {0}
+STUDENT_FILE_NAME = sys.argv[1]
+FUNCTION_TIMEOUT_SECONDS = int(sys.argv[2])
 TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
 
 def input_with_echoing(prompt):
@@ -461,7 +472,7 @@ signal.signal(signal.SIGALRM, handle_timeout)
 signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
 
 try: 
-    import {1}
+    exec("import %s" % (STUDENT_FILE_NAME.removesuffix(".py"),))
 except TimeoutError:
     exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")
 except Exception:
@@ -488,6 +499,10 @@ FUNCTION_TIMEOUT_SECONDS = int(sys.argv[3])
 FUNCTION_CHECK_MUTATE = bool(int(sys.argv[4]))
 INPUT_ECHOING = bool(int(sys.argv[5]))
 
+def decode_obj_data(filename):
+    with open(filename,"rb") as f:
+        return pickle.load(f)
+
 FUNCTION_INPUT = decode_obj_data("subproc-func-input")
 FUNCTION_INPUT_COPY = decode_obj_data("subproc-func-input")
 FUNCTION_EXPECTED = decode_obj_data("subproc-func-expected")
@@ -496,10 +511,6 @@ os.remove("subproc-func-input")
 os.remove("subproc-func-expected")
 
 TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
-
-def decode_obj_data(filename):
-    with open(filename,"rb") as f:
-        return pickle.load(f)
 
 def input_with_echoing(prompt):
     try:
