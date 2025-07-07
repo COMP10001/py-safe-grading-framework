@@ -40,7 +40,7 @@ RELEASE_TEST_CASES = False
 
 STUDENT_FUNCTION = "{1}"
 STUDENT_FILE_NAME = "{2}"
-STUDENT_FILE_PATH_PREFIX = os.getcwd()
+STUDENT_FILE_PATH_PREFIX = "{3}"
 
 FILES_TO_HIDE = [] # eg ["abc.txt"]
 HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
@@ -78,39 +78,42 @@ TEST_ASTCHECK = \
 RUN_FUNCTION_TEST = \
 '''
         run_function_test(
-            student_file_name=STUDENT_FILE_NAME,
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                  
-            function_name=STUDENT_FUNCTION,                              
-            function_input=(), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
-            function_expected = None,                                   
-            function_timeout_seconds = 1,                                
-            check_mutate=False,                                          
-            expected_stdout="",                                          
-            expected_stderr="",                                          
-            non_allowed_nodes = (),                                      
-            non_allowed_functions=(),                                    
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), 
-            required_nodes=(),                                           
-            files_to_reveal = [],                                        
-            hidden_file_dict = HIDDEN_FILE_DICT,                         
-        )
-'''
+            student_file_name=STUDENT_FILE_NAME,                         # File to test function from
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            function_name=None,                                          # Function to test
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_expected = None,                                    # Expected value for function
+            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
+            check_mutate=False,                                          # Check if the function input was mutated
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports = ("sys", "os", "subprocess", "signal"), # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = HIDDEN_FILE_DICT,                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )'''
 
 RUN_SCRIPT_TEST = \
 '''
         run_script_test(
-            student_file_name=STUDENT_FILE_NAME,                        
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                          
-            expected_stdout="",                                        
-            expected_stderr="",                                          
-            non_allowed_nodes = (),                                      
-            non_allowed_functions=(),                                   
-            non_allowed_imports = ("sys", "os", "subprocess", "signal"), 
-            required_nodes=(),                                          
-            files_to_reveal = [],                               
-            hidden_file_dict = HIDDEN_FILE_DICT,                         
-        )
-'''
+            student_file_name=STUDENT_FILE_NAME,                         # File to test function from
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports=("sys", "os", "subprocess", "signal"),   # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = HIDDEN_FILE_DICT,                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )'''
 
 
 TEST_VISIBLE = \

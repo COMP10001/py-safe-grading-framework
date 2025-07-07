@@ -1,0 +1,2 @@
+
+import astcheck_recursive_import_test.recursive_import

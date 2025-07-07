@@ -1,0 +1,1 @@
+print("hello\n1234\t\r\nsdfsfds")

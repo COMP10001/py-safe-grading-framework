@@ -27,8 +27,8 @@ def run_function_test(
         student_file_name=None,                                      # File to test function from
         student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
         function_name=None,                                          # Function to test
-        function_input=(),                                           # Input to function, must be wrapped in a tuple
-        function_expected = None,                                    # Expected value for function
+        function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+        function_expected = None,                                    # Expected return value for function
         function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
         check_mutate=False,                                          # Check if the function input was mutated
         input="",                                                    # Input that can be read by input() seperated by newlines
