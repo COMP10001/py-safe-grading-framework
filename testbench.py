@@ -14,10 +14,10 @@ from safetestingframework import *
 ### SEE TESTBENCH EXAMPLE FOR MORE EXPLANATION
 
 # To run locally use `python -m unittest testbench.py`
-# DANGER: Unlike Ed you do NOT want to remove the testbench when developing locally
+# DANGER: When developing locally comment out os.remove(__file__) but do not forget to add it back!
 
 # Remove the test file after loading by Ed, to prevent ability to print out contents
-os.remove(__file__)
+# os.remove(__file__)
 
 # DANGER: Overrides Hidden and Private Tests so they become visible,
 # Need to re-run test cases for all students for it to work
@@ -25,7 +25,7 @@ RELEASE_TEST_CASES = False
 
 STUDENT_FUNCTION = "remove_player"
 STUDENT_FILE_NAME = "program.py"
-STUDENT_FILE_PATH_PREFIX = os.getcwd() + '/'
+STUDENT_FILE_PATH_PREFIX = "/home/"
 
 FILES_TO_HIDE = [] # eg ["abc.txt"]
 HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
@@ -35,23 +35,22 @@ class SafeTesting(unittest.TestCase):
     @score(0)
     def testVisible_1(self):
         run_function_test(
-                    student_file_name=STUDENT_FILE_NAME,
-                    student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                  
-                    function_name=STUDENT_FUNCTION,                              
-                    function_input=([['|x','|'], ['|', ' ']],(1,1)), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
-                    function_expected = [['|', '|'], ['|', ' ']],                                   
-                    function_timeout_seconds = 1,                                
-                    check_mutate=False,                                          
-                    expected_stdout="",                                          
-                    expected_stderr="",                                          
-                    non_allowed_nodes = (),                                      
-                    non_allowed_functions=(),                                    
-                    non_allowed_imports = ("sys", "os", "subprocess", "signal"), 
-                    required_nodes=(),                                           
-                    files_to_reveal = [],                                        
-                    hidden_file_dict = HIDDEN_FILE_DICT,                         
+            student_file_name=STUDENT_FILE_NAME,
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                  
+            function_name=STUDENT_FUNCTION,                              
+            function_input=([['|x','|'], ['|', ' ']],(1,1)), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
+            function_expected = [['x|', '|'], ['|', ' ']],                                   
+            function_timeout_seconds = 1,                                
+            check_mutate=False,                                          
+            expected_stdout="",                                          
+            expected_stderr="",                                          
+            non_allowed_nodes = (),                                      
+            non_allowed_functions=(),                                    
+            non_allowed_imports = ("sys", "os", "subprocess", "signal"), 
+            required_nodes=(),                                           
+            files_to_reveal = [],                                        
+            hidden_file_dict = HIDDEN_FILE_DICT,                         
         )
-
 
     @setname()
     @score(0)
@@ -83,7 +82,7 @@ class SafeTesting(unittest.TestCase):
                     student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                        
                     function_name=STUDENT_FUNCTION,                              
                     function_input=([['|','|','|','|','|'],['|',' ',' ','|','|'],['|','|','|',' ','|'],['|','|','|x',' ','|']],(4,3)), # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)                                     
-                    function_expected = [['|', '|', '|', '|', '|'], ['|', ' ', ' ', '|', '|'], ['|', '|', '|', ' ', '|'], ['|', '|', '|', ' ', '|']],                                   
+                    function_expected = [[' g|', '|', '|', '|', '|'], ['|', ' ', ' ', '|', '|'], ['|', '|', '|', ' ', '|'], ['|', '|', '|', ' ', '|']],                                   
                     function_timeout_seconds = 1,                                
                     check_mutate=False,                                          
                     expected_stdout="",                                          
@@ -95,4 +94,3 @@ class SafeTesting(unittest.TestCase):
                     files_to_reveal = [],                                        
                     hidden_file_dict = HIDDEN_FILE_DICT,                         
         )
-

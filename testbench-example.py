@@ -8,6 +8,9 @@ from safetestingframework import *
 ### ENSURE PER TESTCASE SCORING IS ENABLED!
 ### ENSURE TIMEOUT (s) IS SET HIGHER THAN THE SUM OF 'function_timeout_seconds' FOR EACH TEST!
 
+# To run locally use `python -m unittest testbench.py`
+# DANGER: When developing locally comment out os.remove(__file__) but do not forget to add it back!
+
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
 

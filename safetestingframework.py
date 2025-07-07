@@ -1,12 +1,9 @@
-# Safe Ed Assignment Unit Testing Framework V0.3.0 safetestingframework.py 
+# Safe Ed Assignment Unit Testing Framework V0.4.0 safetestingframework.py 
 # Last Updated: 2025/06/03
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
 # https://edstem.org/au/courses/20912/lessons/79913/slides/539891
-
-# Note: be careful if developing locally, as importing this code will cause it to be 
-# irreplaceably removed, unlike on Ed.
 
 import unittest
 import os
@@ -15,11 +12,14 @@ import pickle
 import ast
 import traceback
 
+# DANGER: Be careful if developing locally, as importing this code will cause it to be 
+# irreplaceably removed, unlike on Ed.
+
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
 
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
-DEFAULT_STUDENT_FILE_PATH_PREFIX = os.getcwd() + '/'
+DEFAULT_STUDENT_FILE_PATH_PREFIX = "/home/"
 DEFAULT_NON_ALLOWED_IMPORTS = ("sys", "os", "subprocess", "signal")
 ####################################################################
 
@@ -31,6 +31,8 @@ def run_function_test(
         function_expected = None,                                    # Expected value for function
         function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
         check_mutate=False,                                          # Check if the function input was mutated
+        input="",                                                    # Input that can be read by input() seperated by newlines
+        input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
@@ -45,26 +47,34 @@ def run_function_test(
     By default OS and other imports are blocked to mitigate attempts to bypass testing. Other nodes to check for via the 
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
-    run_astcheck_test(student_file_name,
-                      student_file_path_prefix=student_file_path_prefix,
-                      non_allowed_nodes=non_allowed_nodes, 
-                      non_allowed_functions=non_allowed_functions, 
-                      non_allowed_imports=non_allowed_imports, 
-                      required_nodes=required_nodes
-                    )
+    run_astcheck_test(
+        student_file_name,
+        student_file_path_prefix=student_file_path_prefix,
+        non_allowed_nodes=non_allowed_nodes, 
+        non_allowed_functions=non_allowed_functions, 
+        non_allowed_imports=non_allowed_imports, 
+        required_nodes=required_nodes
+    )
 
     encode_obj_data(function_input, "subproc-func-input")
     encode_obj_data(function_expected, "subproc-func-expected")
     
     with open(RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
-        fp.write(RUN_TEST_SUBPROCESS_FILE)
+        fp.write(RUN_FUNCTION_TEST_SUBPROCESS_FILE)
         
+    command = (
+        "python", 
+        RUN_TEST_SUBPROCESS_FILENAME, 
+        student_file_name, 
+        function_name,
+        str(function_timeout_seconds), 
+        str(int(check_mutate)),
+        str(int(input_echoing))
+    )
+    
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        proc_ret = subprocess.run(
-                            ("python", RUN_TEST_SUBPROCESS_FILENAME, student_file_name, function_name, str(function_timeout_seconds), str(int(check_mutate))),
-                            capture_output=True,
-                        )
-
+        proc_ret = subprocess.run(command, capture_output=True, input=input.encode())
+        
     verify_program_output(proc_ret, expected_stdout, expected_stderr)
     
 ####################################################################
@@ -72,6 +82,9 @@ def run_function_test(
 def run_script_test(
         student_file_name=None,                                      # File to test function from
         student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
+        script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
+        input="",                                                    # Input that can be read by input() seperated by newlines
+        input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
@@ -87,19 +100,32 @@ def run_script_test(
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
 
-    run_astcheck_test(student_file_name,
-                      student_file_path_prefix=student_file_path_prefix,
-                      non_allowed_nodes=non_allowed_nodes, 
-                      non_allowed_functions=non_allowed_functions, 
-                      non_allowed_imports=non_allowed_imports, 
-                      required_nodes=required_nodes
-                    )
+    run_astcheck_test(
+        student_file_name,
+        student_file_path_prefix=student_file_path_prefix,
+        non_allowed_nodes=non_allowed_nodes, 
+        non_allowed_functions=non_allowed_functions, 
+        non_allowed_imports=non_allowed_imports, 
+        required_nodes=required_nodes
+    )
+
     
+    file_path_to_run = student_file_path_prefix + student_file_name
+    if input_echoing:
+        file_path_to_run = student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME
+        with open(student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
+            fp.write(INPUT_WITH_ECHOING_SUBPROCESS_FILE.format(student_file_name.removesuffix(".py"), script_timeout_seconds))
+
+    command = (
+        "python", 
+        file_path_to_run
+    )
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
         proc_ret = subprocess.run(
-                                ("python", student_file_path_prefix + student_file_name),
-                                capture_output=True, 
-                            )
+            command, 
+            capture_output=True, 
+            input=input.encode()
+        )
 
     verify_program_output(proc_ret, expected_stdout, expected_stderr)
 
@@ -302,7 +328,7 @@ def setname(name_override=None):
         name = obj.__name__ if name_override == None else name_override
         if (obj.__doc__) == None:
             obj.__doc__ = " "
-        obj.__doc__ = obj.__doc__ + f"#name({name.strip('test').strip('_').replace('_',' ')})"
+        obj.__doc__ = obj.__doc__ + f"#name({name.removeprefix('test').strip('_').replace('_',' ')})"
         return obj
     return dec
 
@@ -392,58 +418,121 @@ class HiddenFileManager:
             os.remove(file)
 
 ####################################################################
-# The runtestsubprocess file must be removed from path before running student code, so it is convient to store it directly
-# in here, to avoid version control inconvenience.
-
-# Note: All occurances of \ need to be escaped as \\
+# The runtestsubprocess files must be removed from path before running student code, so it is 
+# convient to store it directly in here, to avoid version control inconvenience.
+# Note: All occurances of \ need to be escaped as \\ in multi line strings
+    
 RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
-RUN_TEST_SUBPROCESS_FILE = \
+
+# Used to patch the input() function to also print to stdout, when input_echoing is enabled
+# Patching builtins before loading allows the custom version to be used when the code is run 
+# by the import. Stack trace is cleaned up to make it look  almost the same as if not using input_echoing.
+INPUT_WITH_ECHOING_SUBPROCESS_FILE = \
 '''
-import sys
-import pickle
 import os
-import ast
 import signal
 import traceback
-import copy
+import builtins
+from builtins import input
 
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
 
-# Object data is encoded and decoded to be passed in python object format
-# between processes
-def decode_obj_data(filename):
-    with open(filename,"rb") as f:
-        return pickle.load(f)
-
-STUDENT_FILE_PATH = sys.argv[1]
-FUNCTION_NAME = sys.argv[2]
-FUNCTION_TIMEOUT_SECONDS = int(sys.argv[3])
-FUNCTION_CHECK_MUTATE = bool(int(sys.argv[4]))
-FUNCTION_INPUT = decode_obj_data("subproc-func-input")
-FUNCTION_EXPECTED = decode_obj_data("subproc-func-expected")
-
+FUNCTION_TIMEOUT_SECONDS = {0}
 TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
-FUNCTION_INPUT_COPY = copy.deepcopy(FUNCTION_INPUT)
 
-os.remove("subproc-func-input")
-os.remove("subproc-func-expected")
+def input_with_echoing(prompt):
+    try:
+        out = input(prompt)
+        print(out) # echo the input to stdout
+    except Exception:
+        stack = "Traceback (most recent call last):\\n" 
+        stack += "".join(traceback.format_stack(limit=2)[:1])
+        exit(stack+traceback.format_exc(limit=0)) 
+    return out
 
-# Try import function from student code
-try:
-    exec("from %s import %s" % (STUDENT_FILE_PATH.removesuffix(".py"), FUNCTION_NAME))
-except:
-    exit(traceback.format_exc(limit=-1))
+builtins.input = input_with_echoing
+
 
 def handle_timeout(signum, frame):
-        raise TimeoutError
+    raise TimeoutError
 
 signal.signal(signal.SIGALRM, handle_timeout)
 signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
 
+try: 
+    import {1}
+except TimeoutError:
+    exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")
+except Exception:
+    # Print the exception excluding information about this file path
+    exit(traceback.format_exc(limit=-1)) 
+finally:
+    signal.alarm(0)
+'''
+
+RUN_FUNCTION_TEST_SUBPROCESS_FILE = \
+'''
+import sys
+import pickle
+import os
+import signal
+import traceback
+
+# Remove the test file after loading, to prevent ability to print out contents
+os.remove(__file__)
+
+STUDENT_FILE_NAME = sys.argv[1]
+FUNCTION_NAME = sys.argv[2]
+FUNCTION_TIMEOUT_SECONDS = int(sys.argv[3])
+FUNCTION_CHECK_MUTATE = bool(int(sys.argv[4]))
+INPUT_ECHOING = bool(int(sys.argv[5]))
+
+FUNCTION_INPUT = decode_obj_data("subproc-func-input")
+FUNCTION_INPUT_COPY = decode_obj_data("subproc-func-input")
+FUNCTION_EXPECTED = decode_obj_data("subproc-func-expected")
+
+os.remove("subproc-func-input")
+os.remove("subproc-func-expected")
+
+TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
+
+def decode_obj_data(filename):
+    with open(filename,"rb") as f:
+        return pickle.load(f)
+
+def input_with_echoing(prompt):
+    try:
+        out = input(prompt)
+        print(out) # echo the input to stdout
+    except Exception:
+        stack = "Traceback (most recent call last):\\n" 
+        stack += "".join(traceback.format_stack(limit=2)[:1])
+        exit(stack+traceback.format_exc(limit=0)) 
+    return out
+
+def format_invis_chars(data):
+    if type(data) == str:
+        # This forces it to show characters as being escaped and wrapped in quotation marks for consistency
+        return str((data,))[1:-2]
+    return str(data)
+
+def handle_timeout(signum, frame):
+    raise TimeoutError
+
+signal.signal(signal.SIGALRM, handle_timeout)
+signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
+
+# Try import function from student code
 # Run the function and check for timeout and mutating input 
 try: 
-    got = globals()[FUNCTION_NAME](*FUNCTION_INPUT)
+    exec("import %s" % (STUDENT_FILE_NAME.removesuffix(".py"),))
+    if INPUT_ECHOING == True:
+        # patch the input function to echo the input to stdout
+        exec("%s.input = input_with_echoing" % (STUDENT_FILE_NAME.removesuffix(".py"),))
+
+    exec("student_function = %s.%s" % (STUDENT_FILE_NAME.removesuffix(".py"),FUNCTION_NAME))
+    got = student_function(*FUNCTION_INPUT)
 except TimeoutError:
     exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")
 except Exception:
@@ -456,17 +545,10 @@ finally:
 if FUNCTION_CHECK_MUTATE and FUNCTION_INPUT != FUNCTION_INPUT_COPY:
     exit("Your code should not mutate the function input!")
 
-def format_invis_chars(data):
-    if type(data) == str:
-        # This forces it to show characters as being escaped and wrapped in quotation marks for consistency
-        return str((data,))[1:-2]
-    return str(data)
-  
 if got != FUNCTION_EXPECTED:
-    function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT}"
-    if len(FUNCTION_INPUT) == 1:
+    function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT_COPY}"
+    if len(FUNCTION_INPUT_COPY) == 1:
         function_call = function_call.strip(",)") + ")"
     exit(f"► Called: {function_call}\\n► Returned <{type(got).__name__}>:\\n{format_invis_chars(got)}\\n► Expected <{type(FUNCTION_EXPECTED).__name__}>:\\n{format_invis_chars(FUNCTION_EXPECTED)}")
 '''
-
 ####################################################################
