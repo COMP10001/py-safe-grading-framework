@@ -3,6 +3,7 @@
 for stdout that is dynamic to number of test cases
 
 - ASTCheck and PEP8 functions show too much information in stacktrace, should use traceback to change the limit.
+    - Fixed with custom grader, no traceback is shown.
 
 - Importing can fail if the file name has '-' in it. Switch to using import lib to dynamically load
 
@@ -13,6 +14,8 @@ for stdout that is dynamic to number of test cases
 <!-- 
 - json parsing bug when missing name or score or something -->
 
+-add @debug_expected_fail() decorator
+- switch timeout to use subprocess.run(timeout = xxx ) instead of having it in the subprocess script
 
 # Edstem
 

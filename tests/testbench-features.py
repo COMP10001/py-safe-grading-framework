@@ -1,4 +1,5 @@
-# Assignment 1
+# Feature Testing Testbench for safe testing framework
+# Author: Kacie Beckett <kacie.beckett@unimelb.edu>
 #
 # Depends on Safe Ed Assignment Unit Testing Framework V0.3.0
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu> 2025/04/01
@@ -21,6 +22,9 @@ RELEASE_TEST_CASES = False
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
 STUDENT_FILE_PATH_PREFIX = "/home/"
+
+DEBUG_OUTPUT = True
+SHOW_ALL_PASSED_TESTS_FIRST = True
 
 FILES_TO_HIDE = ["hidden.txt"] # eg ["abc.txt"]
 HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
@@ -109,7 +113,7 @@ class SafeTesting():
     def testAST_Check_Non_Allowed_Imports_Recursive_Check_Pass(self): 
         run_astcheck_test(
             student_file_name="astcheck_recursive_import_test.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
+            student_file_path_prefix="/home/", # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
             non_allowed_imports = ("signal", "subprocess"),                          # Imports that are not allowed anywhere in student file or any local imports
@@ -490,7 +494,7 @@ class SafeTesting():
             check_mutate=False,                                          # Check if the function input was mutated
             input="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="Abc\nabc\nabc\n",                                          # Expected value in stdout
+            expected_stdout="Abc\nabc\t\r\nabc\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
             non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                                    # Function names of any specific functions to disallow
@@ -848,6 +852,125 @@ class SafeTesting():
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
+        
+    @setname()
+    @score(0)
+    def testFunction_Spam_Print_Fail(self):
+        run_function_test(
+            student_file_name="function_tests.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            function_name="spam_print",                                          # Function to test
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_expected = None,                                    # Expected value for function
+            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
+            check_mutate=False,                                          # Check if the function input was mutated
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+        
+    @setname()
+    @score(0)
+    def testFunction_Spam_Print_Stdout_and_Stderr_Fail(self):
+        run_function_test(
+            student_file_name="function_tests.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            function_name="spam_print_stdout_stderr",                   # Function to test
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_expected = None,                                    # Expected value for function
+            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
+            check_mutate=False,                                          # Check if the function input was mutated
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+    
+    @setname()
+    @score(0)
+    def testFunction_Import_With_Dashes_Pass(self):
+        run_function_test(
+            student_file_name="import-with-dashes.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            function_name="func",                   # Function to test
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_expected = 123,                                    # Expected value for function
+            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
+            check_mutate=False,                                          # Check if the function input was mutated
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+    
+    @setname()
+    @score(0)
+    def testFunction_Expected_File_Pass(self):
+        run_function_test(
+            student_file_name="function_tests.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            function_name="expected_file",                   # Function to test
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_expected = None,                                    # Expected value for function
+            function_timeout_seconds = 1,                               # Time in seconds until test fails due to timeout
+            check_mutate=False,                                          # Check if the function input was mutated
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            expected_files=[("student_file.txt", "expected_file1.txt")],
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+        
+    @setname()
+    @score(0)
+    def testFunction_Expected_File_Fail(self):
+        run_function_test(
+            student_file_name="function_tests.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            function_name="expected_file",                   # Function to test
+            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_expected = None,                                    # Expected value for function
+            function_timeout_seconds = 1,                               # Time in seconds until test fails due to timeout
+            check_mutate=False,                                          # Check if the function input was mutated
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            expected_files=[("student_file.txt", "expected_file2.txt")],
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+        
+        
     @setname()
     @score(0)
     def testScript_Input_Pass(self):
@@ -1076,7 +1199,7 @@ class SafeTesting():
     
     @setname()
     @score(0)
-    def testScript_Hidden_File_Valid_Access(self):
+    def testScript_Hidden_File_Valid_Access_Pass(self):
         run_script_test(
             student_file_name="script_hidden_files.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
@@ -1111,79 +1234,10 @@ class SafeTesting():
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
-        
-    @setname()
-    @score(0)
-    def testFunction_Spam_Print(self):
-        run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="spam_print",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Spam_Print_Stdout_and_Stderr(self):
-        run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="spam_print_stdout_stderr",                   # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
     
     @setname()
     @score(0)
-    def testFunction_Import_With_Dashes(self):
-        run_function_test(
-            student_file_name="import-with-dashes.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="func",                   # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = 123,                                    # Expected value for function
-            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testScript_Import_With_Dashes(self):
+    def testScript_Import_With_Dashes_Pass(self):
         run_script_test(
             student_file_name="import-with-dashes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
@@ -1199,7 +1253,48 @@ class SafeTesting():
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
-    
+        
+    @setname()
+    @score(0)
+    def testScript_Expected_File_Pass(self):
+        run_script_test(
+            student_file_name="script_expected_file.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            expected_files=[("student_file.txt", "expected_file1.txt")],
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+        
+    @setname()
+    @score(0)
+    def testScript_Expected_File_Fail(self):
+        run_script_test(
+            student_file_name="script_expected_file.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
+            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            expected_files=[("student_file.txt", "expected_file2.txt")],
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+        
+
     @setname()
     @hidden()
     @score(0)
@@ -1223,4 +1318,4 @@ class SafeTesting():
         pass
 
 if __name__ == "__main__":
-    run_tests(SafeTesting)
+    run_tests(SafeTesting, debug_output=DEBUG_OUTPUT, show_all_passed_tests_first=SHOW_ALL_PASSED_TESTS_FIRST)

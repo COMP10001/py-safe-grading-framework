@@ -25,7 +25,7 @@ def expected_return_tuple():
     return (123, "abc", [1,2,3])
     
 def expected_stdout():
-    print("Abc\nabc\nabc")
+    print("Abc\nabc\t\r\nabc")
 
 def expected_stderr():
     print("Fake Error has occurred.", file=sys.stderr)
@@ -60,3 +60,7 @@ def input_echoing():
     b = input("Type in 2:")
     print(a == "1")
     print(b == "2")
+
+def expected_file():
+    with open("student_file.txt", "w") as fp:
+        fp.write("abcdef\n")

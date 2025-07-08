@@ -1,5 +1,5 @@
 # Safe Ed Assignment Testing Library V0.3.0 safetestingframework.py 
-# Last Updated: 2025/06/03
+# Last Updated: 2025/06/09
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
@@ -12,6 +12,7 @@ import ast
 import traceback
 import json
 import re
+import filecmp
 
 # DANGER: Be careful if developing locally, as importing this code will cause it to be 
 # irreplaceably removed, unlike on Ed.
@@ -22,7 +23,7 @@ os.remove(__file__)
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 DEFAULT_STUDENT_FILE_PATH_PREFIX = "/home/"
 DEFAULT_NON_ALLOWED_FUNCTIONS = ("exec",)
-DEFAULT_NON_ALLOWED_IMPORTS = ("sys", "os", "subprocess", "signal")
+DEFAULT_NON_ALLOWED_IMPORTS = ("sys", "os", "subprocess", "signal", "importlib")
 
 # This is set dynamically depending on the number of test cases in the testbench see run_test()
 # MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION
@@ -37,7 +38,7 @@ OUTPUT_TRUNCATION_MESSAGE = "\n[...] Too much output was produced.\n"
 EDSTEM_MAX_GRADER_OUTPUT_CHARS = 200000
 
 # Not presently used for anything, but were found by testing
-EDSTEM_TESTING_FILESYSTEM_SIZE_MB = 100
+EDSTEM_TESTING_FILESYSTEM_MAX_SIZE_MB = 100
 EDSTEM_STUDENT_DATA_MAX_SIZE_MB = 20
 
 
@@ -55,6 +56,7 @@ def run_function_test(
         input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
+        expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
         non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
@@ -95,13 +97,13 @@ def run_function_test(
             
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
         proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(command, input.encode(), MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, OUTPUT_TRUNCATION_MESSAGE)
-    
+        # This must be inside hidden file manager context so expected file checking can use hidden files.
+        verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix)
         
-    verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr)
+    
     
     test_pass_feedback = ""
     return test_pass_feedback
-    
     
 ####################################################################
 
@@ -113,6 +115,7 @@ def run_script_test(
         input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
+        expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
         non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
         non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
@@ -136,24 +139,24 @@ def run_script_test(
     )
 
     
-    file_path_to_run = student_file_path_prefix + student_file_name
-    if input_echoing:
-        file_path_to_run = student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME
-        with open(student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
-            fp.write(INPUT_WITH_ECHOING_SUBPROCESS_FILE)
+    file_path_to_run = student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME
+    with open(student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
+        fp.write(RUN_SCRIPT_TEST_SUBPROCESS_FILE)
 
     command = (
         "python", 
         file_path_to_run,
         student_file_name,
-        str(script_timeout_seconds)
+        str(script_timeout_seconds),
+        str(int(input_echoing))
     )
     
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
         proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(command, input.encode(), MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, OUTPUT_TRUNCATION_MESSAGE)
+        # This must be inside hidden file manager context so expected file checking can use hidden files.
+        verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix)
         
-    verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr)
-    
+
     test_pass_feedback = ""
     return test_pass_feedback
 
@@ -169,7 +172,7 @@ def run_pep8_test(
     '''
     filepath = student_file_path_prefix + student_file_name
     files_to_check = recursive_find_local_import_paths(filepath)
-    
+
     pep8_violations = ""
     for file in files_to_check:
         proc_ret = subprocess.run(
@@ -402,7 +405,7 @@ def format_invis_chars(data):
         return str((data,))[2:-3].replace("\\n", "\\n\n")
     return str(data)
 
-def verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr):
+def verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix):
     ''' 
     Produce the errors displayed to students when a test fails. In a unit test
     assert is used to say the test failed, before moving onto the next.
@@ -423,10 +426,23 @@ def verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_st
         else:
             errors += "► Your program printed the following output:\n{0}\n► The expected printed output is:\n{1}" \
             .format(format_invis_chars(proc_stdout), format_invis_chars(expected_stdout))
+            
+    errors += check_expected_files_equal(expected_files, student_file_path_prefix)
         
     if errors != "":
          assert False, errors
-        
+
+def check_expected_files_equal(expected_files, student_file_path_prefix):
+    errors = ""
+    if (len(expected_files) > 0):
+        for student_file, test_file in expected_files:
+            if not os.path.isfile(student_file_path_prefix + student_file):
+                errors +=  f"{student_file_path_prefix + student_file} does not exist!\n"
+            elif not os.path.isfile(student_file_path_prefix + test_file):
+                errors += f"{student_file_path_prefix + test_file} does not exist!\n"
+            elif not filecmp.cmp(student_file_path_prefix + student_file, student_file_path_prefix + test_file, shallow=False):
+                errors += f"{student_file_path_prefix + student_file} and {student_file_path_prefix + test_file} are not equal.\n"
+    return errors
 ####################################################################
 
 def cache_hidden_test_files(files):
@@ -480,8 +496,8 @@ def subprocess_run_with_truncated_output(command, input_data, max_output_size, t
     # buffered contents to be written to disk which can cause an OSError due to insufficient space.
     try:
         try:
-            stdout_fp = open("stdout.txt", "w") 
-            stderr_fp = open("stderr.txt", "w")
+            stdout_fp = open("stdout.txt", "wb") 
+            stderr_fp = open("stderr.txt", "wb")
             proc_ret = subprocess.run(command, stdout=stdout_fp, stderr=stderr_fp, input=input_data)
             stdout_fp.close()
             
@@ -496,8 +512,8 @@ def subprocess_run_with_truncated_output(command, input_data, max_output_size, t
             proc_stdout += truncation_message
         
         
-        stdout_fp = open("stdout.txt", "r") 
-        proc_stdout = stdout_fp.read() + proc_stdout
+        stdout_fp = open("stdout.txt", "rb") 
+        proc_stdout = stdout_fp.read().decode() + proc_stdout
         stdout_fp.close()
         os.remove("stdout.txt")
         
@@ -512,8 +528,8 @@ def subprocess_run_with_truncated_output(command, input_data, max_output_size, t
         stderr_fp.close()
         proc_stderr += truncation_message
         
-    stderr_fp = open("stderr.txt", "r") 
-    proc_stderr = stderr_fp.read() + proc_stderr
+    stderr_fp = open("stderr.txt", "rb") 
+    proc_stderr = stderr_fp.read().decode() + proc_stderr
     stderr_fp.close()
     os.remove("stderr.txt")
     
@@ -572,7 +588,7 @@ def get_test_methods_in_order(SafeTestClass):
     
     return methods
 
-def run_tests(SafeTestClass, debugOutput=True):
+def run_tests(SafeTestClass, debug_output=True, show_all_passed_tests_first=True):
     global MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION
     test_list = get_test_methods_in_order(SafeTestClass)
     
@@ -586,6 +602,12 @@ def run_tests(SafeTestClass, debugOutput=True):
     grader_output = {}
     grader_output["testcases"] = testcase_output
     
+    if debug_output:
+        testcase = get_testcase_dict("Debug Data", "#name(Debug Data) #private #score(0)")
+        testcase["feedback"] = "# More test cases decreases this value accordingly\n"
+        testcase["feedback"] += f"MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION: {MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION} bytes\n"
+        testcase_output.append(testcase)
+    
     for test in test_list:
         test_method = getattr(testbench, test)
         testcase = get_testcase_dict(test_method.__name__, test_method.__doc__)
@@ -598,10 +620,9 @@ def run_tests(SafeTestClass, debugOutput=True):
             testcase["passed"] = False
         testcase_output.append(testcase)
         
-    if debugOutput:
-        testcase = get_testcase_dict("Debug Data", "#name(Debug Data) #private #score(0)")
-        testcase["feedback"] = f"MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION: {MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION} bytes\n"
-        testcase_output.append(testcase)
+    if show_all_passed_tests_first:
+        testcase_output.sort(key=lambda x: not x["passed"])    
+    
     
     print(json.dumps(grader_output))
 
@@ -615,7 +636,7 @@ RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
 # Used to patch the input() function to also print to stdout, when input_echoing is enabled
 # Patching builtins before loading allows the custom version to be used when the code is run 
 # by the import. Stack trace is cleaned up to make it look  almost the same as if not using input_echoing.
-INPUT_WITH_ECHOING_SUBPROCESS_FILE = \
+RUN_SCRIPT_TEST_SUBPROCESS_FILE = \
 '''
 import os
 import sys
@@ -630,6 +651,7 @@ os.remove(__file__)
 
 STUDENT_FILE_NAME = sys.argv[1]
 FUNCTION_TIMEOUT_SECONDS = int(sys.argv[2])
+INPUT_ECHOING = bool(int(sys.argv[3]))
 TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
 
 def input_with_echoing(prompt):
@@ -642,8 +664,8 @@ def input_with_echoing(prompt):
         exit(stack+traceback.format_exc(limit=0)) 
     return out
 
-builtins.input = input_with_echoing
-
+if INPUT_ECHOING == True:
+    builtins.input = input_with_echoing
 
 def handle_timeout(signum, frame):
     raise TimeoutError
