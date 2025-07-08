@@ -1,16 +1,17 @@
-# Safe Ed Assignment Unit Testing Framework V0.4.0 safetestingframework.py 
+# Safe Ed Assignment Testing Library V0.3.0 safetestingframework.py 
 # Last Updated: 2025/06/03
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
 # https://edstem.org/au/courses/20912/lessons/79913/slides/539891
 
-import unittest
 import os
 import subprocess
 import pickle
 import ast
 import traceback
+import json
+import re
 
 # DANGER: Be careful if developing locally, as importing this code will cause it to be 
 # irreplaceably removed, unlike on Ed.
@@ -22,6 +23,24 @@ PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131
 DEFAULT_STUDENT_FILE_PATH_PREFIX = "/home/"
 DEFAULT_NON_ALLOWED_FUNCTIONS = ("exec",)
 DEFAULT_NON_ALLOWED_IMPORTS = ("sys", "os", "subprocess", "signal")
+
+# This is set dynamically depending on the number of test cases in the testbench see run_test()
+# MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION
+
+OUTPUT_TRUNCATION_MESSAGE = "\n[...] Too much output was produced.\n"
+
+# This is the maximum amount of output that can be printed by test code
+# before Edstem crashes and dumps all of stdout to screen.
+# Custom grader passes json object over stdout for Ed to parse.
+# Note that this limit is imposed by Ed's json parser, and not imposed 
+# on subprocesses, which will crash  due to exceeding memory availability or disk space 
+EDSTEM_MAX_GRADER_OUTPUT_CHARS = 200000
+
+# Not presently used for anything, but were found by testing
+EDSTEM_TESTING_FILESYSTEM_SIZE_MB = 100
+EDSTEM_STUDENT_DATA_MAX_SIZE_MB = 20
+
+
 ####################################################################
 
 def run_function_test(
@@ -48,6 +67,7 @@ def run_function_test(
     By default OS and other imports are blocked to mitigate attempts to bypass testing. Other nodes to check for via the 
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
+    
     run_astcheck_test(
         student_file_name,
         student_file_path_prefix=student_file_path_prefix,
@@ -72,11 +92,16 @@ def run_function_test(
         str(int(check_mutate)),
         str(int(input_echoing))
     )
-    
+            
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        proc_ret = subprocess.run(command, capture_output=True, input=input.encode())
+        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(command, input.encode(), MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, OUTPUT_TRUNCATION_MESSAGE)
+    
         
-    verify_program_output(proc_ret, expected_stdout, expected_stderr)
+    verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr)
+    
+    test_pass_feedback = ""
+    return test_pass_feedback
+    
     
 ####################################################################
 
@@ -100,7 +125,7 @@ def run_script_test(
     By default OS and other imports are blocked to mitigate attempts to bypass testing. Other nodes to check for via the 
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
-
+    
     run_astcheck_test(
         student_file_name,
         student_file_path_prefix=student_file_path_prefix,
@@ -123,14 +148,14 @@ def run_script_test(
         student_file_name,
         str(script_timeout_seconds)
     )
+    
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        proc_ret = subprocess.run(
-            command, 
-            capture_output=True, 
-            input=input.encode()
-        )
-
-    verify_program_output(proc_ret, expected_stdout, expected_stderr)
+        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(command, input.encode(), MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, OUTPUT_TRUNCATION_MESSAGE)
+        
+    verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr)
+    
+    test_pass_feedback = ""
+    return test_pass_feedback
 
 ####################################################################
 
@@ -158,8 +183,16 @@ def run_pep8_test(
         pep8_violations += proc_ret.stdout.replace('/home/', '')
         
     if pep8_violations != "":
-        raise Exception("\nhe following style errors were found:\n" + pep8_violations)                                   
+        pep8_violations = "The following style errors were found:\n" + pep8_violations
+        
+        if len(pep8_violations) > MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION:
+            pep8_violations = pep8_violations[:MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION] + OUTPUT_TRUNCATION_MESSAGE
+        
+        assert False, pep8_violations
     
+    test_pass_feedback = ""
+    return test_pass_feedback
+        
 
 ####################################################################
 
@@ -179,6 +212,7 @@ def run_astcheck_test(
  
     output = ""
     for student_file in files_to_check:
+        
         tree = create_ast_object(student_file)
 
         # Run the AST node type visitor over the tree to search for forbidden nodes.
@@ -186,7 +220,6 @@ def run_astcheck_test(
         forbidden_node_visitor.visit(tree)
         for node in forbidden_node_visitor.nodes:
             output += "Your program is not allowed to use a '{}'. This occurred on line {} of {}.\n".format(type(node).__name__, node.lineno, student_file)
-            
             
         required_node_visitor = NodeTypeVisitor(required_nodes)
         required_node_visitor.visit(tree)
@@ -208,7 +241,12 @@ def run_astcheck_test(
                 output += f'Your program is not allowed to import {lib}. Occured in file {student_file}.\n'
 
     if output != "":
-        raise Exception("\n" + output)
+        if len(output) > MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION:
+            output = output[:MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION] + OUTPUT_TRUNCATION_MESSAGE
+        assert False, output
+    
+    test_pass_feedback = ""
+    return test_pass_feedback
     
 class NodeTypeVisitor(ast.NodeVisitor):
     def __init__(self, types, *args, **kwargs):
@@ -273,6 +311,7 @@ def recursive_find_local_import_paths(filepath):
        if next_import not in files_checked:
            files_checked.append(next_import)
            local_imports += find_local_import_paths(next_import)
+    
     return files_checked
             
 
@@ -363,31 +402,30 @@ def format_invis_chars(data):
         return str((data,))[2:-3].replace("\\n", "\\n\n")
     return str(data)
 
-
-def verify_program_output(proc_ret, expected_stdout, expected_stderr):
+def verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr):
     ''' 
     Produce the errors displayed to students when a test fails. In a unit test
     assert is used to say the test failed, before moving onto the next.
     '''
     errors = ""
-    if proc_ret.stderr.decode() != expected_stderr:
+    if proc_stderr != expected_stderr:
         if expected_stderr == "":
-            errors += "\n► Your program produced the following errors:\n{0}" \
-            .format(proc_ret.stderr.decode())
+            errors += "► Your program produced the following errors:\n{0}" \
+            .format(proc_stderr)
         else:
-            errors +="\n► Your program produced the following errors:\n{0}\n► The expected errors are:\n{1}" \
-                .format(format_invis_chars(proc_ret.stderr.decode()), format_invis_chars(expected_stderr))
+            errors +="► Your program produced the following errors:\n{0}\n► The expected errors are:\n{1}" \
+                .format(format_invis_chars(proc_stderr), format_invis_chars(expected_stderr))
             
-    if proc_ret.stdout.decode() != expected_stdout: 
+    if proc_stdout != expected_stdout: 
         if expected_stdout == "":
-            errors += "\n► Your program printed the following output when no printing was expected:\n{0}" \
-            .format(format_invis_chars(proc_ret.stdout.decode()), format_invis_chars(expected_stdout))
+            errors += "► Your program printed the following output when no printing was expected:\n{0}" \
+            .format(format_invis_chars(proc_stdout), format_invis_chars(expected_stdout))
         else:
-            errors += "\n► Your program printed the following output:\n{0}\n► The expected printed output is:\n{1}" \
-            .format(format_invis_chars(proc_ret.stdout.decode()), format_invis_chars(expected_stdout))
+            errors += "► Your program printed the following output:\n{0}\n► The expected printed output is:\n{1}" \
+            .format(format_invis_chars(proc_stdout), format_invis_chars(expected_stdout))
         
     if errors != "":
-        raise Exception(errors)
+         assert False, errors
         
 ####################################################################
 
@@ -427,6 +465,147 @@ class HiddenFileManager:
             os.remove(file)
 
 ####################################################################
+
+def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message):
+    '''
+    subprocess.run() cannot limit the amount of input received from stdout and stederr. Given the memory and disk constraints
+    on Ed, instead of trying to reliably control reading system calls, instead read stdout/stderr to a file until
+    an OSError occurs due to running out of disk space, or the process finishes, before truncating the file to some
+    predetermined size if necessary to recover space, storing it as a string, and then deleting the file.  
+    '''
+    proc_stdout = ""
+    proc_stderr = ""
+    
+    # Two layers of try-except, one for each of stdout, stderr, as closing a file causes the 
+    # buffered contents to be written to disk which can cause an OSError due to insufficient space.
+    try:
+        try:
+            stdout_fp = open("stdout.txt", "w") 
+            stderr_fp = open("stderr.txt", "w")
+            proc_ret = subprocess.run(command, stdout=stdout_fp, stderr=stderr_fp, input=input_data)
+            stdout_fp.close()
+            
+        except OSError:
+            # If too much output is generated there will be no more space on device
+            pass
+            
+        if (os.path.getsize("stdout.txt") > max_output_size):
+            stdout_fp = open("stdout.txt", "a")
+            stdout_fp.truncate(max_output_size)
+            stdout_fp.close()
+            proc_stdout += truncation_message
+        
+        
+        stdout_fp = open("stdout.txt", "r") 
+        proc_stdout = stdout_fp.read() + proc_stdout
+        stdout_fp.close()
+        os.remove("stdout.txt")
+        
+        stderr_fp.close()
+    except OSError:
+            # If too much output is generated there will be no more space on device
+            pass
+    
+    if (os.path.getsize("stderr.txt") > max_output_size):
+        stderr_fp = open("stderr.txt", "a")
+        stderr_fp.truncate(max_output_size)
+        stderr_fp.close()
+        proc_stderr += truncation_message
+        
+    stderr_fp = open("stderr.txt", "r") 
+    proc_stderr = stderr_fp.read() + proc_stderr
+    stderr_fp.close()
+    os.remove("stderr.txt")
+    
+    return proc_ret, proc_stdout, proc_stderr
+
+####################################################################
+
+def get_testcase_dict(function_name, docstring):
+    ''' 
+    Parse the given docstring of a function for #score() #name() #hidden #private
+    and create a dictionary using the format specified by Edstem's custom grader json.
+    '''
+    if docstring == None:
+        docstring = ""
+        
+    score_pattern = r"#score\((\d*\.?\d+)\)"
+    name_pattern = r"#name\(((?:[^()\\]|\\.)*)\)"
+
+    try:
+        score = re.findall(score_pattern, docstring)[0]
+        if '.' in score:
+            score = float(score)
+        else:
+            score = int(score)
+    except:
+        score = 0
+
+    try:
+        matches = re.findall(name_pattern, docstring)[0]
+        name = "".join([re.sub(r'\\([()])', r'\1', match) for match in matches])
+    except:
+        name = function_name
+        
+    private = True if "#private" in docstring else False
+    hidden = True if "#hidden" in docstring and private == False else False
+    testcase = {}
+    testcase["name"] = name
+    testcase["score"] = score
+    testcase["ok"] = True
+    testcase["passed"] = True
+    testcase["hidden"] = hidden
+    testcase["private"] = private
+
+    return testcase
+
+def get_test_methods_in_order(SafeTestClass):
+    ''' Get a list of every test method object in the order it was defined in the test class '''
+    methods = []
+    for m_name in dir(SafeTestClass):
+        method = getattr(SafeTestClass, m_name)
+        if hasattr(method, '__code__') and callable(getattr(SafeTestClass, m_name)) and m_name.startswith("test"):
+            methods.append((method.__code__.co_firstlineno, m_name))
+            
+    methods.sort()
+    methods = [method[1] for method in methods]
+    
+    return methods
+
+def run_tests(SafeTestClass, debugOutput=True):
+    global MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION
+    test_list = get_test_methods_in_order(SafeTestClass)
+    
+    # Needs to be small enough so that each test can produce this much output on stdout and stderr
+    # while having enough free characters to have all the JSON syntax and other stuff also printed.
+    # 2.5x should be a decent overestimate to avoid the testing code ever crashing.
+    MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION = int(EDSTEM_MAX_GRADER_OUTPUT_CHARS / (2.5 * len(test_list)))
+    
+    testbench = SafeTestClass()
+    testcase_output = []
+    grader_output = {}
+    grader_output["testcases"] = testcase_output
+    
+    for test in test_list:
+        test_method = getattr(testbench, test)
+        testcase = get_testcase_dict(test_method.__name__, test_method.__doc__)
+        try:
+            feedback = test_method()
+            if feedback != "":
+                testcase["feedback"] = feedback
+        except Exception as e:
+            testcase["feedback"] = str(e)
+            testcase["passed"] = False
+        testcase_output.append(testcase)
+        
+    if debugOutput:
+        testcase = get_testcase_dict("Debug Data", "#name(Debug Data) #private #score(0)")
+        testcase["feedback"] = f"MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION: {MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION} bytes\n"
+        testcase_output.append(testcase)
+    
+    print(json.dumps(grader_output))
+
+####################################################################
 # The runtestsubprocess files must be removed from path before running student code, so it is 
 # convient to store it directly in here, to avoid version control inconvenience.
 # Note: All occurances of \ need to be escaped as \\ in multi line strings
@@ -443,6 +622,7 @@ import sys
 import signal
 import traceback
 import builtins
+import importlib.util
 from builtins import input
 
 # Remove the test file after loading, to prevent ability to print out contents
@@ -471,8 +651,9 @@ def handle_timeout(signum, frame):
 signal.signal(signal.SIGALRM, handle_timeout)
 signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
 
-try: 
-    exec("import %s" % (STUDENT_FILE_NAME.removesuffix(".py"),))
+try:
+    # Use importlib instead of import keyword in case the studentfile has dashes eg student-file.py
+    student_module = importlib.import_module(STUDENT_FILE_NAME.removesuffix(".py"))
 except TimeoutError:
     exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")
 except Exception:
@@ -489,6 +670,7 @@ import pickle
 import os
 import signal
 import traceback
+import importlib
 
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
@@ -537,12 +719,14 @@ signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
 # Try import function from student code
 # Run the function and check for timeout and mutating input 
 try: 
-    exec("import %s" % (STUDENT_FILE_NAME.removesuffix(".py"),))
+    # Use importlib instead of import keyword in case the studentfile has dashes eg student-file.py
+    student_module = importlib.import_module(STUDENT_FILE_NAME.removesuffix(".py"))
+    
     if INPUT_ECHOING == True:
         # patch the input function to echo the input to stdout
-        exec("%s.input = input_with_echoing" % (STUDENT_FILE_NAME.removesuffix(".py"),))
+        student_module.input = input_with_echoing
 
-    exec("student_function = %s.%s" % (STUDENT_FILE_NAME.removesuffix(".py"),FUNCTION_NAME))
+    exec("student_function = student_module.%s" % (FUNCTION_NAME,))
     got = student_function(*FUNCTION_INPUT)
 except TimeoutError:
     exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")

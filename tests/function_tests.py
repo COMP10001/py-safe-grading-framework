@@ -1,5 +1,11 @@
 import sys
 
+def check_1_input_arg(a):
+    pass 
+
+def check_2_input_arg(a, b):
+    pass 
+
 def check_mutate_fail(a: list):
     a.append(1)
 
@@ -39,15 +45,16 @@ def timeout_fail():
 def spam_print():
     while True:
         print("abcdefgh")
-    
-def hidden_files_invalid_access():
-    with open("hidden.txt") as fp:
-        print(fp.read())
-    
-def hidden_files_valid_access():
-    with open("hidden.txt") as fp:
-        print(fp.read())
 
+def spam_print_stdout_stderr():
+    while True:
+        print("abcdefgh")
+        print("abcdefgh",file=sys.stderr)
+    
+def hidden_files_access():
+    with open("hidden.txt") as fp:
+        print(fp.read())
+    
 def input_echoing():
     a = input("Type in 1:")
     b = input("Type in 2:")
