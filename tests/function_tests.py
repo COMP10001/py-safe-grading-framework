@@ -64,3 +64,4 @@ def input_echoing():
 def expected_file():
     with open("student_file.txt", "w") as fp:
         fp.write("abcdef\n")
+

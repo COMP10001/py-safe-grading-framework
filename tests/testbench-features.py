@@ -989,8 +989,6 @@ class SafeTesting():
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
-        
-        
     @setname()
     @score(0)
     def testScript_Input_Fail(self):
@@ -1321,3 +1319,4 @@ class SafeTesting():
 
 if __name__ == "__main__":
     run_tests(SafeTesting, debug_output=DEBUG_OUTPUT, show_all_passed_tests_first=SHOW_ALL_PASSED_TESTS_FIRST)
+
