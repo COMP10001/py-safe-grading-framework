@@ -183,7 +183,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Check_1_Input_Arg_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="check_1_input_arg",                           # Function to test
@@ -206,7 +206,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Check_2_Input_Arg_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="check_2_input_arg",                           # Function to test
@@ -229,7 +229,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Check_Mutate_Input_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="check_mutate_fail",                           # Function to test
@@ -253,7 +253,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_Int_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_int",                                          # Function to test
@@ -276,7 +276,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_Int_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_int",                                          # Function to test
@@ -299,7 +299,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_Str_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_str",                                          # Function to test
@@ -322,7 +322,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_Str_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_str",                                          # Function to test
@@ -345,7 +345,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_Float_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_float",                                          # Function to test
@@ -368,7 +368,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_Float_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_float",                                          # Function to test
@@ -391,7 +391,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_List_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_list",                                          # Function to test
@@ -414,7 +414,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_List_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_list",                                          # Function to test
@@ -437,7 +437,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_Tuple_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_tuple",                                          # Function to test
@@ -460,7 +460,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Return_List_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_tuple",                                          # Function to test
@@ -484,7 +484,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Stdout_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stdout",                                          # Function to test
@@ -507,7 +507,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Stdout_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stdout",                                          # Function to test
@@ -530,7 +530,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Stderr_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr",                                          # Function to test
@@ -553,7 +553,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Stderr_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr",                                          # Function to test
@@ -576,7 +576,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Stderr_Exception_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr_exception",                                          # Function to test
@@ -599,7 +599,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Stderr_Exception_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr_exception",                                          # Function to test
@@ -622,7 +622,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Return_and_Stdout_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_and_stdout",                                          # Function to test
@@ -645,7 +645,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_Return_and_Stdout_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_and_stdout",                                          # Function to test
@@ -668,7 +668,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Timeout_1_second_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="timeout_fail",                                          # Function to test
@@ -691,7 +691,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Timeout_2_second_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="timeout_fail",                                          # Function to test
@@ -715,7 +715,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Hidden_File_Valid_Access_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="hidden_files_access",                                          # Function to test
@@ -738,7 +738,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Hidden_File_Invalid_Access_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="hidden_files_access",                                          # Function to test
@@ -762,7 +762,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Input_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
@@ -785,7 +785,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Input_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
@@ -808,7 +808,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Input_Echoing_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
@@ -833,7 +833,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Input_Echoing_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
@@ -856,7 +856,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Spam_Print_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="spam_print",                                          # Function to test
@@ -879,7 +879,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Spam_Print_Stdout_and_Stderr_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="spam_print_stdout_stderr",                   # Function to test
@@ -902,7 +902,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Import_With_Dashes_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="import-with-dashes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="func",                   # Function to test
@@ -925,7 +925,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_File_Pass(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_file",                   # Function to test
@@ -949,7 +949,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testFunction_Expected_File_Fail(self):
-        run_function_test(
+        return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_file",                   # Function to test
@@ -974,7 +974,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Input_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -989,10 +989,12 @@ class SafeTesting():
             files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
             hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
         )
+        
+        
     @setname()
     @score(0)
     def testScript_Input_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1010,7 +1012,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Input_Echoing_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1029,7 +1031,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Input_Echoing_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1048,7 +1050,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Timeout_1_Second_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_timeout_fail.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1067,7 +1069,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Timeout_2_Second_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_timeout_fail.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=2,                                    # Time in seconds until test fails due to timeout
@@ -1086,7 +1088,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_Stdout_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_stdout.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1105,7 +1107,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_Stdout_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_stdout.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1124,7 +1126,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_Stderr_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_stderr.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1143,7 +1145,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_Stderr_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_stderr.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1162,7 +1164,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_Stderr_Exception_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_stderr_exception.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1181,7 +1183,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_Stderr_Exception_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_stderr_exception.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1200,7 +1202,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Hidden_File_Valid_Access_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_hidden_files.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1219,7 +1221,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Hidden_File_Invalid_Access_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_hidden_files.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1238,7 +1240,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Import_With_Dashes_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="import-with-dashes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1257,7 +1259,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_File_Pass(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_file.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
@@ -1277,7 +1279,7 @@ class SafeTesting():
     @setname()
     @score(0)
     def testScript_Expected_File_Fail(self):
-        run_script_test(
+        return run_script_test(
             student_file_name="script_expected_file.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout

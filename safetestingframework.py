@@ -22,6 +22,7 @@ os.remove(__file__)
 
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 DEFAULT_STUDENT_FILE_PATH_PREFIX = "/home/"
+DEFAULT_NON_ALLOWED_NODES = ()
 DEFAULT_NON_ALLOWED_FUNCTIONS = ("exec",)
 DEFAULT_NON_ALLOWED_IMPORTS = ("sys", "os", "subprocess", "signal", "importlib")
 
@@ -41,7 +42,6 @@ EDSTEM_MAX_GRADER_OUTPUT_CHARS = 200000
 EDSTEM_TESTING_FILESYSTEM_MAX_SIZE_MB = 100
 EDSTEM_STUDENT_DATA_MAX_SIZE_MB = 20
 
-
 ####################################################################
 
 def run_function_test(
@@ -49,20 +49,20 @@ def run_function_test(
         student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
         function_name=None,                                          # Function to test
         function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-        function_expected = None,                                    # Expected return value for function
-        function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
+        function_expected=None,                                      # Expected return value for function
+        function_timeout_seconds=1,                                  # Time in seconds until test fails due to timeout
         check_mutate=False,                                          # Check if the function input was mutated
         input="",                                                    # Input that can be read by input() seperated by newlines
-        input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+        input_echoing=True,                                          # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
-        non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+        non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg ast.Name, see run_astcheck_test and ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
         non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
         required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-        files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-        hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        files_to_reveal=[],                                          # Filenames in the hidden_file_dict keys to add to the path while this function runs
+        hidden_file_dict={},                                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
     '''
     Test the return value, stdout, stderr of a student defined function. Includes the ability to check for mutated input. 
@@ -90,20 +90,30 @@ def run_function_test(
         RUN_TEST_SUBPROCESS_FILENAME, 
         student_file_name, 
         function_name,
-        str(function_timeout_seconds), 
         str(int(check_mutate)),
         str(int(input_echoing))
     )
             
-    with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(command, input.encode(), MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, OUTPUT_TRUNCATION_MESSAGE)
-        # This must be inside hidden file manager context so expected file checking can use hidden files.
-        verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix)
+    function_call = f"{function_name}{function_input}"
+    if len(function_input) == 1:
+        function_call = function_call.strip(",)") + ")"
         
+    test_feedback = f"► Called: {function_call}\n"
+    if input != "":
+        test_feedback += f"► Input:\n{input.replace("\n","\\n\n")}\n"
+      
+    with HiddenFileManager(hidden_file_dict, files_to_reveal):
+        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(
+            command, 
+            input.encode(), 
+            MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, 
+            OUTPUT_TRUNCATION_MESSAGE, 
+            function_timeout_seconds
+        )
+        # This must be inside hidden file manager context so expected file checking can use hidden files.
+        verify_program_output(test_feedback, proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix)
     
-    
-    test_pass_feedback = ""
-    return test_pass_feedback
+    return test_feedback
     
 ####################################################################
 
@@ -116,12 +126,12 @@ def run_script_test(
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
-        non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+        non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg ast.Name, see run_astcheck_test and ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
         non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
         required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-        files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-        hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        files_to_reveal=[],                                          # Filenames in the hidden_file_dict keys to add to the path while this function runs
+        hidden_file_dict={},                                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
     '''
     Test the stdout, stderr of a student defined python script. 
@@ -147,18 +157,26 @@ def run_script_test(
         "python", 
         file_path_to_run,
         student_file_name,
-        str(script_timeout_seconds),
         str(int(input_echoing))
     )
     
+    test_feedback = ""
+    if input != "":
+        test_feedback += f"► Input:\n{input.replace("\n","\\n\n")}\n"
+    
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(command, input.encode(), MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, OUTPUT_TRUNCATION_MESSAGE)
+        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(
+            command, 
+            input.encode(), 
+            MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, 
+            OUTPUT_TRUNCATION_MESSAGE, 
+            script_timeout_seconds
+        )
         # This must be inside hidden file manager context so expected file checking can use hidden files.
-        verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix)
+        verify_program_output(test_feedback, proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix)
         
-
-    test_pass_feedback = ""
-    return test_pass_feedback
+    
+    return test_feedback
 
 ####################################################################
 
@@ -202,9 +220,9 @@ def run_pep8_test(
 def run_astcheck_test(
         student_file_name=None,                                      # File to test function from
         student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
-        non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+        non_allowed_nodes=(),                                        # Eg ast.Name, see run_astcheck_test and ast library
         non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-        non_allowed_imports = (),                                    # Imports that are not allowed anywhere in student file or any local imports
+        non_allowed_imports=(),                                      # Imports that are not allowed anywhere in student file or any local imports
         required_nodes=(),                                           # Eg ast.Name, see ast library
     ):
     '''
@@ -215,7 +233,6 @@ def run_astcheck_test(
  
     output = ""
     for student_file in files_to_check:
-        
         tree = create_ast_object(student_file)
 
         # Run the AST node type visitor over the tree to search for forbidden nodes.
@@ -317,7 +334,6 @@ def recursive_find_local_import_paths(filepath):
     
     return files_checked
             
-
 ####################################################################
 # Test Case Decorators for controlling Ed Integration
 # use @hidden(), @private(), @score(), @setname()
@@ -405,7 +421,7 @@ def format_invis_chars(data):
         return str((data,))[2:-3].replace("\\n", "\\n\n")
     return str(data)
 
-def verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix):
+def verify_program_output(test_feedback, proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix):
     ''' 
     Produce the errors displayed to students when a test fails. In a unit test
     assert is used to say the test failed, before moving onto the next.
@@ -430,7 +446,7 @@ def verify_program_output(proc_stdout, proc_stderr, expected_stdout, expected_st
     errors += check_expected_files_equal(expected_files, student_file_path_prefix)
         
     if errors != "":
-         assert False, errors
+         assert False, test_feedback + errors
 
 def check_expected_files_equal(expected_files, student_file_path_prefix):
     errors = ""
@@ -481,8 +497,8 @@ class HiddenFileManager:
             os.remove(file)
 
 ####################################################################
-
-def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message):
+            
+def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message, timeout_seconds):
     '''
     subprocess.run() cannot limit the amount of input received from stdout and stederr. Given the memory and disk constraints
     on Ed, instead of trying to reliably control reading system calls, instead read stdout/stderr to a file until
@@ -491,14 +507,21 @@ def subprocess_run_with_truncated_output(command, input_data, max_output_size, t
     '''
     proc_stdout = ""
     proc_stderr = ""
-    
+    timeout_message = ""
+    timeout_suffix = "" if timeout_seconds == 1 else "s"
     # Two layers of try-except, one for each of stdout, stderr, as closing a file causes the 
     # buffered contents to be written to disk which can cause an OSError due to insufficient space.
+    proc_ret = None
     try:
         try:
             stdout_fp = open("stdout.txt", "wb") 
             stderr_fp = open("stderr.txt", "wb")
-            proc_ret = subprocess.run(command, stdout=stdout_fp, stderr=stderr_fp, input=input_data)
+
+            try: 
+                proc_ret = subprocess.run(command, stdout=stdout_fp, stderr=stderr_fp, input=input_data, timeout=timeout_seconds)
+            except subprocess.TimeoutExpired:
+                timeout_message = f"Your program took too long to run and was terminated after {timeout_seconds} second{timeout_suffix}. Do you have an infinite loop?\n" 
+            
             stdout_fp.close()
             
         except OSError:
@@ -529,7 +552,7 @@ def subprocess_run_with_truncated_output(command, input_data, max_output_size, t
         proc_stderr += truncation_message
         
     stderr_fp = open("stderr.txt", "rb") 
-    proc_stderr = stderr_fp.read().decode() + proc_stderr
+    proc_stderr = timeout_message + stderr_fp.read().decode() + proc_stderr
     stderr_fp.close()
     os.remove("stderr.txt")
     
@@ -633,27 +656,8 @@ def run_tests(SafeTestClass, debug_output=True, show_all_passed_tests_first=True
     
 RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
 
-# Used to patch the input() function to also print to stdout, when input_echoing is enabled
-# Patching builtins before loading allows the custom version to be used when the code is run 
-# by the import. Stack trace is cleaned up to make it look  almost the same as if not using input_echoing.
-RUN_SCRIPT_TEST_SUBPROCESS_FILE = \
+INPUT_WITH_ECHOING_FUNCTION = \
 '''
-import os
-import sys
-import signal
-import traceback
-import builtins
-import importlib.util
-from builtins import input
-
-# Remove the test file after loading, to prevent ability to print out contents
-os.remove(__file__)
-
-STUDENT_FILE_NAME = sys.argv[1]
-FUNCTION_TIMEOUT_SECONDS = int(sys.argv[2])
-INPUT_ECHOING = bool(int(sys.argv[3]))
-TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
-
 def input_with_echoing(prompt):
     try:
         out = input(prompt)
@@ -663,34 +667,42 @@ def input_with_echoing(prompt):
         stack += "".join(traceback.format_stack(limit=2)[:1])
         exit(stack+traceback.format_exc(limit=0)) 
     return out
+'''
+
+# Used to patch the input() function to also print to stdout, when input_echoing is enabled
+# Patching builtins before loading allows the custom version to be used when the code is run 
+# by the import. Stack trace is cleaned up to make it look  almost the same as if not using input_echoing.
+RUN_SCRIPT_TEST_SUBPROCESS_FILE = INPUT_WITH_ECHOING_FUNCTION + \
+'''
+import os
+import sys
+import traceback
+import builtins
+import importlib.util
+from builtins import input
+
+# Remove the test file after loading, to prevent ability to print out contents
+os.remove(__file__)
+
+STUDENT_FILE_NAME = sys.argv[1]
+INPUT_ECHOING = bool(int(sys.argv[2]))
 
 if INPUT_ECHOING == True:
     builtins.input = input_with_echoing
 
-def handle_timeout(signum, frame):
-    raise TimeoutError
-
-signal.signal(signal.SIGALRM, handle_timeout)
-signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
-
 try:
     # Use importlib instead of import keyword in case the studentfile has dashes eg student-file.py
     student_module = importlib.import_module(STUDENT_FILE_NAME.removesuffix(".py"))
-except TimeoutError:
-    exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")
 except Exception:
     # Print the exception excluding information about this file path
     exit(traceback.format_exc(limit=-1)) 
-finally:
-    signal.alarm(0)
 '''
 
-RUN_FUNCTION_TEST_SUBPROCESS_FILE = \
+RUN_FUNCTION_TEST_SUBPROCESS_FILE = INPUT_WITH_ECHOING_FUNCTION + \
 '''
 import sys
 import pickle
 import os
-import signal
 import traceback
 import importlib
 
@@ -699,9 +711,8 @@ os.remove(__file__)
 
 STUDENT_FILE_NAME = sys.argv[1]
 FUNCTION_NAME = sys.argv[2]
-FUNCTION_TIMEOUT_SECONDS = int(sys.argv[3])
-FUNCTION_CHECK_MUTATE = bool(int(sys.argv[4]))
-INPUT_ECHOING = bool(int(sys.argv[5]))
+FUNCTION_CHECK_MUTATE = bool(int(sys.argv[3]))
+INPUT_ECHOING = bool(int(sys.argv[4]))
 
 def decode_obj_data(filename):
     with open(filename,"rb") as f:
@@ -714,29 +725,11 @@ FUNCTION_EXPECTED = decode_obj_data("subproc-func-expected")
 os.remove("subproc-func-input")
 os.remove("subproc-func-expected")
 
-TIMEOUT_SUFFIX = "" if FUNCTION_TIMEOUT_SECONDS == 1 else "s"
-
-def input_with_echoing(prompt):
-    try:
-        out = input(prompt)
-        print(out) # echo the input to stdout
-    except Exception:
-        stack = "Traceback (most recent call last):\\n" 
-        stack += "".join(traceback.format_stack(limit=2)[:1])
-        exit(stack+traceback.format_exc(limit=0)) 
-    return out
-
 def format_invis_chars(data):
     if type(data) == str:
         # This forces it to show characters as being escaped and wrapped in quotation marks for consistency
         return str((data,))[1:-2]
     return str(data)
-
-def handle_timeout(signum, frame):
-    raise TimeoutError
-
-signal.signal(signal.SIGALRM, handle_timeout)
-signal.alarm(FUNCTION_TIMEOUT_SECONDS)  # seconds
 
 # Try import function from student code
 # Run the function and check for timeout and mutating input 
@@ -750,22 +743,24 @@ try:
 
     exec("student_function = student_module.%s" % (FUNCTION_NAME,))
     got = student_function(*FUNCTION_INPUT)
-except TimeoutError:
-    exit(f"Your program took too long to run and was terminated after {FUNCTION_TIMEOUT_SECONDS} second{TIMEOUT_SUFFIX}. Do you have an infinite loop?")
 except Exception:
     # Print the exception excluding information about this file path
-    exit(traceback.format_exc(limit=-1)) 
-finally:
-    signal.alarm(0)
+    exit(traceback.format_exc(limit=-1))
+
+function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT_COPY}"
+if len(FUNCTION_INPUT_COPY) == 1:
+    function_call = function_call.strip(",)") + ")"
+    
+errors = ""
 
 # Check for mutated input if desired.
 if FUNCTION_CHECK_MUTATE and FUNCTION_INPUT != FUNCTION_INPUT_COPY:
-    exit("Your code should not mutate the function input!")
+    errors += "Your code should not mutate the function input!"
 
 if got != FUNCTION_EXPECTED:
-    function_call = f"{FUNCTION_NAME}{FUNCTION_INPUT_COPY}"
-    if len(FUNCTION_INPUT_COPY) == 1:
-        function_call = function_call.strip(",)") + ")"
-    exit(f"► Called: {function_call}\\n► Returned <{type(got).__name__}>:\\n{format_invis_chars(got)}\\n► Expected <{type(FUNCTION_EXPECTED).__name__}>:\\n{format_invis_chars(FUNCTION_EXPECTED)}")
+    errors += f"► Returned <{type(got).__name__}>:\\n{format_invis_chars(got)}\\n► Expected <{type(FUNCTION_EXPECTED).__name__}>:\\n{format_invis_chars(FUNCTION_EXPECTED)}"
+
+if errors != "":
+    exit(errors)
 '''
 ####################################################################
