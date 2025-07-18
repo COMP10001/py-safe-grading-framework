@@ -1,4 +1,4 @@
-# Testbench Template Generator for V.0.3.1 Safe Testing Framework
+# Testbench Template Generator for V.0.4.0 Safe Testing Framework
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 # Choose from these options to generate a testbench file template
 ASSIGNMENT_DESC = "Assignment 1 Testbench"
@@ -93,11 +93,13 @@ r'''
         return run_function_test(
             student_file_name=STUDENT_FILE_NAME,                                      # File to test function from
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                        # File path prefix
-            function_name=None,                                                       # Function to test
+            function_name=STUDENT_FUNCTION,                                           # Function to test
             function_args=[],                                                         # Must be wrapped in a tuple/list like test() -> [] or test(1) -> [1]
             function_expected=None,                                                   # Expected value for function
             function_timeout_seconds=1,                                               # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                              # Check if the function input was mutated
+            function_fail_on_mutated_args=False,                                      # Fail if function input was mutated
+            function_expected_mutated_args=[],                                        # Required mutated_args
+            function_check_expected_mutated_args=False,                               # Check if the function input was mutated to match function_expected_mutated_args, ignored if fail_on_mutated_args
             input_data="",                                                            # Input that can be read by input() seperated by newlines
             input_echoing=True,                                                       # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                                       # Expected value in stdout

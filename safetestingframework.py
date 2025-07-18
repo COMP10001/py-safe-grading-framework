@@ -24,6 +24,7 @@ DEFAULT_PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E
 DEFAULT_STUDENT_FILE_PATH_PREFIX = "/home/"
 DEFAULT_NON_ALLOWED_NODES = []
 DEFAULT_NON_ALLOWED_FUNCTIONS = ["exec"]
+DEFAULT_NON_ALLOWED_METHODS = ["exec"]
 DEFAULT_NON_ALLOWED_IMPORTS = ["sys", "os", "subprocess", "signal", "importlib"]
 
 # This is set dynamically depending on the number of test cases in the testbench see run_test()
@@ -46,20 +47,18 @@ EDSTEM_STUDENT_DATA_MAX_SIZE_MB = 20
 # directly into the testbench variable for setup
 FORMAT_TEST_IN_OUT_DATA_AS_STRING = False
 
-MAX_FEEDBACK_LEN_EXCEEDED_MESSAGE = "Setup Issue: Given function args / return value too much of the allocated feedback message length. Reduce the number of test cases or amount of data in the test input/output."
-
 FUNCTION_CALLED_MSG = "► Called: {0}\n"
 INPUT_FEEDBACK_MSG = "► Input:\n{0}\n"
 
-EXPECTED_RETURN_MSG = "► Expected Return <{0}>:\n{1}\n"
+EXPECTED_RETURN_MSG = "► Expected <{0}>:\n{1}\n"
 STUDENT_RETURN_MSG = "► Returned <{0}>:\n{1}\n"
 
 ERROR_RETURN_MSG = "► No value was returned due to errors\n"
-WRONG_STDERR_MSG = "► Your program produced the following stderr output:\n{0}"
-EXPECTED_STDERR_MSG = "► The expected stderr output is:\n{0}"
+WRONG_STDERR_MSG = "► Your program produced the following stderr output:\n{0}\n"
+EXPECTED_STDERR_MSG = "► The expected stderr output is:\n{0}\n"
 
-UNEXPECTED_STDOUT_MSG = "► Your program printed the following output when no printing was expected:\n{0}"
-WRONG_STDOUT_MSG = "► Your program printed the following output:\n{0}"
+UNEXPECTED_STDOUT_MSG = "► Your program printed the following output when no printing was expected:\n{0}\n"
+WRONG_STDOUT_MSG = "► Your program printed the following output:\n{0}\n"
 EXPECTED_STDOUT_MSG = "► The expected printed output is:\n{0}"
 
 PEP8_ERROR_MSG = "► The following style errors were found:\n"
@@ -68,77 +67,24 @@ FILE_CHECK_ERROR_MSG = "► The following expected file errors were found:\n"
 
 NON_ALLOWED_NODE_MSG = "Your program is not allowed to use a {0}. This occurred on line {1} of {2}.\n"
 REQUIRED_NODE_MSG = "Your program must use a {0}.\n"
+
 NON_ALLOWED_FUNCTION_MSG = 'Your program is not allowed to use the {0} function. This occurred on line {1} of {2}.\n'
+REQUIRED_FUNCTION_MSG = 'Your program must use the {0} function.\n'
+
+NON_ALLOWED_METHOD_MSG = 'Your program is not allowed to use the {0} method. This occurred on line {1} of {2}.\n'
+REQUIRED_METHOD_MSG = 'Your program must use the {0} method.\n'
+
 NON_ALLOWED_IMPORT_MSG = 'Your program is not allowed to import {0}. Occured in file {1}.\n'
+REQUIRED_IMPORT_MSG = 'Your program must use import {0}.\n'
+
+FAIL_ON_MUTATION_MSG = "► Your code should not mutate the function input!\n"
+RECIEVED_ARGS_MSG = "► Input Arguments:\n{0}\n"
+EXPECTED_MUTATED_ARGS_MSG = "► Expected Mutated Input Arguments:\n{0}\n"
+
+TIMEOUT_ERROR_MSG = "► Your program took too long to run and was terminated after {0} second{1}. Do you have an infinite loop?\n"
+MAX_FEEDBACK_LEN_EXCEEDED_MSG = "Setup Issue: {0} Reduce the number of test cases or amount of data in the test input/output.\n"
 
 ####################################################################
-
-def verify_program_output(
-        test_feedback, 
-        proc_stdout, 
-        proc_stderr, 
-        expected_stdout, 
-        expected_stderr, 
-        expected_files, 
-        student_file_path_prefix,
-        value_returned=None,
-        student_func_ret=None, 
-        expected_func_ret=None
-    ):
-    ''' 
-    Produce the errors displayed to students when a test fails. When a test function
-    raises an exception, it is considered as having failed.
-    '''
-    
-    test_feedback["expected_return"] = EXPECTED_RETURN_MSG.format(type(expected_func_ret).__name__, format_var_as_python_code(expected_func_ret))
-    test_feedback["expected_stdout"] = EXPECTED_STDOUT_MSG.format(format_test_in_out_data(expected_stdout)) if expected_stdout != "" else ""
-    test_feedback["expected_stderr"] = EXPECTED_STDERR_MSG.format(format_test_in_out_data(expected_stderr)) if expected_stderr != "" else ""
-    
-    
-    errors = ""
-    err_count = 4
-    
-    truncation_length = int((MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION * 0.48 - len(test_feedback)) / (err_count))
-    assert truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MESSAGE
-    
-    # Incorrect output files messages
-    expected_file_feedback = check_expected_files_equal(expected_files, student_file_path_prefix)
-    if expected_file_feedback != "":
-        test_feedback["expected_file"] = FILE_CHECK_ERROR_MSG + expected_file_feedback
-    
-    errors = False
-    # Function output error messages
-    if value_returned and student_func_ret != expected_func_ret:
-        errors = True
-        test_feedback["student_return"] = STUDENT_RETURN_MSG.format(type(student_func_ret).__name__, format_var_as_python_code(student_func_ret))
-    elif value_returned == False:
-        errors = True
-        test_feedback["student_return"] = ERROR_RETURN_MSG
-    
-    # Incorrect stderr messages
-    if proc_stderr != expected_stderr:
-        errors = True
-        formatted_proc_stderr = proc_stderr if expected_stderr == "" else format_test_in_out_data(proc_stderr)
-        test_feedback["student_stderr"] = WRONG_STDERR_MSG.format(formatted_proc_stderr)
-            
-    # Incorrect stdout messages
-    if proc_stdout != expected_stdout: 
-        errors = True
-        if expected_stdout == "":
-            test_feedback["student_stdout"] = UNEXPECTED_STDOUT_MSG.format(format_test_in_out_data(proc_stdout))
-        else:
-            test_feedback["student_stdout"] = WRONG_STDOUT_MSG.format(format_test_in_out_data(proc_stdout))
-            
-    for x in ("expected_file", "student_return", "student_stderr", "student_stdout"):
-        if x in test_feedback.keys():
-            test_feedback[x] = truncate_string(test_feedback[x], truncation_length, OUTPUT_TRUNCATION_MESSAGE)
-
-    feedback_ordering = ["function_call", "input_feedback", "student_return", "expected_return", "student_stderr", "expected_stderr", "student_stdout", "expected_stdout", "expected_file"]
-    
-    if errors:
-         feedback = "".join([test_feedback[x] for x in feedback_ordering if x in test_feedback.keys()])
-         assert False, feedback
-         
 
 def run_function_test(
         student_file_name="",                                        # File to test function from
@@ -147,16 +93,22 @@ def run_function_test(
         function_args=[],                                            # Must be wrapped in a tuple/list like test() -> [] or test(1) -> [1]
         function_expected=None,                                      # Expected return value for function
         function_timeout_seconds=1,                                  # Time in seconds until test fails due to timeout
-        function_check_mutate=False,                                 # Check if the function input was mutated
+        function_fail_on_mutated_args=False,                         # Fail if function input was mutated
+        function_expected_mutated_args=[],                           # Required mutated_args
+        function_check_expected_mutated_args=False,                  # Check if the function input was mutated to match function_expected_mutated_args, ignored if fail_on_mutated_args
         input_data="",                                               # Input that can be read by input() seperated by newlines
         input_echoing=True,                                          # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
-        required_nodes=[],                                           # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
-        non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
+        non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
+        non_allowed_methods=DEFAULT_NON_ALLOWED_METHODS,             # Method name strings of any specific methods to disallow
         non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
+        required_nodes=[],                                           # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
+        required_functions=[],                                       # Function name strings of any specific functions to require
+        required_methods=[],                                         # Method name strings of any specific methods to require
+        required_imports=[],                                         # Imports that must be somewhere in student file or any local imports
         files_to_reveal=[],                                          # Filenames in the hidden_file_dict keys to add to the path while this function runs
         hidden_file_dict={},                                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
@@ -165,82 +117,82 @@ def run_function_test(
     By default OS and other imports are blocked to mitigate attempts to bypass testing. Other nodes to check for via the 
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
-    check_arg_type(
-        [str],
-        student_file_name=student_file_name,
-        function_name=function_name,
-        input_data=input_data,
-        expected_stdout=expected_stdout,
-        expected_stderr=expected_stderr,
-    )
-        
-    check_arg_type([list, tuple], function_args=function_args, expected_files=expected_files)
+    check_arg_type([str], student_file_name=student_file_name, function_name=function_name)
+    check_arg_type([str], input_data=input_data, expected_stdout=expected_stdout, expected_stderr=expected_stderr)
+    check_arg_type([list, tuple], function_args=function_args, function_expected_mutated_args=function_expected_mutated_args)
+    check_arg_type([list, tuple], expected_files=expected_files, files_to_reveal=files_to_reveal)
     check_arg_type([int], function_timeout_seconds=function_timeout_seconds)
-    check_arg_type([bool], function_check_mutate=function_check_mutate, input_echoing=input_echoing)
+    check_arg_type([bool], function_fail_on_mutated_args=function_fail_on_mutated_args, function_check_expected_mutated_args=function_check_expected_mutated_args)
+    check_arg_type([bool], input_echoing=input_echoing)
     check_arg_type([dict], hidden_file_dict=hidden_file_dict)
     
-    test_feedback = {}
+    if function_fail_on_mutated_args:
+        function_check_expected_mutated_args = False
     
-    test_feedback["function_call"] = FUNCTION_CALLED_MSG.format(f"{function_name}({str(list(function_args))[1:-1]})")
-    test_feedback["input_feedback"] = INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
-    
-    feedback_ordering = ["function_call", "input_feedback", "expected_return", "expected_stderr", "expected_stdout"]
-    feedback = "".join([test_feedback[x] for x in feedback_ordering if x in test_feedback.keys()])
-    
-    used_feedback_len = len(feedback)
-
-    assert used_feedback_len < int(MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK * 0.48), MAX_FEEDBACK_LEN_EXCEEDED_MESSAGE
+    test_feedback = ""
+    test_feedback += FUNCTION_CALLED_MSG.format(f"{function_name}({str(list(function_args))[1:-1]})")
+    test_feedback += INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
     
     ast_violations = run_astcheck_test(
         student_file_name,
         student_file_path_prefix=student_file_path_prefix,
-        non_allowed_nodes=non_allowed_nodes, 
-        non_allowed_functions=non_allowed_functions, 
+        non_allowed_nodes=non_allowed_nodes,
+        non_allowed_functions=non_allowed_functions,
+        non_allowed_methods=non_allowed_methods,
         non_allowed_imports=non_allowed_imports, 
         required_nodes=required_nodes,
+        required_functions=required_functions,
+        required_methods=required_methods,
+        required_imports=required_imports,
+        raise_error=False,
     )
     
-    remaining_max_feedback_len = MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - used_feedback_len
-    assert remaining_max_feedback_len > 0, MAX_FEEDBACK_LEN_EXCEEDED_MESSAGE
+    truncation_length = MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(test_feedback)
+    std_out_err_truncation_length = truncation_length // 2
+    assert std_out_err_truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("run_function_test: std_out_err_truncation_length <= 0")
     
-    if ast_violations != "":
-        assert False, feedback + truncate_string(ast_violations, remaining_max_feedback_len, OUTPUT_TRUNCATION_MESSAGE)
+    raise_astcheck_error(ast_violations, test_feedback, truncation_length)
     
-    encode_obj_data(function_args, "subproc-func-input")
     
-    # This is automatically removed after each function run
-    with open(RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
-        fp.write(RUN_FUNCTION_TEST_SUBPROCESS_FILE)
-        
-    command = (
-        "python", 
-        RUN_TEST_SUBPROCESS_FILENAME, 
-        student_file_name, 
-        function_name,
-        str(int(function_check_mutate)),
-        str(int(input_echoing))
-    )
-      
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(
+        encode_obj_data(function_args, "subproc-func-input")
+        # This is automatically removed after each function run
+        with open(RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
+            fp.write(RUN_FUNCTION_TEST_SUBPROCESS_FILE)
+        
+        command = ["python", RUN_TEST_SUBPROCESS_FILENAME, student_file_name, function_name, str(int(input_echoing))]
+        _proc_ret, proc_stdout, proc_stderr, timeout_message = subprocess_run_with_truncated_output(
             command, 
             input_data.encode(), 
-            remaining_max_feedback_len, 
+            std_out_err_truncation_length, 
             OUTPUT_TRUNCATION_MESSAGE, 
             function_timeout_seconds
         )
         
-        student_func_ret = None
-        value_returned = os.path.isfile("subproc-func-return")
-        if value_returned:
-            student_func_ret = decode_obj_data("subproc-func-return")
-            os.remove("subproc-func-return")
+        student_func_ret, value_returned = load_data_object("subproc-func-return")
+        student_func_args, args_returned = load_data_object("subproc-func-args")
             
         # This must be inside hidden file manager context so expected file checking can use hidden files.
-        verify_program_output(test_feedback, proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix, value_returned, student_func_ret, function_expected)
-     
-    return feedback
-    
+        verify_program_output(
+            test_feedback, 
+            proc_stdout, proc_stderr, 
+            expected_stdout, expected_stderr, 
+            expected_files, 
+            student_file_path_prefix,
+            timeout_message,
+            student_function_args=student_func_args,
+            args_returned=args_returned,
+            function_args_copy=function_args,
+            function_fail_on_mutated_args=function_fail_on_mutated_args,                         
+            function_expected_mutated_args=function_expected_mutated_args,                           
+            function_check_expected_mutated_args=function_check_expected_mutated_args,                  
+            value_returned=value_returned,
+            student_func_ret=student_func_ret, 
+            expected_func_ret=function_expected
+        )
+        
+    return test_feedback
+
 ####################################################################
 
 def run_script_test(
@@ -252,10 +204,14 @@ def run_script_test(
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
         expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
-        required_nodes=[],                                           # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
-        non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
+        non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
+        non_allowed_methods=DEFAULT_NON_ALLOWED_METHODS,             # Method name strings of any specific methods to disallow
         non_allowed_imports=DEFAULT_NON_ALLOWED_IMPORTS,             # Imports that are not allowed anywhere in student file or any local imports
+        required_nodes=[],                                           # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
+        required_functions=[],                                       # Function name strings of any specific functions to require
+        required_methods=[],                                         # Method name strings of any specific methods to require
+        required_imports=[],                                         # Imports that must be somewhere in student file or any local imports
         files_to_reveal=[],                                          # Filenames in the hidden_file_dict keys to add to the path while this function runs
         hidden_file_dict={},                                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
@@ -265,70 +221,65 @@ def run_script_test(
     abstract syntax tree can be specified to check that students use or do not use certain python features.
     '''
     
-    check_arg_type(
-        [str],
-        student_file_name=student_file_name,
-        input_data=input_data,
-        expected_stdout=expected_stdout,
-        expected_stderr=expected_stderr,
-    )
-        
-    check_arg_type([list, tuple], expected_files=expected_files)
+    check_arg_type([str], student_file_name=student_file_name, input_data=input_data, expected_stdout=expected_stdout, expected_stderr=expected_stderr)
+    check_arg_type([list, tuple], expected_files=expected_files, files_to_reveal=files_to_reveal)
     check_arg_type([int], script_timeout_seconds=script_timeout_seconds)
     check_arg_type([bool], input_echoing=input_echoing)
     check_arg_type([dict], hidden_file_dict=hidden_file_dict)
     
-    test_feedback = {}
-    test_feedback["input_feedback"] = INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
 
-    feedback_ordering = ["input_feedback", "expected_stderr", "expected_stdout"]
-    feedback = "".join([test_feedback[x] for x in feedback_ordering if x in test_feedback.keys()])
-    
-    used_feedback_len = len(feedback)
-
-    assert used_feedback_len < int(MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK * 0.48), MAX_FEEDBACK_LEN_EXCEEDED_MESSAGE
+    test_feedback = ""
+    test_feedback += INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
     
     ast_violations = run_astcheck_test(
         student_file_name,
         student_file_path_prefix=student_file_path_prefix,
-        non_allowed_nodes=non_allowed_nodes, 
-        non_allowed_functions=non_allowed_functions, 
+        non_allowed_nodes=non_allowed_nodes,
+        non_allowed_functions=non_allowed_functions,
+        non_allowed_methods=non_allowed_methods,
         non_allowed_imports=non_allowed_imports, 
         required_nodes=required_nodes,
-        raise_error=False
+        required_functions=required_functions,
+        required_methods=required_methods,
+        required_imports=required_imports,
+        raise_error=False,
     )
     
-    remaining_max_feedback_len = MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - used_feedback_len
-    assert remaining_max_feedback_len > 0, MAX_FEEDBACK_LEN_EXCEEDED_MESSAGE
-        
-    if ast_violations != "":
-        assert False, feedback + truncate_string(ast_violations, remaining_max_feedback_len, OUTPUT_TRUNCATION_MESSAGE)
-
-    file_path_to_run = student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME
+    truncation_length = MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(test_feedback)
+    std_out_err_truncation_length = truncation_length // 2
+    assert std_out_err_truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("run_script_test: std_out_err_truncation_length <= 0")
     
-     # This is automatically removed after each function run
-    with open(student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
-        fp.write(RUN_SCRIPT_TEST_SUBPROCESS_FILE)
-
-    command = (
-        "python", 
-        file_path_to_run,
-        student_file_name,
-        str(int(input_echoing))
-    )
+    raise_astcheck_error(ast_violations, test_feedback)
     
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        proc_ret, proc_stdout, proc_stderr = subprocess_run_with_truncated_output(
+        # This is automatically removed after each function run
+        with open(student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
+            fp.write(RUN_SCRIPT_TEST_SUBPROCESS_FILE)
+            
+        file_path_to_run = student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME
+        command = ["python",  file_path_to_run, student_file_name, str(int(input_echoing))]
+        
+        _proc_ret, proc_stdout, proc_stderr, timeout_message = subprocess_run_with_truncated_output(
             command, 
             input_data.encode(), 
-            MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, 
+            std_out_err_truncation_length, 
             OUTPUT_TRUNCATION_MESSAGE, 
             script_timeout_seconds
         )
-        # This must be inside hidden file manager context so expected file checking can use hidden files.
-        verify_program_output(test_feedback, proc_stdout, proc_stderr, expected_stdout, expected_stderr, expected_files, student_file_path_prefix)
         
-    return feedback
+        # This must be inside hidden file manager context so expected file checking can use hidden files.
+        verify_program_output(
+            test_feedback, 
+            proc_stdout, 
+            proc_stderr, 
+            expected_stdout, 
+            expected_stderr, 
+            expected_files, 
+            student_file_path_prefix,
+            timeout_message,
+        )
+        
+    return test_feedback
 
 ####################################################################
 
@@ -341,7 +292,6 @@ def run_pep8_test(
     '''
     Run PEP8 style checks on the student submission file, and any local imports
     '''
-    
     check_arg_type([str], student_file_name=student_file_name, student_file_path_prefix=student_file_path_prefix, ignored_tests=ignored_tests)
 
     filepath = student_file_path_prefix + student_file_name
@@ -350,37 +300,35 @@ def run_pep8_test(
     pep8_violations = ""
     
     for file in files_to_check:
-        command = ('flake8', '--jobs=1', '--ignore='+ignored_tests, file)
-        proc_ret = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            text=True
+        command = ['flake8', '--jobs=1', '--ignore='+ignored_tests, file]
+        _proc_ret, proc_stdout, _proc_stderr, _timeout_message = subprocess_run_with_truncated_output(
+            command, 
+            "".encode(), 
+            MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(pep8_violations), 
+            OUTPUT_TRUNCATION_MESSAGE, 
+            1,
         )
-        pep8_violations += proc_ret.stdout.replace('/home/', '')
+         
+        pep8_violations += proc_stdout.replace(student_file_path_prefix, '')
         
-    if raise_error and pep8_violations != "":
-        pep8_violations = PEP8_ERROR_MSG + pep8_violations
-        pep8_violations = truncate_string(pep8_violations, MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION, OUTPUT_TRUNCATION_MESSAGE)     
-        assert False, pep8_violations
+    if raise_error and pep8_violations != "":   
+        assert False, PEP8_ERROR_MSG + pep8_violations
             
     return pep8_violations
-
-def truncate_string(string, truncation_length, truncation_message):
-    assert truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MESSAGE
-    if len(string) > truncation_length:
-        return string[:truncation_length] + truncation_message
-    return string
-
 
 ####################################################################
 
 def run_astcheck_test(
         student_file_name="",                                        # File to test function from
         student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
-        required_nodes=[],                                           # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
         non_allowed_nodes=[],                                        # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
         non_allowed_functions=[],                                    # Function names of any specific functions to disallow
+        non_allowed_methods=[],                                      # Method name strings of any specific methods to disallow
         non_allowed_imports=[],                                      # Imports that are not allowed anywhere in student file or any local imports
+        required_nodes=[],                                           # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
+        required_functions=[],                                       # Function name strings of any specific functions to require
+        required_methods=[],                                         # Method name strings of any specific methods to require
+        required_imports=[],                                         # Imports that must be somewhere in student file or any local imports
         raise_error = True,
     ):
     '''
@@ -388,7 +336,8 @@ def run_astcheck_test(
     '''
     check_arg_type([str], student_file_name=student_file_name, student_file_path_prefix=student_file_path_prefix)
     check_arg_type([list, tuple, dict], non_allowed_nodes=non_allowed_nodes, required_nodes=required_nodes)
-    check_arg_type([list, tuple], non_allowed_functions=non_allowed_functions, non_allowed_imports=non_allowed_imports)
+    check_arg_type([list, tuple], non_allowed_functions=non_allowed_functions, non_allowed_methods=non_allowed_methods, non_allowed_imports=non_allowed_imports)
+    check_arg_type([list, tuple], required_functions=required_functions, required_methods=required_methods, required_imports=required_imports)
     
     if type(required_nodes) != dict:
         required_nodes = {node : node.__name__ for node in required_nodes}
@@ -402,42 +351,97 @@ def run_astcheck_test(
     ast_violations = ""
     for student_file in files_to_check:
         tree = create_ast_object(student_file)
-
-        #  # Check for all non allowed nodes
-        non_allowed_node_visitor = NodeTypeVisitor(non_allowed_nodes.keys(), tree)
-        for node in non_allowed_node_visitor.nodes:
-            ast_violations += NON_ALLOWED_NODE_MSG .format(non_allowed_nodes[node], node.lineno, student_file)
-        
-         # Check for all required nodes
-        required_node_visitor = NodeTypeVisitor(required_nodes.keys(), tree)
-        required_nodes_found = [type(x) for x in required_node_visitor.nodes]
-        for node in required_nodes:
-            if node not in required_nodes_found:
-                ast_violations += REQUIRED_NODE_MSG.format(required_nodes[node])
-                
-        # Check for all non allowed functions
-        name_visitor = NodeTypeVisitor([ast.Name], tree)
-        for node in name_visitor.nodes:
-            if node.id in non_allowed_functions:
-                ast_violations += NON_ALLOWED_FUNCTION_MSG.format(node.id, node.lineno, student_file)
-
-        # Check for all non allowed imports
-        student_imports = find_imports(student_file)
-        for lib in student_imports:
-            if lib in non_allowed_imports:
-                ast_violations += NON_ALLOWED_IMPORT_MSG.format(lib, student_file)
+        ast_violations += astcheck_nodes(non_allowed_nodes, required_nodes, tree, student_file)
+        ast_violations += astcheck_functions(non_allowed_functions, required_functions, tree, student_file)
+        ast_violations += astcheck_methods(non_allowed_methods, required_methods, tree, student_file)
+        ast_violations += astcheck_imports(non_allowed_imports, required_imports, student_file)
 
     if ast_violations != "":
         ast_violations = AST_VIOLATION_MSG + ast_violations
-        
-    if raise_error and ast_violations != "":
-        ast_violations = truncate_string(ast_violations, MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK, OUTPUT_TRUNCATION_MESSAGE)
-        assert False, ast_violations
+        if raise_error:
+            ast_violations = truncate_string(ast_violations, MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK, OUTPUT_TRUNCATION_MESSAGE)
+            assert False, ast_violations
         
     return ast_violations
+
+####################################################################
+
+def astcheck_nodes(non_allowed_nodes, required_nodes, tree, student_file):
+    ''' Check for all non allowed and required nodes '''
+    ast_violations = ""
     
+     # Check for all non allowed nodes
+    non_allowed_node_visitor = NodeTypeVisitor(non_allowed_nodes.keys(), tree)
+    for node in non_allowed_node_visitor.nodes:
+        ast_violations += NON_ALLOWED_NODE_MSG.format(non_allowed_nodes[type(node)], node.lineno, student_file)
+    
+    # Check for all required nodes
+    required_node_visitor = NodeTypeVisitor(required_nodes.keys(), tree)
+    required_nodes_found = [type(x) for x in required_node_visitor.nodes]
+    for node in required_nodes:
+        if node not in required_nodes_found:
+            ast_violations += REQUIRED_NODE_MSG.format(required_nodes[node])
+        
+    return ast_violations
+
+def astcheck_functions(non_allowed_functions, required_functions, tree, student_file):
+    ''' Check for all non allowed and required functions '''
+    ast_violations = ""
+    
+    # Check for all non allowed functions
+    name_visitor = NodeTypeVisitor([ast.Name], tree)
+    for node in name_visitor.nodes:
+        if node.id in non_allowed_functions:
+            ast_violations += NON_ALLOWED_FUNCTION_MSG.format(node.id, node.lineno, student_file)
+    
+    # Check for all required functions
+    functions_found = [node.id for node in name_visitor.nodes]
+    for function in required_functions:
+        if function not in functions_found:
+            ast_violations += REQUIRED_FUNCTION_MSG.format(function)
+    
+    return ast_violations
+
+def astcheck_methods(non_allowed_methods, required_methods, tree, student_file):
+    ''' Check for all non allowed and required methods '''
+    ast_violations = ""
+    
+    # Check for all non_allowed methods
+    method_visitor = NodeTypeVisitor([ast.Attribute], tree)
+    methods_found = [node.attr for node in method_visitor.nodes]
+    for node in method_visitor.nodes:
+        if node.attr in non_allowed_methods:
+            ast_violations += NON_ALLOWED_METHOD_MSG.format(node.attr, node.lineno, student_file)
+
+    # Check for all required methods
+    for method in required_methods:
+        if method not in methods_found:
+            ast_violations += REQUIRED_METHOD_MSG.format(method)
+            
+    return ast_violations
+
+def astcheck_imports(non_allowed_imports, required_imports, student_file):
+    ''' Check for all non allowed imports'''
+    ast_violations = ""
+    
+    # Non allowed imports
+    student_imports = find_imports(student_file)
+    for lib in student_imports:
+        if lib in non_allowed_imports:
+            ast_violations += NON_ALLOWED_IMPORT_MSG.format(lib, student_file)
+
+    # Required imports
+    student_imports = find_imports(student_file)
+    for lib in required_imports:
+        if lib not in student_imports:
+            ast_violations += REQUIRED_IMPORT_MSG.format(lib)
+            
+    return ast_violations
+
+####################################################################
+
 class NodeTypeVisitor(ast.NodeVisitor):
-    def __init__(self, types, tree, *args, **kwargs):
+    def __init__(self, types, tree):
         self.types = tuple(types)
         self.nodes = []
         self.visit(tree)
@@ -446,8 +450,7 @@ class NodeTypeVisitor(ast.NodeVisitor):
         if isinstance(node, self.types):
             self.nodes.append(node)
         super().visit(node)
-        
-        
+    
 def create_ast_object(filename):
     with open(filename) as f:
         source = f.read()
@@ -458,6 +461,165 @@ def create_ast_object(filename):
 
     return tree
 
+def raise_astcheck_error(ast_violations, test_feedback, truncation_length):
+    assert truncation_length > 0,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("run_function_test: truncation_length <= 0")
+    if ast_violations != "":
+        ast_violations = truncate_string(ast_violations, truncation_length, OUTPUT_TRUNCATION_MESSAGE)
+        assert False, test_feedback + ast_violations
+
+####################################################################
+
+def verify_program_output(
+        test_feedback, 
+        proc_stdout, 
+        proc_stderr, 
+        expected_stdout, 
+        expected_stderr, 
+        expected_files, 
+        student_file_path_prefix,
+        timeout_message,
+        student_function_args=None,
+        args_returned=None,
+        function_args_copy=None,
+        function_fail_on_mutated_args=False,                         
+        function_expected_mutated_args=None,                           
+        function_check_expected_mutated_args=False,                  
+        value_returned=None,
+        student_func_ret=None, 
+        expected_func_ret=None
+    ):
+    ''' 
+    Produce the errors displayed to students when a test fails. When a test function
+    raises an exception, it is considered as having failed.
+    '''
+    
+    if timeout_message != "":
+        assert False, test_feedback + timeout_message
+        
+    truncation_length = int(MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(test_feedback))
+    assert truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("Given function args / return value too much of the allocated feedback message length.")
+    
+    std_out_err_truncation_length = truncation_length // 4
+    return_truncation_length = truncation_length // 2
+    mutation_truncation_length = truncation_length // 2
+    
+    stderr_feedback = verify_expected_stderr(proc_stderr, expected_stderr, std_out_err_truncation_length)
+    stdout_feedback = verify_expected_stdout(proc_stdout, expected_stdout, std_out_err_truncation_length)
+   
+    if stderr_feedback != "" or stdout_feedback != "":
+        assert False, test_feedback + stderr_feedback + stdout_feedback
+
+    return_feedback = verify_function_return(value_returned, student_func_ret, expected_func_ret, return_truncation_length)
+    
+    if return_feedback != "":
+        assert False, test_feedback + return_feedback
+        
+    check_mutated_feedback = verify_check_mutated_input(function_fail_on_mutated_args, student_function_args, function_args_copy, mutation_truncation_length)
+    
+    if check_mutated_feedback != "":
+        assert False, test_feedback + check_mutated_feedback
+    
+    mutated_args_feedback = verify_expected_mutated_args(args_returned, function_check_expected_mutated_args, student_function_args, function_expected_mutated_args, mutation_truncation_length)
+    
+    if mutated_args_feedback  != "":
+        assert False, test_feedback + mutated_args_feedback 
+   
+    # Incorrect output file messages
+    expected_file_feedback = verify_expected_files(expected_files, student_file_path_prefix)
+    if expected_file_feedback != "":
+        assert False, test_feedback + expected_file_feedback
+
+####################################################################
+
+def verify_expected_stderr(proc_stderr, expected_stderr, std_out_err_truncation_length):
+    stderr_feedback = ""
+     # Incorrect stderr messages
+    if proc_stderr != expected_stderr:
+        formatted_proc_stderr = proc_stderr if expected_stderr == "" else format_test_in_out_data(proc_stderr)
+        student_stderr_feedback = WRONG_STDERR_MSG.format(formatted_proc_stderr)
+        expected_stderr_feedback = EXPECTED_STDERR_MSG.format(format_test_in_out_data(expected_stderr)) if expected_stderr != "" else ""
+        
+        if (len(expected_stderr_feedback) > std_out_err_truncation_length ):
+            assert False,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_stderr_feedback) > truncation_length")
+        
+        stderr_feedback += truncate_string(student_stderr_feedback, std_out_err_truncation_length , OUTPUT_TRUNCATION_MESSAGE) + expected_stderr_feedback
+        
+    return stderr_feedback
+        
+def verify_expected_stdout(proc_stdout, expected_stdout, std_out_err_truncation_length):
+    stdout_feedback = ""
+     # Incorrect stdout messages
+    if proc_stdout != expected_stdout: 
+        expected_stdout_feedback = EXPECTED_STDOUT_MSG.format(format_test_in_out_data(expected_stdout)) if expected_stdout != "" else ""
+        if expected_stdout == "":
+            student_stdout_feedback = UNEXPECTED_STDOUT_MSG.format(format_test_in_out_data(proc_stdout))
+        else:
+            student_stdout_feedback = WRONG_STDOUT_MSG.format(format_test_in_out_data(proc_stdout))
+        
+        if (len(expected_stdout_feedback) > std_out_err_truncation_length ):
+            assert False,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_stdout_feedback) > truncation_length")
+            
+        stdout_feedback += truncate_string(student_stdout_feedback, std_out_err_truncation_length , OUTPUT_TRUNCATION_MESSAGE) + expected_stdout_feedback
+        
+    return stdout_feedback
+
+def verify_function_return(value_returned, student_func_ret, expected_func_ret, return_truncation_length):
+    return_feedback = ""
+    # Incorrect function return messages
+    if value_returned != None and student_func_ret != expected_func_ret:
+        expected_return_feedback = EXPECTED_RETURN_MSG.format(type(expected_func_ret).__name__, format_var_as_python_code(expected_func_ret))
+        student_return_feedback = ""
+        if value_returned == True:
+            student_return_feedback = STUDENT_RETURN_MSG.format(type(student_func_ret).__name__, format_var_as_python_code(student_func_ret))
+        else:
+            student_return_feedback = ERROR_RETURN_MSG
+   
+        if (len(expected_return_feedback) > return_truncation_length):
+            assert False,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_return_feedback) > truncation_length")
+
+        return_feedback += truncate_string(student_return_feedback, return_truncation_length, OUTPUT_TRUNCATION_MESSAGE) + expected_return_feedback
+        
+    return return_feedback
+
+def verify_check_mutated_input(function_fail_on_mutated_args, student_function_args, function_args_copy, mutation_truncation_length):
+    check_mutated_feedback = ""
+    # Check for mutated input
+    if function_fail_on_mutated_args == True and student_function_args != function_args_copy:
+        student_args_feedback = RECIEVED_ARGS_MSG.format(f"({str(list(student_function_args))[1:-1]})")
+        check_mutated_feedback += truncate_string(student_args_feedback, mutation_truncation_length, OUTPUT_TRUNCATION_MESSAGE) + FAIL_ON_MUTATION_MSG
+        
+    return check_mutated_feedback
+
+def verify_expected_mutated_args(args_returned, function_check_expected_mutated_args, student_function_args, function_expected_mutated_args, mutation_truncation_length):
+    expected_mutated_args_feedback = ""
+    # Check for expected mutated arguments
+    if args_returned == True and function_check_expected_mutated_args and student_function_args != function_expected_mutated_args:
+        student_args_feedback = RECIEVED_ARGS_MSG.format(f"({str(list(student_function_args))[1:-1]})")
+        expected_mutated_feedback = EXPECTED_MUTATED_ARGS_MSG.format(f"({str(list(function_expected_mutated_args))[1:-1]})")
+        if (len(expected_mutated_feedback) > mutation_truncation_length):
+            assert False, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_mutated_feedback) > truncation_length")
+        
+        expected_mutated_args_feedback += truncate_string(student_args_feedback, mutation_truncation_length, OUTPUT_TRUNCATION_MESSAGE) + expected_mutated_feedback
+
+    return expected_mutated_feedback
+    
+def verify_expected_files(expected_files, student_file_path_prefix, truncation_length):
+    expected_file_feedback = ""
+    if (len(expected_files) > 0):
+        for student_file, test_file in expected_files:
+            if not os.path.isfile(student_file_path_prefix + student_file):
+                expected_file_feedback +=  f"{student_file_path_prefix + student_file} does not exist!\n"
+            elif not os.path.isfile(student_file_path_prefix + test_file):
+                expected_file_feedback += f"{student_file_path_prefix + test_file} does not exist!\n"
+            elif not filecmp.cmp(student_file_path_prefix + student_file, student_file_path_prefix + test_file, shallow=False):
+                expected_file_feedback += f"{student_file_path_prefix + student_file} and {student_file_path_prefix + test_file} are not equal.\n"
+                
+    if expected_file_feedback != "":
+        expected_file_feedback = FILE_CHECK_ERROR_MSG + expected_file_feedback
+        expected_file_feedback = truncate_string(expected_file_feedback, truncation_length, OUTPUT_TRUNCATION_MESSAGE)
+
+    return expected_file_feedback
+        
 ####################################################################
 # In order for safety checks to work properly all local imports from the 
 # file being tested must be found and checked accordingly for non allowed
@@ -503,6 +665,126 @@ def recursive_find_local_import_paths(filepath):
     
     return files_checked
             
+####################################################################
+
+def format_test_in_out_data(data):
+    ''' Return string so it shows invisible characters and line wrapping'''
+    if FORMAT_TEST_IN_OUT_DATA_AS_STRING:
+        return format_var_as_python_code(data)
+    return str([data])[2:-2].replace("\\n", "\\n\n").strip("\n").replace("\\'","'")
+
+def format_var_as_python_code(data):
+    ''' Return variable as string so it prints exactly as required for python assignment'''
+    if type(data) == str:
+        return str([data])[1:-1]
+    return str(data)
+
+####################################################################
+
+def cache_hidden_test_files(files):
+    '''
+    Create a dictionary of Key, Value = Filename, File Content String
+    for each file and remove it from path. The files can then be revealed
+    only when running a given test, with HiddenFileManager, or its integration
+    into run_function_test or run_script_test, to avoid data leakage. 
+    '''
+    file_dict = {}
+    for file in files:
+        with open(file, 'rb') as fp:
+            file_dict[file] = fp.read()
+        os.remove(file)
+    return file_dict
+
+class HiddenFileManager:
+    ''' 
+    Allow easy revealing and automatic removal of files from a hidden file dictionary
+    by using the with keyword scope.
+    '''
+    def __init__(self, hidden_file_dict, files_to_reveal):
+        self.hidden_file_dict = hidden_file_dict
+        self.files_to_reveal = files_to_reveal
+        for file in files_to_reveal:
+            if file not in hidden_file_dict:
+                raise Exception(f"Setup Issue: File to reveal '{file}' not in hidden_file_dict!")
+            with open(file, 'wb') as fp:
+                fp.write(self.hidden_file_dict[file])
+        
+    def __enter__(self):
+        pass
+            
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for file in self.files_to_reveal:
+            os.remove(file)
+
+####################################################################
+
+def truncate_string(string, truncation_length, truncation_message):
+    assert truncation_length > 0, "Setup Issue: truncate_string: truncation_length <=0"
+    if len(string) > truncation_length:
+        return string[:truncation_length] + truncation_message
+    return string
+            
+def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message, timeout_seconds):
+    '''
+    subprocess.run() cannot limit the amount of input received from stdout and stederr. Given the memory and disk constraints
+    on Ed, instead of trying to reliably control reading system calls, instead read stdout/stderr to a file until
+    an OSError occurs due to running out of disk space, or the process finishes, before truncating the file to some
+    predetermined size if necessary to recover space, storing it as a string, and then deleting the file.  
+    '''
+    proc_stdout = ""
+    proc_stderr = ""
+    timeout_message = ""
+    timeout_suffix = "" if timeout_seconds == 1 else "s"
+    # Two layers of try-except, one for each of stdout, stderr, as closing a file causes the 
+    # buffered contents to be written to disk which can cause a new OSError due to insufficient space.
+    proc_ret = None
+    try:
+        try:
+            stdout_fp = open("stdout.txt", "wb") 
+            stderr_fp = open("stderr.txt", "wb")
+
+            try: 
+                proc_ret = subprocess.run(command, stdout=stdout_fp, stderr=stderr_fp, input=input_data, timeout=timeout_seconds)
+            except subprocess.TimeoutExpired:
+                timeout_message = TIMEOUT_ERROR_MSG.format(timeout_seconds, timeout_suffix)
+            
+            stdout_fp.close()
+            
+        except OSError:
+            # If too much output is generated there will be no more space on device
+            pass
+            
+        if (os.path.getsize("stdout.txt") > max_output_size):
+            # immediately truncate over sized output file, to avoid a new OSError.
+            stdout_fp = open("stdout.txt", "a")
+            stdout_fp.truncate(max_output_size)
+            stdout_fp.close()
+            proc_stdout += truncation_message
+        
+        stdout_fp = open("stdout.txt", "rb") 
+        proc_stdout = stdout_fp.read().decode() + proc_stdout
+        stdout_fp.close()
+        os.remove("stdout.txt")
+        stderr_fp.close()
+        
+    except OSError:
+        # If too much output is generated there will be no more space on device
+        pass
+    
+    if (os.path.getsize("stderr.txt") > max_output_size):
+        # immediately truncate over sized output file, to avoid a new OSError.
+        stderr_fp = open("stderr.txt", "a")
+        stderr_fp.truncate(max_output_size)
+        stderr_fp.close()
+        proc_stderr += truncation_message
+        
+    stderr_fp = open("stderr.txt", "rb") 
+    proc_stderr = stderr_fp.read().decode() + proc_stderr
+    stderr_fp.close()
+    os.remove("stderr.txt")
+    
+    return proc_ret, proc_stdout, proc_stderr, timeout_message
+
 ####################################################################
 # Test Case Decorators for controlling Ed Integration
 # use @hidden(), @private(), @score(), @setname()
@@ -575,130 +857,13 @@ def decode_obj_data(filename):
         data = pickle.load(f)
     return data
 
-####################################################################
-def format_test_in_out_data(data):
-    ''' Return string so it shows invisible characters and line wrapping'''
-    if FORMAT_TEST_IN_OUT_DATA_AS_STRING:
-        return format_var_as_python_code(data)
-    return str([data])[2:-2].replace("\\n", "\\n\n").replace("\\'","'")
-
-def format_var_as_python_code(data):
-    ''' Return variable as string so it prints exactly as required for python assignment'''
-    if type(data) == str:
-        return str([data])[1:-1]
-    return str(data)
-
-def check_expected_files_equal(expected_files, student_file_path_prefix):
-    errors = ""
-    if (len(expected_files) > 0):
-        for student_file, test_file in expected_files:
-            if not os.path.isfile(student_file_path_prefix + student_file):
-                errors +=  f"{student_file_path_prefix + student_file} does not exist!\n"
-            elif not os.path.isfile(student_file_path_prefix + test_file):
-                errors += f"{student_file_path_prefix + test_file} does not exist!\n"
-            elif not filecmp.cmp(student_file_path_prefix + student_file, student_file_path_prefix + test_file, shallow=False):
-                errors += f"{student_file_path_prefix + student_file} and {student_file_path_prefix + test_file} are not equal.\n"
-        
-    return errors
-
-####################################################################
-
-def cache_hidden_test_files(files):
-    '''
-    Create a dictionary of Key, Value = Filename, File Content String
-    for each file and remove it from path. The files can then be revealed
-    only when running a given test, with HiddenFileManager, or its integration
-    into run_function_test or run_script_test, to avoid data leakage. 
-    '''
-    file_dict = {}
-    for file in files:
-        with open(file, 'rb') as fp:
-            file_dict[file] = fp.read()
+def load_data_object(file):
+    obj = None
+    obj_exists = os.path.isfile(file)
+    if obj_exists:
+        obj = decode_obj_data(file)
         os.remove(file)
-    return file_dict
-
-class HiddenFileManager:
-    ''' 
-    Allow easy revealing and automatic removal of files from a hidden file dictionary
-    by using the with keyword scope.
-    '''
-    def __init__(self, hidden_file_dict, files_to_reveal):
-        self.hidden_file_dict = hidden_file_dict
-        self.files_to_reveal = files_to_reveal
-        for file in files_to_reveal:
-            if file not in hidden_file_dict:
-                raise Exception(f"Setup Issue: File to reveal '{file}' not in hidden_file_dict!")
-            with open(file, 'wb') as fp:
-                fp.write(self.hidden_file_dict[file])
-        
-    def __enter__(self):
-        pass
-            
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for file in self.files_to_reveal:
-            os.remove(file)
-
-####################################################################
-            
-def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message, timeout_seconds):
-    '''
-    subprocess.run() cannot limit the amount of input received from stdout and stederr. Given the memory and disk constraints
-    on Ed, instead of trying to reliably control reading system calls, instead read stdout/stderr to a file until
-    an OSError occurs due to running out of disk space, or the process finishes, before truncating the file to some
-    predetermined size if necessary to recover space, storing it as a string, and then deleting the file.  
-    '''
-    proc_stdout = ""
-    proc_stderr = ""
-    timeout_message = ""
-    timeout_suffix = "" if timeout_seconds == 1 else "s"
-    # Two layers of try-except, one for each of stdout, stderr, as closing a file causes the 
-    # buffered contents to be written to disk which can cause a new OSError due to insufficient space.
-    proc_ret = None
-    try:
-        try:
-            stdout_fp = open("stdout.txt", "wb") 
-            stderr_fp = open("stderr.txt", "wb")
-
-            try: 
-                proc_ret = subprocess.run(command, stdout=stdout_fp, stderr=stderr_fp, input=input_data, timeout=timeout_seconds)
-            except subprocess.TimeoutExpired:
-                timeout_message = f"Your program took too long to run and was terminated after {timeout_seconds} second{timeout_suffix}. Do you have an infinite loop?\n" 
-            
-            stdout_fp.close()
-            
-        except OSError:
-            # If too much output is generated there will be no more space on device
-            pass
-            
-        if (os.path.getsize("stdout.txt") > max_output_size):
-            stdout_fp = open("stdout.txt", "a")
-            stdout_fp.truncate(max_output_size)
-            stdout_fp.close()
-            proc_stdout += truncation_message
-        
-        
-        stdout_fp = open("stdout.txt", "rb") 
-        proc_stdout = stdout_fp.read().decode() + proc_stdout
-        stdout_fp.close()
-        os.remove("stdout.txt")
-        
-        stderr_fp.close()
-    except OSError:
-        # If too much output is generated there will be no more space on device
-        pass
-    
-    if (os.path.getsize("stderr.txt") > max_output_size):
-        stderr_fp = open("stderr.txt", "a")
-        stderr_fp.truncate(max_output_size)
-        stderr_fp.close()
-        proc_stderr += truncation_message
-        
-    stderr_fp = open("stderr.txt", "rb") 
-    proc_stderr = timeout_message + stderr_fp.read().decode() + proc_stderr
-    stderr_fp.close()
-    os.remove("stderr.txt")
-    
-    return proc_ret, proc_stdout, proc_stderr
+    return obj, obj_exists
 
 ####################################################################
 
@@ -762,14 +927,13 @@ def get_test_methods_in_order(SafeTestClass):
     return methods
 
 def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True):
+    ''' Test Runner function that runs all test methods in a test class '''
     global MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION
     global MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK
     test_list = get_test_methods_in_order(SafeTestClass)
     
     # Needs to be small enough so that each test can produce this much output on stdout and stderr
     # while having enough free characters to have all the JSON syntax and other stuff also printed.
-    # 3x should be a decent overestimate to avoid the testing code ever crashing.
-    MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION = int(EDSTEM_MAX_GRADER_OUTPUT_CHARS / (3 * len(test_list)))
     MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK = int(EDSTEM_MAX_GRADER_OUTPUT_CHARS / (1.5 * len(test_list)))
     
     testbench = SafeTestClass()
@@ -785,7 +949,7 @@ def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True)
         testcase["feedback"] += "All tests fail when SETUP_MODE is enabled, so that it is not left enabled by accident.\n"
         testcase["feedback"] += "FORMAT_TEST_IN_OUT_DATA_AS_STRING = True, so input and expected stdout/stderr can be copy pasted directly into testbench\n"
         testcase["feedback"] += "Having more test cases decreases this value accordingly, to prevent grader from crashing\n"
-        testcase["feedback"] += f"> MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION: {MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION} chars\n"
+        testcase["feedback"] += f"> MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK : {MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK} chars\n"
         testcase_output.append(testcase)
     
     for test in test_list:
@@ -872,8 +1036,7 @@ os.remove(__file__)
 
 STUDENT_FILE_NAME = sys.argv[1]
 FUNCTION_NAME = sys.argv[2]
-FUNCTION_CHECK_MUTATE = bool(int(sys.argv[3]))
-INPUT_ECHOING = bool(int(sys.argv[4]))
+INPUT_ECHOING = bool(int(sys.argv[3]))
 
 def encode_obj_data(input_data, filename):
     with open(filename,"wb") as f:
@@ -884,8 +1047,6 @@ def decode_obj_data(filename):
         return pickle.load(f)
 
 FUNCTION_INPUT = decode_obj_data("subproc-func-input")
-FUNCTION_INPUT_COPY = decode_obj_data("subproc-func-input")
-
 os.remove("subproc-func-input")
 
 # Try import function from student code
@@ -903,14 +1064,12 @@ try:
     student_function = getattr(student_module, FUNCTION_NAME)
     got = student_function(*FUNCTION_INPUT)
     encode_obj_data(got, "subproc-func-return")
+    encode_obj_data(FUNCTION_INPUT, "subproc-func-args")
     
 except Exception:
     # Print the exception excluding information about this file path
     exit(traceback.format_exc(limit=-1))
-
-# Check for mutated input
-if FUNCTION_CHECK_MUTATE and FUNCTION_INPUT != FUNCTION_INPUT_COPY:
-    exit("Your code should not mutate the function input!")
-
 '''
+
 ####################################################################
+
