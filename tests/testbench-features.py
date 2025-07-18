@@ -1,7 +1,7 @@
 # Feature Testing Testbench for safe testing framework
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu>
 #
-# Depends on Safe Ed Assignment Unit Testing Framework V0.3.0
+# Depends on Safe Ed Assignment Unit Testing Framework V0.3.1
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu> 2025/04/01
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
@@ -21,9 +21,9 @@ RELEASE_TEST_CASES = False
 
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
-STUDENT_FILE_PATH_PREFIX = "/home/"
+STUDENT_FILE_PATH_PREFIX = "/home/admin/git/safe-testing-framework/tests/" #"/home/"
 
-DEBUG_OUTPUT = True
+SETUP_MODE = False
 SHOW_ALL_PASSED_TESTS_FIRST = True
 
 FILES_TO_HIDE = ["hidden.txt"] # eg ["abc.txt"]
@@ -79,7 +79,7 @@ class SafeTesting():
             student_file_name="astcheck_non_allowed_functions.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=("print"),                          # Function names of any specific functions to disallow
+            non_allowed_functions=["print"],                          # Function names of any specific functions to disallow
             non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                 # Eg ast.Name, see ast library
         )
@@ -104,7 +104,7 @@ class SafeTesting():
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
             non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
             non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys"),                          # Imports that are not allowed anywhere in student file or any local imports
+            non_allowed_imports = ["sys"],                          # Imports that are not allowed anywhere in student file or any local imports
             required_nodes=(),                                 # Eg ast.Name, see ast library
         )
         
@@ -182,16 +182,39 @@ class SafeTesting():
     
     @setname()
     @score(0)
+    def testFunction_Not_Defined(self):
+        return run_function_test(
+            student_file_name="function_tests.py",
+            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
+            function_name="missing_function",                           # Function to test
+            function_args=("hello",),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_expected = "Showing the fail formatting",                                    # Expected value for function
+            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
+            function_check_mutate=True,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
+            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
+            expected_stdout="",                                          # Expected value in stdout
+            expected_stderr="",                                          # Expected value in stderr
+            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
+            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
+            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
+            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
+            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
+            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
+        )
+    
+    @setname()
+    @score(0)
     def testFunction_Check_1_Input_Arg_Fail(self):
         return run_function_test(
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="check_1_input_arg",                           # Function to test
-            function_input=("hello",),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=("hello",),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = "Showing the fail formatting",                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=True,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=True,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -210,11 +233,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="check_2_input_arg",                           # Function to test
-            function_input=("hello",12345),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=("hello",12345),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = "Showing the fail formatting",                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=True,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=True,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -233,11 +256,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="check_mutate_fail",                           # Function to test
-            function_input=([1,2,3],),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=([1,2,3],),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=True,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=True,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -257,11 +280,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_int",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = 1,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -280,11 +303,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_int",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = 4,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -303,11 +326,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_str",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = "abc\ndefgh\t\r\nhello",                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -326,11 +349,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_str",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = "1234\n1234\n1234",                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -349,11 +372,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_float",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = 1.0,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -372,11 +395,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_float",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = 1.5,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -395,11 +418,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_list",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = [1, 1.0, "abc", ("hi", 123)],                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -418,11 +441,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_list",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = [1,2,3,"abc"],                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -441,11 +464,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_tuple",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = (123, "abc", [1,2,3]),                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -464,11 +487,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_tuple",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = (1,2,3,"abc"),                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -488,11 +511,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stdout",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="Abc\nabc\t\r\nabc\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -511,11 +534,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stdout",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="1234\n1234\n\t\r\nasdfsdf",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -534,11 +557,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="Fake Error has occurred.\n",                                          # Expected value in stderr
@@ -557,11 +580,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="Error",                                    # Expected value in stderr
@@ -580,11 +603,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr_exception",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr='Traceback (most recent call last):\n  File "/home/function_tests.py", line 34, in expected_stderr_exception\n    raise Exception("An error occured")\nException: An error occured\n\n',                                          # Expected value in stderr
@@ -603,11 +626,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_stderr_exception",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="Error",                                    # Expected value in stderr
@@ -626,11 +649,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_and_stdout",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = "abc",                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="abc\ndef\n",                                # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -649,11 +672,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_return_and_stdout",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = "abc1234",                               # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="abc\ndef\nefgh\n",                                # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -672,11 +695,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="timeout_fail",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -695,11 +718,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="timeout_fail",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 2,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -719,11 +742,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="hidden_files_access",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -742,11 +765,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="hidden_files_access",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="verysecretfilecontents\n",                 # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -766,11 +789,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -789,11 +812,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="1\n",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -812,11 +835,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -837,11 +860,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="input_echoing",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="1\n",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -860,11 +883,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="spam_print",                                          # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -883,11 +906,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="spam_print_stdout_stderr",                   # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -906,11 +929,11 @@ class SafeTesting():
             student_file_name="import-with-dashes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="func",                   # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = 123,                                    # Expected value for function
             function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -929,11 +952,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_file",                   # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -953,11 +976,11 @@ class SafeTesting():
             student_file_name="function_tests.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             function_name="expected_file",                   # Function to test
-            function_input=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
+            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
             function_expected = None,                                    # Expected value for function
             function_timeout_seconds = 1,                               # Time in seconds until test fails due to timeout
-            check_mutate=False,                                          # Check if the function input was mutated
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            function_check_mutate=False,                                          # Check if the function input was mutated
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -978,7 +1001,7 @@ class SafeTesting():
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
+            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -996,7 +1019,7 @@ class SafeTesting():
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="1\n",                                                    # Input that can be read by input() seperated by newlines
+            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1014,7 +1037,7 @@ class SafeTesting():
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
+            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1033,7 +1056,7 @@ class SafeTesting():
             student_file_name="script_input_echoing.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="1\n",                                                    # Input that can be read by input() seperated by newlines
+            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1052,7 +1075,7 @@ class SafeTesting():
             student_file_name="script_timeout_fail.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1071,7 +1094,7 @@ class SafeTesting():
             student_file_name="script_timeout_fail.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=2,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1090,7 +1113,7 @@ class SafeTesting():
             student_file_name="script_expected_stdout.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="hello\n1234\t\r\nsdfsfds\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1109,7 +1132,7 @@ class SafeTesting():
             student_file_name="script_expected_stdout.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="1234",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1128,7 +1151,7 @@ class SafeTesting():
             student_file_name="script_expected_stderr.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="hello\n1234\t\r\nsdfsfds\n",                                          # Expected value in stderr
@@ -1147,7 +1170,7 @@ class SafeTesting():
             student_file_name="script_expected_stderr.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="1234",                                          # Expected value in stderr
@@ -1166,7 +1189,7 @@ class SafeTesting():
             student_file_name="script_expected_stderr_exception.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr='Traceback (most recent call last):\n  File "/home/script_expected_stderr_exception.py", line 1, in <module>\n    raise Exception("Test exception")\nException: Test exception\n\n',                                          # Expected value in stderr
@@ -1185,7 +1208,7 @@ class SafeTesting():
             student_file_name="script_expected_stderr_exception.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="1234",                                          # Expected value in stderr
@@ -1204,7 +1227,7 @@ class SafeTesting():
             student_file_name="script_hidden_files.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1223,7 +1246,7 @@ class SafeTesting():
             student_file_name="script_hidden_files.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1242,7 +1265,7 @@ class SafeTesting():
             student_file_name="import-with-dashes.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1261,7 +1284,7 @@ class SafeTesting():
             student_file_name="script_expected_file.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1281,7 +1304,7 @@ class SafeTesting():
             student_file_name="script_expected_file.py",
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
             script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input="",                                                    # Input that can be read by input() seperated by newlines
+            input_data="",                                                    # Input that can be read by input() seperated by newlines
             input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
             expected_stdout="",                                          # Expected value in stdout
             expected_stderr="",                                          # Expected value in stderr
@@ -1318,5 +1341,5 @@ class SafeTesting():
         pass
 
 if __name__ == "__main__":
-    run_tests(SafeTesting, debug_output=DEBUG_OUTPUT, show_all_passed_tests_first=SHOW_ALL_PASSED_TESTS_FIRST)
+    run_tests(SafeTesting, setup_mode=SETUP_MODE, show_all_passed_tests_first=SHOW_ALL_PASSED_TESTS_FIRST)
 
