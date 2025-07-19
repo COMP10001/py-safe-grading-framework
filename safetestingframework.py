@@ -84,6 +84,10 @@ EXPECTED_MUTATED_ARGS_MSG = "► Expected Mutated Input Arguments:\n{0}\n"
 TIMEOUT_ERROR_MSG = "► Your program took too long to run and was terminated after {0} second{1}. Do you have an infinite loop?\n"
 MAX_FEEDBACK_LEN_EXCEEDED_MSG = "Setup Issue: {0} Reduce the number of test cases or amount of data in the test input/output.\n"
 
+SUBPROC_FUNC_INPUT_FILENAME = "subproc-func-input"
+SUBPROC_FUNC_RETURN_FILENAME = "subproc-func-return"
+SUBPROC_FUNC_ARGS_FILENAME = "subproc-func-args"
+
 ####################################################################
 
 def run_function_test(
@@ -100,7 +104,6 @@ def run_function_test(
         input_echoing=True,                                          # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
-        expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
         non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
         non_allowed_methods=DEFAULT_NON_ALLOWED_METHODS,             # Method name strings of any specific methods to disallow
@@ -109,6 +112,7 @@ def run_function_test(
         required_functions=[],                                       # Function name strings of any specific functions to require
         required_methods=[],                                         # Method name strings of any specific methods to require
         required_imports=[],                                         # Imports that must be somewhere in student file or any local imports
+        expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
         files_to_reveal=[],                                          # Filenames in the hidden_file_dict keys to add to the path while this function runs
         hidden_file_dict={},                                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
@@ -133,7 +137,8 @@ def run_function_test(
     test_feedback += FUNCTION_CALLED_MSG.format(f"{function_name}({str(list(function_args))[1:-1]})")
     test_feedback += INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
     
-    ast_violations = run_astcheck_test(
+    # Stops test, before running student code if unallowed features are used.
+    run_astcheck_test(
         student_file_name,
         student_file_path_prefix=student_file_path_prefix,
         non_allowed_nodes=non_allowed_nodes,
@@ -144,18 +149,15 @@ def run_function_test(
         required_functions=required_functions,
         required_methods=required_methods,
         required_imports=required_imports,
-        raise_error=False,
+        feedback_injection=test_feedback
     )
     
     truncation_length = MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(test_feedback)
     std_out_err_truncation_length = truncation_length // 2
     assert std_out_err_truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("run_function_test: std_out_err_truncation_length <= 0")
     
-    raise_astcheck_error(ast_violations, test_feedback, truncation_length)
-    
-    
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
-        encode_obj_data(function_args, "subproc-func-input")
+        encode_obj_data(function_args, SUBPROC_FUNC_INPUT_FILENAME)
         # This is automatically removed after each function run
         with open(RUN_TEST_SUBPROCESS_FILENAME, "w") as fp:
             fp.write(RUN_FUNCTION_TEST_SUBPROCESS_FILE)
@@ -169,8 +171,8 @@ def run_function_test(
             function_timeout_seconds
         )
         
-        student_func_ret, value_returned = load_data_object("subproc-func-return")
-        student_func_args, args_returned = load_data_object("subproc-func-args")
+        student_func_ret, value_returned = load_data_object(SUBPROC_FUNC_RETURN_FILENAME)
+        student_func_args, args_returned = load_data_object(SUBPROC_FUNC_ARGS_FILENAME)
             
         # This must be inside hidden file manager context so expected file checking can use hidden files.
         verify_program_output(
@@ -203,7 +205,6 @@ def run_script_test(
         input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
         expected_stdout="",                                          # Expected value in stdout
         expected_stderr="",                                          # Expected value in stderr
-        expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
         non_allowed_nodes=DEFAULT_NON_ALLOWED_NODES,                 # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see ast library
         non_allowed_functions=DEFAULT_NON_ALLOWED_FUNCTIONS,         # Function names of any specific functions to disallow
         non_allowed_methods=DEFAULT_NON_ALLOWED_METHODS,             # Method name strings of any specific methods to disallow
@@ -212,6 +213,7 @@ def run_script_test(
         required_functions=[],                                       # Function name strings of any specific functions to require
         required_methods=[],                                         # Method name strings of any specific methods to require
         required_imports=[],                                         # Imports that must be somewhere in student file or any local imports
+        expected_files=[],                                           # List of tuples of (student_file, test_file), test_file can come from files_to_reveal
         files_to_reveal=[],                                          # Filenames in the hidden_file_dict keys to add to the path while this function runs
         hidden_file_dict={},                                         # Key: Filename, Value: File Content String | See cache_hidden_test_files function
     ):
@@ -227,12 +229,12 @@ def run_script_test(
     check_arg_type([bool], input_echoing=input_echoing)
     check_arg_type([dict], hidden_file_dict=hidden_file_dict)
     
-
     test_feedback = ""
     test_feedback += INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
     
-    ast_violations = run_astcheck_test(
-        student_file_name,
+    # Stops test, before running student code if unallowed features are used.
+    run_astcheck_test(
+        student_file_name=student_file_name,
         student_file_path_prefix=student_file_path_prefix,
         non_allowed_nodes=non_allowed_nodes,
         non_allowed_functions=non_allowed_functions,
@@ -242,14 +244,13 @@ def run_script_test(
         required_functions=required_functions,
         required_methods=required_methods,
         required_imports=required_imports,
-        raise_error=False,
+        feedback_injection=test_feedback
     )
     
     truncation_length = MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(test_feedback)
+    
     std_out_err_truncation_length = truncation_length // 2
     assert std_out_err_truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("run_script_test: std_out_err_truncation_length <= 0")
-    
-    raise_astcheck_error(ast_violations, test_feedback)
     
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
         # This is automatically removed after each function run
@@ -284,35 +285,45 @@ def run_script_test(
 ####################################################################
 
 def run_pep8_test(
-        student_file_name=None,                                      # File to test function from
+        student_file_name="",                                        # File to test function from
         student_file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,   # File path prefix
         ignored_tests=DEFAULT_PEP8_IGNORED,                          # Names of tests to ignore, see flake8 documentation.
-        raise_error=True,
+        raise_error=True,                                            # Used internally to library not in testbench.
+        truncation_length=None,   # Used internally to library not in testbench.
+        output_truncation_message=OUTPUT_TRUNCATION_MESSAGE,         # Used internally to library not in testbench.
     ):
     '''
     Run PEP8 style checks on the student submission file, and any local imports
     '''
+    if truncation_length is None:
+        truncation_length = MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK
+    
     check_arg_type([str], student_file_name=student_file_name, student_file_path_prefix=student_file_path_prefix, ignored_tests=ignored_tests)
 
     filepath = student_file_path_prefix + student_file_name
     files_to_check = recursive_find_local_import_paths(filepath)
 
     pep8_violations = ""
-    
     for file in files_to_check:
+        if truncation_length - len(pep8_violations) <= 0:
+            break
+        
         command = ['flake8', '--jobs=1', '--ignore='+ignored_tests, file]
         _proc_ret, proc_stdout, _proc_stderr, _timeout_message = subprocess_run_with_truncated_output(
             command, 
             "".encode(), 
-            MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(pep8_violations), 
-            OUTPUT_TRUNCATION_MESSAGE, 
+            truncation_length - len(pep8_violations), 
+            output_truncation_message, 
             1,
         )
          
         pep8_violations += proc_stdout.replace(student_file_path_prefix, '')
+    
+    if pep8_violations != "":
+        pep8_violations = PEP8_ERROR_MSG + pep8_violations
         
-    if raise_error and pep8_violations != "":   
-        assert False, PEP8_ERROR_MSG + pep8_violations
+        if raise_error:
+            assert False, pep8_violations
             
     return pep8_violations
 
@@ -329,7 +340,9 @@ def run_astcheck_test(
         required_functions=[],                                       # Function name strings of any specific functions to require
         required_methods=[],                                         # Method name strings of any specific methods to require
         required_imports=[],                                         # Imports that must be somewhere in student file or any local imports
-        raise_error = True,
+        raise_error = True,                                          # Used only internally to library in other run functions, not in testbench
+        feedback_injection="",                                       # Used only internally to library in other run functions, not in testbench
+        truncation_length=None,                                      # Used only internally to library in other run functions, not in testbench
     ):
     '''
     Run abstract syntax tree checks on the student submission file, and any local imports
@@ -339,6 +352,8 @@ def run_astcheck_test(
     check_arg_type([list, tuple], non_allowed_functions=non_allowed_functions, non_allowed_methods=non_allowed_methods, non_allowed_imports=non_allowed_imports)
     check_arg_type([list, tuple], required_functions=required_functions, required_methods=required_methods, required_imports=required_imports)
     
+    # node checking allows for both passing an input as a list/tuple or nodes, or a dictionary
+    # with node key, and description value. Passing a list uses the node names as the description
     if type(required_nodes) != dict:
         required_nodes = {node : node.__name__ for node in required_nodes}
     
@@ -355,12 +370,13 @@ def run_astcheck_test(
         ast_violations += astcheck_functions(non_allowed_functions, required_functions, tree, student_file)
         ast_violations += astcheck_methods(non_allowed_methods, required_methods, tree, student_file)
         ast_violations += astcheck_imports(non_allowed_imports, required_imports, student_file)
-
+            
     if ast_violations != "":
         ast_violations = AST_VIOLATION_MSG + ast_violations
+        ast_violations = truncate_string(ast_violations, truncation_length, OUTPUT_TRUNCATION_MESSAGE)
+        
         if raise_error:
-            ast_violations = truncate_string(ast_violations, MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK, OUTPUT_TRUNCATION_MESSAGE)
-            assert False, ast_violations
+            assert False, feedback_injection + ast_violations
         
     return ast_violations
 
@@ -461,12 +477,6 @@ def create_ast_object(filename):
 
     return tree
 
-def raise_astcheck_error(ast_violations, test_feedback, truncation_length):
-    assert truncation_length > 0,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("run_function_test: truncation_length <= 0")
-    if ast_violations != "":
-        ast_violations = truncate_string(ast_violations, truncation_length, OUTPUT_TRUNCATION_MESSAGE)
-        assert False, test_feedback + ast_violations
-
 ####################################################################
 
 def verify_program_output(
@@ -492,10 +502,6 @@ def verify_program_output(
     Produce the errors displayed to students when a test fails. When a test function
     raises an exception, it is considered as having failed.
     '''
-    
-    if timeout_message != "":
-        assert False, test_feedback + timeout_message
-        
     truncation_length = int(MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK - len(test_feedback))
     assert truncation_length > 0, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("Given function args / return value too much of the allocated feedback message length.")
     
@@ -503,35 +509,39 @@ def verify_program_output(
     return_truncation_length = truncation_length // 2
     mutation_truncation_length = truncation_length // 2
     
+    # Due to limitations of maximum chars to print to stdout by Ed, the per test case feedback message must be limited length
+    # found using truncation length, only 1 or 2 messages below are shown at a time.
+    # This could be changed to show more of them, with the downside that too much content will be cut off sooner, as more 
+    # test cases are added, which decreases the per test amount of output that can be checked.
+    
+    if timeout_message != "":
+        assert False, test_feedback + timeout_message
+    
     stderr_feedback = verify_expected_stderr(proc_stderr, expected_stderr, std_out_err_truncation_length)
     stdout_feedback = verify_expected_stdout(proc_stdout, expected_stdout, std_out_err_truncation_length)
-   
     if stderr_feedback != "" or stdout_feedback != "":
         assert False, test_feedback + stderr_feedback + stdout_feedback
 
     return_feedback = verify_function_return(value_returned, student_func_ret, expected_func_ret, return_truncation_length)
-    
     if return_feedback != "":
         assert False, test_feedback + return_feedback
         
     check_mutated_feedback = verify_check_mutated_input(function_fail_on_mutated_args, student_function_args, function_args_copy, mutation_truncation_length)
-    
     if check_mutated_feedback != "":
         assert False, test_feedback + check_mutated_feedback
     
     mutated_args_feedback = verify_expected_mutated_args(args_returned, function_check_expected_mutated_args, student_function_args, function_expected_mutated_args, mutation_truncation_length)
-    
     if mutated_args_feedback  != "":
         assert False, test_feedback + mutated_args_feedback 
    
     # Incorrect output file messages
-    expected_file_feedback = verify_expected_files(expected_files, student_file_path_prefix)
+    expected_file_feedback = verify_expected_files(expected_files, student_file_path_prefix, truncation_length)
     if expected_file_feedback != "":
         assert False, test_feedback + expected_file_feedback
 
 ####################################################################
 
-def verify_expected_stderr(proc_stderr, expected_stderr, std_out_err_truncation_length):
+def verify_expected_stderr(proc_stderr, expected_stderr, truncation_length):
     stderr_feedback = ""
      # Incorrect stderr messages
     if proc_stderr != expected_stderr:
@@ -539,14 +549,16 @@ def verify_expected_stderr(proc_stderr, expected_stderr, std_out_err_truncation_
         student_stderr_feedback = WRONG_STDERR_MSG.format(formatted_proc_stderr)
         expected_stderr_feedback = EXPECTED_STDERR_MSG.format(format_test_in_out_data(expected_stderr)) if expected_stderr != "" else ""
         
-        if (len(expected_stderr_feedback) > std_out_err_truncation_length ):
+        # If the expected feedback message is too long, then cannot show a full diff of the expected answer, to the student.
+        # Truncating the student feedback that is longer than this allows for the relevant part to be shown.
+        if (len(expected_stderr_feedback) > truncation_length ):
             assert False,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_stderr_feedback) > truncation_length")
         
-        stderr_feedback += truncate_string(student_stderr_feedback, std_out_err_truncation_length , OUTPUT_TRUNCATION_MESSAGE) + expected_stderr_feedback
+        stderr_feedback += truncate_string(student_stderr_feedback, truncation_length , OUTPUT_TRUNCATION_MESSAGE) + expected_stderr_feedback
         
     return stderr_feedback
         
-def verify_expected_stdout(proc_stdout, expected_stdout, std_out_err_truncation_length):
+def verify_expected_stdout(proc_stdout, expected_stdout, truncation_length):
     stdout_feedback = ""
      # Incorrect stdout messages
     if proc_stdout != expected_stdout: 
@@ -556,14 +568,16 @@ def verify_expected_stdout(proc_stdout, expected_stdout, std_out_err_truncation_
         else:
             student_stdout_feedback = WRONG_STDOUT_MSG.format(format_test_in_out_data(proc_stdout))
         
-        if (len(expected_stdout_feedback) > std_out_err_truncation_length ):
+        # If the expected feedback message is too long, then cannot show a full diff of the expected answer, to the student.
+        # Truncating the student feedback that is longer than this allows for the relevant part to still be shown.
+        if (len(expected_stdout_feedback) > truncation_length ):
             assert False,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_stdout_feedback) > truncation_length")
             
-        stdout_feedback += truncate_string(student_stdout_feedback, std_out_err_truncation_length , OUTPUT_TRUNCATION_MESSAGE) + expected_stdout_feedback
+        stdout_feedback += truncate_string(student_stdout_feedback, truncation_length , OUTPUT_TRUNCATION_MESSAGE) + expected_stdout_feedback
         
     return stdout_feedback
 
-def verify_function_return(value_returned, student_func_ret, expected_func_ret, return_truncation_length):
+def verify_function_return(value_returned, student_func_ret, expected_func_ret, truncation_length):
     return_feedback = ""
     # Incorrect function return messages
     if value_returned != None and student_func_ret != expected_func_ret:
@@ -573,11 +587,13 @@ def verify_function_return(value_returned, student_func_ret, expected_func_ret, 
             student_return_feedback = STUDENT_RETURN_MSG.format(type(student_func_ret).__name__, format_var_as_python_code(student_func_ret))
         else:
             student_return_feedback = ERROR_RETURN_MSG
-   
-        if (len(expected_return_feedback) > return_truncation_length):
+
+        # If the expected feedback message is too long, then cannot show a full diff of the expected answer, to the student.
+        # Truncating the student feedback that is longer than this allows for the relevant part to still be shown.
+        if (len(expected_return_feedback) > truncation_length):
             assert False,  MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_return_feedback) > truncation_length")
 
-        return_feedback += truncate_string(student_return_feedback, return_truncation_length, OUTPUT_TRUNCATION_MESSAGE) + expected_return_feedback
+        return_feedback += truncate_string(student_return_feedback, truncation_length, OUTPUT_TRUNCATION_MESSAGE) + expected_return_feedback
         
     return return_feedback
 
@@ -590,19 +606,22 @@ def verify_check_mutated_input(function_fail_on_mutated_args, student_function_a
         
     return check_mutated_feedback
 
-def verify_expected_mutated_args(args_returned, function_check_expected_mutated_args, student_function_args, function_expected_mutated_args, mutation_truncation_length):
+def verify_expected_mutated_args(args_returned, function_check_expected_mutated_args, student_function_args, function_expected_mutated_args, truncation_length):
     expected_mutated_args_feedback = ""
     # Check for expected mutated arguments
     if args_returned == True and function_check_expected_mutated_args and student_function_args != function_expected_mutated_args:
         student_args_feedback = RECIEVED_ARGS_MSG.format(f"({str(list(student_function_args))[1:-1]})")
         expected_mutated_feedback = EXPECTED_MUTATED_ARGS_MSG.format(f"({str(list(function_expected_mutated_args))[1:-1]})")
-        if (len(expected_mutated_feedback) > mutation_truncation_length):
+        
+        # If the expected feedback message is too long, then cannot show a full diff of the expected answer, to the student.
+        # Truncating the student feedback that is longer than this allows for the relevant part to still be shown.
+        if (len(expected_mutated_feedback) > truncation_length):
             assert False, MAX_FEEDBACK_LEN_EXCEEDED_MSG.format("len(expected_mutated_feedback) > truncation_length")
         
-        expected_mutated_args_feedback += truncate_string(student_args_feedback, mutation_truncation_length, OUTPUT_TRUNCATION_MESSAGE) + expected_mutated_feedback
+        expected_mutated_args_feedback += truncate_string(student_args_feedback, truncation_length, OUTPUT_TRUNCATION_MESSAGE) + expected_mutated_feedback
 
-    return expected_mutated_feedback
-    
+    return expected_mutated_args_feedback
+
 def verify_expected_files(expected_files, student_file_path_prefix, truncation_length):
     expected_file_feedback = ""
     if (len(expected_files) > 0):
@@ -724,7 +743,7 @@ def truncate_string(string, truncation_length, truncation_message):
         return string[:truncation_length] + truncation_message
     return string
             
-def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message, timeout_seconds):
+def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message, timeout_seconds=1):
     '''
     subprocess.run() cannot limit the amount of input received from stdout and stederr. Given the memory and disk constraints
     on Ed, instead of trying to reliably control reading system calls, instead read stdout/stderr to a file until
@@ -964,9 +983,9 @@ def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True)
             testcase["passed"] = False
             
         if setup_mode:
-            testcase["feedback"] = "Setup Issue: Disable SETUP_MODE\n" + str(e)
+            testcase["feedback"] = "Setup Issue: Disable SETUP_MODE\n"
             testcase["passed"] = False
-            
+        
         testcase_output.append(testcase)
         
     if show_all_passed_tests_first:
@@ -1023,7 +1042,14 @@ except Exception:
     exit(traceback.format_exc(limit=-1)) 
 '''
 
-RUN_FUNCTION_TEST_SUBPROCESS_FILE = INPUT_WITH_ECHOING_FUNCTION + \
+SUBPROC_FILENAMES = \
+r'''
+SUBPROC_FUNC_INPUT_FILENAME = {0}
+SUBPROC_FUNC_RETURN_FILENAME = {1}
+SUBPROC_FUNC_ARGS_FILENAME = {2}
+'''.format(SUBPROC_FUNC_INPUT_FILENAME, SUBPROC_FUNC_RETURN_FILENAME, SUBPROC_FUNC_ARGS_FILENAME)
+
+RUN_FUNCTION_TEST_SUBPROCESS_FILE = INPUT_WITH_ECHOING_FUNCTION + SUBPROC_FILENAMES + \
 r'''
 import sys
 import pickle
@@ -1046,8 +1072,8 @@ def decode_obj_data(filename):
     with open(filename,"rb") as f:
         return pickle.load(f)
 
-FUNCTION_INPUT = decode_obj_data("subproc-func-input")
-os.remove("subproc-func-input")
+FUNCTION_INPUT = decode_obj_data(SUBPROC_FUNC_INPUT_FILENAME)
+os.remove(SUBPROC_FUNC_INPUT_FILENAME)
 
 # Try import function from student code
 # Run the function and check for timeout and mutating input 
@@ -1063,8 +1089,8 @@ try:
 
     student_function = getattr(student_module, FUNCTION_NAME)
     got = student_function(*FUNCTION_INPUT)
-    encode_obj_data(got, "subproc-func-return")
-    encode_obj_data(FUNCTION_INPUT, "subproc-func-args")
+    encode_obj_data(got, SUBPROC_FUNC_RETURN_FILENAME)
+    encode_obj_data(FUNCTION_INPUT, SUBPROC_FUNC_ARGS_FILENAME)
     
 except Exception:
     # Print the exception excluding information about this file path
