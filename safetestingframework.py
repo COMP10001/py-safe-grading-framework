@@ -90,7 +90,12 @@ SUBPROC_FUNC_INPUT_FILENAME = "subproc-func-input"
 SUBPROC_FUNC_RETURN_FILENAME = "subproc-func-return"
 SUBPROC_FUNC_ARGS_FILENAME = "subproc-func-args"
 
-MAX_SUBPROCESS_STDOUT_CHARS = 20000
+VISIBLE_TEST_REPORT_FILENAME = "visible_test_report.txt"
+PRIVATE_TEST_REPORT_FILENAME = "private_test_report.txt"
+VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "visible_test_execution_transcript.txt"
+PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "private_test_execution_transcript.txt"
+
+MAX_SUBPROCESS_STDOUT_CHARS = 10000
 DEFAULT_PEP8_TRUNCATION_LENGTH = 1000
 DEFAULT_AST_TRUNCATION_LENGTH = 1000
 
@@ -134,25 +139,18 @@ class TestData:
         def __init__(self):
             self.pep8 = ""
             self.astcheck = ""
-            
             self.function_call = ""
             self.input = ""
             self.timeout = ""
-            
             self.student_stderr = ""
             self.expected_stderr = ""
-            
             self.student_stdout = ""
             self.expected_stdout = ""
-            
             self.student_return = ""
             self.expected_return = ""
-            
             self.mutation_check = ""
-            
             self.student_mutated = ""
             self.expected_mutated = ""
-            
             self.expected_file = ""
             
 def run_function_test(
@@ -210,7 +208,7 @@ def run_function_test(
     test_data.function_fail_on_mutated_args = function_fail_on_mutated_args
     test_data.function_check_expected_mutated_args = function_check_expected_mutated_args
     
-    test_data.msg.function_call = FUNCTION_CALLED_MSG.format(f"{function_name}({str(list(function_args))[1:-1]})")
+    test_data.msg.function_call = FUNCTION_CALLED_MSG.format(f"{function_name}{format_as_func_arg_string(function_args)}")
     test_data.msg.input = INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
 
     test_data.astcheck_msg = run_astcheck_test(
@@ -394,7 +392,7 @@ def run_astcheck_test(
         required_functions=[],                                       # Function name strings of any specific functions to require
         required_methods=[],                                         # Method name strings of any specific methods to require
         required_imports=[],                                         # Imports that must be somewhere in student file or any local imports
-        truncation_length=DEFAULT_AST_TRUNCATION_LENGTH,            # Used only internally to library in other run functions, not in testbench
+        truncation_length=DEFAULT_AST_TRUNCATION_LENGTH,             # Used only internally to library in other run functions, not in testbench
     ) -> TestData:
     '''
     Run abstract syntax tree checks on the student submission file, and any local imports
@@ -602,7 +600,6 @@ def verify_expected_stdout(test_data: TestData):
 def verify_function_return(test_data: TestData):
     # Incorrect function return messages
     if test_data.test_type == TestData.TEST_FUNCTION: 
-        
         if hasattr(test_data.student, "returned"):
             if test_data.student.returned != test_data.expected.returned:
                 test_data.msg.student_return = STUDENT_RETURN_MSG \
@@ -610,7 +607,15 @@ def verify_function_return(test_data: TestData):
                         type(test_data.student.returned).__name__, 
                         format_var_as_python_code(test_data.student.returned)
                     )
+                test_data.msg.expected_return = EXPECTED_RETURN_MSG \
+                    .format(
+                        type(test_data.expected.returned).__name__, 
+                        format_var_as_python_code(test_data.expected.returned)
+                )
         elif test_data.expected.stderr != test_data.student.stderr:
+            # If there is an expected stderr *WHEN* the function does not return
+            # that means it was the student code that triggered it, and it was not
+            # the subprocess code running file.
             test_data.msg.student_return = ERROR_RETURN_MSG
             test_data.msg.expected_return = EXPECTED_RETURN_MSG \
                 .format(
@@ -1054,46 +1059,10 @@ def create_ed_test_json_obj(test_data_list: list[TestData], test_json_list: list
     levels_to_reduce = 0
     
     while True:
-        with open(file_path_prefix + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w", encoding="utf-8") as visible_fp:
-            with open(file_path_prefix + PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w", encoding="utf-8") as private_fp:
-                for test_data, test_json in zip(test_data_list, test_json_list):
-                    if test_data is not None:
-                        test_json["feedback"] = generate_feedback_level(test_data, levels_to_reduce)
-                        if levels_to_reduce == 0:
-                            if isinstance(test_data, TestData):
-                                test_visibility = "Visible"
-                                if test_json["hidden"]:
-                                    test_visibility = "Hidden"
-                                elif test_json["private"]:
-                                    test_visibility = "Private"
-                                
-                                if test_json["hidden"] or test_json["private"]:
-                                    fp = private_fp
-                                else:
-                                    fp = visible_fp
-                                    
-                                if test_data.test_type == TestData.TEST_FUNCTION or test_data.test_type == TestData.TEST_SCRIPT:
-                                    fp.write("="*100+'\n')
-                                    fp.write(f"{test_visibility} <{test_data.test_type}> '{test_json["name"]}':\n")
-                                    fp.write("="*100+'\n')
-                                    fp.write(test_data.msg.pep8)
-                                    fp.write(test_data.msg.astcheck)
-                                    fp.write(test_data.msg.function_call)
-                                    fp.write(test_data.msg.input)
-                                    fp.write(test_data.msg.timeout)
-                                    fp.write(test_data.msg.student_stderr)
-                                    fp.write(test_data.msg.expected_stderr)
-                                    fp.write(test_data.msg.student_stdout)
-                                    fp.write(test_data.msg.expected_stdout)
-                                    fp.write(test_data.msg.student_return)
-                                    fp.write(test_data.msg.expected_return)
-                                    fp.write(test_data.msg.mutation_check)
-                                    fp.write(test_data.msg.student_mutated)
-                                    fp.write(test_data.msg.expected_mutated)
-                                    fp.write(test_data.msg.expected_file)
+        for test_data, test_json in zip(test_data_list, test_json_list):
+            if test_data is not None:
+                test_json["feedback"] = generate_feedback_level(test_data, levels_to_reduce)
                                         
-                    
-            
         if len(json.dumps(grader_output)) < EDSTEM_MAX_GRADER_OUTPUT_CHARS:
             return grader_output
         
@@ -1110,60 +1079,87 @@ def show_output_files(test_data: TestData):
             output_files.append({"path": expected_file_path, "title": "", "required": False})
     return output_files
 
-VISIBLE_TEST_REPORT_FILENAME = "visible_test_report.txt"
-PRIVATE_TEST_REPORT_FILENAME = "private_test_report.txt"
-VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "visible_test_execution_transcript.txt"
-PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "private_test_execution_transcript.txt"
-
 def create_test_reports(test_data_list: list[TestData], test_json_list: list[dict], file_path_prefix: str):
-    INDENT_NUM = 0
-    INDENT_CTRL = "\n" + INDENT_NUM * " "
-    SECTION_INDENT = INDENT_NUM * " " + ">"
-    with open(file_path_prefix + VISIBLE_TEST_REPORT_FILENAME, "w", encoding="utf-8") as visible_fp:
-        with open(file_path_prefix + PRIVATE_TEST_REPORT_FILENAME, "w", encoding="utf-8") as private_fp:
-            for test_data, test_json in zip(test_data_list, test_json_list):
-                if isinstance(test_data, TestData):
-                    test_visibility = "Visible"
-                    if test_json["hidden"]:
-                        test_visibility = "Hidden"
-                    elif test_json["private"]:
-                        test_visibility = "Private"
-                    
-                    if test_json["hidden"] or test_json["private"]:
-                        fp = private_fp
-                    else:
-                        fp = visible_fp
-                        
-                    if test_data.test_type == TestData.TEST_FUNCTION or test_data.test_type == TestData.TEST_SCRIPT:
-                        fp.write("="*100+'\n')
-                        fp.write(f"{test_visibility} <{test_data.test_type}> '{test_json["name"]}':\n")
-                        fp.write("="*100+'\n')
-                        fp.write(test_data.msg.function_call.replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
-                        fp.write(test_data.msg.input.replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
-                        
-                        if hasattr(test_data.expected, "stderr"):
-                            fp.write(EXPECTED_STDERR_MSG.format(format_test_in_out_data(test_data.expected.stderr)).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
-                            
-                        if hasattr(test_data.expected, "stdout"):
-                            fp.write(EXPECTED_STDOUT_MSG.format(format_test_in_out_data(test_data.expected.stdout)).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
-                            
-                        if test_data.test_type == TestData.TEST_FUNCTION:
-                            if hasattr(test_data.expected, "returned"):
-                                fp.write(EXPECTED_RETURN_MSG.format(
-                                        type(test_data.expected.returned).__name__, 
-                                        format_var_as_python_code(test_data.expected.returned)
-                                ).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
-                                
-                            if test_data.function_fail_on_mutated_args:
-                                fp.write(FAIL_ON_MUTATION_MSG.replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
-                                
-                            if hasattr(test_data.expected, "mutated_args") and test_data.function_check_expected_mutated_args:
-                                fp.write(EXPECTED_MUTATED_ARGS_MSG.format(format_as_func_arg_string(test_data.expected.mutated_args)))
-                            
-                            if hasattr(test_data.expected, "filenames"): 
-                                fp.write(EXPECTED_FILES_MSG.format("".join(str(tup) for tup in test_data.expected.filenames)).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
-
+    ''' This function was just put together quickly, needs to be cleaned up... '''
+    SECTION_INDENT = ">"
+    
+    visible_report_fp = open(file_path_prefix + VISIBLE_TEST_REPORT_FILENAME, "w")
+    private_report_fp = open(file_path_prefix + PRIVATE_TEST_REPORT_FILENAME, "w")
+    visible_transcript_fp = open(file_path_prefix + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w")
+    private_transcript_fp = open(file_path_prefix + PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w")
+    
+    for test_data, test_json in zip(test_data_list, test_json_list):
+        if isinstance(test_data, TestData):
+            test_visibility = "Visible"
+            transcript_fp = visible_transcript_fp
+            report_fp = visible_report_fp
+            pass_or_fail = "FAILED"
+                
+            if test_json["hidden"]:
+                test_visibility = "Hidden"
+            elif test_json["private"]:
+                test_visibility = "Private"
+                
+            if test_json["passed"]:
+                pass_or_fail = "PASSED"
             
+            if test_json["hidden"] or test_json["private"]:
+                transcript_fp = private_transcript_fp
+                report_fp =   private_report_fp
+
+                  
+            if test_data.test_type == TestData.TEST_FUNCTION or test_data.test_type == TestData.TEST_SCRIPT:
+                transcript_fp.write("="*100+'\n')
+                transcript_fp.write(f"{pass_or_fail} {test_visibility} <{test_data.test_type}> '{test_json["name"]}':\n")
+                transcript_fp.write("="*100+'\n')
+                transcript_fp.write(test_data.msg.pep8)
+                transcript_fp.write(test_data.msg.astcheck)
+                transcript_fp.write(test_data.msg.function_call)
+                transcript_fp.write(test_data.msg.input)
+                transcript_fp.write(test_data.msg.timeout)
+                transcript_fp.write(test_data.msg.student_stderr)
+                transcript_fp.write(test_data.msg.expected_stderr)
+                transcript_fp.write(test_data.msg.student_stdout)
+                transcript_fp.write(test_data.msg.expected_stdout)
+                transcript_fp.write(test_data.msg.student_return)
+                transcript_fp.write(test_data.msg.expected_return)
+                transcript_fp.write(test_data.msg.mutation_check)
+                transcript_fp.write(test_data.msg.student_mutated)
+                transcript_fp.write(test_data.msg.expected_mutated)
+                transcript_fp.write(test_data.msg.expected_file)
+                
+                report_fp.write("="*100+'\n')
+                report_fp.write(f"{test_visibility} <{test_data.test_type}> '{test_json["name"]}':\n")
+                report_fp.write("="*100+'\n')
+                report_fp.write(test_data.msg.function_call.replace("►", SECTION_INDENT))
+                report_fp.write(test_data.msg.input.replace("►", SECTION_INDENT))
+                
+                if hasattr(test_data.expected, "stderr"):
+                    report_fp.write(EXPECTED_STDERR_MSG.format(format_test_in_out_data(test_data.expected.stderr)).replace("►", SECTION_INDENT))
+                    
+                if hasattr(test_data.expected, "stdout"):
+                    report_fp.write(EXPECTED_STDOUT_MSG.format(format_test_in_out_data(test_data.expected.stdout)).replace("►", SECTION_INDENT))
+                    
+                if test_data.test_type == TestData.TEST_FUNCTION:
+                    if hasattr(test_data.expected, "returned"):
+                        report_fp.write(EXPECTED_RETURN_MSG.format(
+                                type(test_data.expected.returned).__name__, 
+                                format_var_as_python_code(test_data.expected.returned)
+                        ).replace("►", SECTION_INDENT))
+                        
+                    if test_data.function_fail_on_mutated_args:
+                        report_fp.write(FAIL_ON_MUTATION_MSG.replace("►", SECTION_INDENT))
+                        
+                    if hasattr(test_data.expected, "mutated_args") and test_data.function_check_expected_mutated_args:
+                        report_fp.write(EXPECTED_MUTATED_ARGS_MSG.format(format_as_func_arg_string(test_data.expected.mutated_args)))
+                    
+                    if hasattr(test_data.expected, "filenames"): 
+                        report_fp.write(EXPECTED_FILES_MSG.format("".join(str(tup) for tup in test_data.expected.filenames)).replace("►", SECTION_INDENT))
+
+    visible_report_fp.close()
+    visible_transcript_fp.close()
+    private_report_fp.close()
+    private_transcript_fp.close()
         
         
 def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True, file_path_prefix = DEFAULT_STUDENT_FILE_PATH_PREFIX):
@@ -1198,10 +1194,6 @@ def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True,
 
                 if output_files != []:
                     testcase_dict["output_files"] = output_files
-                
-                # Free up space
-                # del test_data.student
-                # del test_data.expected
                 
                 test_data_list.append(test_data)
                 testcase_dict["passed"] = test_data.success
@@ -1240,6 +1232,13 @@ def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True,
     ]
     
     create_test_reports(test_data_list, test_json_list, file_path_prefix)
+    
+    for test in test_list:
+         if isinstance(test_data, TestData):
+             # Free up space
+            del test_data.student
+            del test_data.expected
+                
     
     print(json.dumps(ed_test_case_json))
 
