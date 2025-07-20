@@ -50,7 +50,7 @@ FORMAT_TEST_IN_OUT_DATA_AS_STRING = False
 FUNCTION_CALLED_MSG = "► Called: {0}\n"
 INPUT_FEEDBACK_MSG = "► Input:\n{0}\n"
 
-EXPECTED_RETURN_MSG = "► Expected <{0}>:\n{1}\n"
+EXPECTED_RETURN_MSG = "► Expected Return <{0}>:\n{1}\n"
 STUDENT_RETURN_MSG = "► Returned <{0}>:\n{1}\n"
 
 ERROR_RETURN_MSG = "► No value was returned due to errors\n"
@@ -59,7 +59,7 @@ EXPECTED_STDERR_MSG = "► The expected stderr output is:\n{0}\n"
 
 UNEXPECTED_STDOUT_MSG = "► Your program printed the following output when no printing was expected:\n{0}\n"
 WRONG_STDOUT_MSG = "► Your program printed the following output:\n{0}\n"
-EXPECTED_STDOUT_MSG = "► The expected printed output is:\n{0}"
+EXPECTED_STDOUT_MSG = "► The expected printed output is:\n{0}\n"
 
 PEP8_ERROR_MSG = "► The following style errors were found:\n"
 AST_VIOLATION_MSG = "► The following AST violations were found:\n"
@@ -81,6 +81,8 @@ FAIL_ON_MUTATION_MSG = "► Your code should not mutate the function input!\n"
 RECIEVED_ARGS_MSG = "► Input Arguments after mutation:\n{0}\n"
 EXPECTED_MUTATED_ARGS_MSG = "► Expected Mutated Input Arguments:\n{0}\n"
 
+EXPECTED_FILES_MSG = "► Expected Files:\n{}\n"
+
 TIMEOUT_ERROR_MSG = "► Your program took too long to run and was terminated after {0} second{1}. Do you have an infinite loop?\n"
 MAX_FEEDBACK_LEN_EXCEEDED_MSG = "Setup Issue: {0} Reduce the number of test cases or amount of data in the test input/output.\n"
 
@@ -95,14 +97,14 @@ DEFAULT_AST_TRUNCATION_LENGTH = 1000
 ####################################################################
 
 class TestData:
-    TEST_FUNCTION = "function"
-    TEST_SCRIPT = "script"
-    TEST_AST = "ast"
-    TEST_PEP8 = "pep8"
+    TEST_FUNCTION = "function-test"
+    TEST_SCRIPT = "script-test"
+    TEST_AST = "ast-test"
+    TEST_PEP8 = "pep8-test"
     
     def __init__(self, test_type):
         self.test_type = test_type
-        self.success = False
+        self.success: bool
         self.student_file_path_prefix: str
         self.function_check_expected_mutated_args: bool
         self.function_fail_on_mutated_args: bool
@@ -197,15 +199,16 @@ def run_function_test(
         function_check_expected_mutated_args = False
     
     test_data = TestData(TestData.TEST_FUNCTION)
-    test_data.success = False
+    test_data.success = True
     test_data.student_file_path_prefix = student_file_path_prefix
     test_data.expected.stdout = expected_stdout
     test_data.expected.stderr = expected_stderr
-    test_data.expected.files = expected_files
+    test_data.expected.filenames = expected_files
     test_data.expected.returned = function_expected
     test_data.expected.original_args = function_args
     test_data.expected.mutated_args = function_expected_mutated_args
     test_data.function_fail_on_mutated_args = function_fail_on_mutated_args
+    test_data.function_check_expected_mutated_args = function_check_expected_mutated_args
     
     test_data.msg.function_call = FUNCTION_CALLED_MSG.format(f"{function_name}({str(list(function_args))[1:-1]})")
     test_data.msg.input = INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
@@ -225,6 +228,7 @@ def run_function_test(
     
     # Stops test, before running student code if unallowed features are used.
     if test_data.msg.astcheck:
+        test_data.success = False
         return test_data
     
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
@@ -232,7 +236,7 @@ def run_function_test(
         # This is automatically removed after each function run
         file_path_to_run = student_file_path_prefix + RUN_TEST_SUBPROCESS_FILENAME
         with open(file_path_to_run, "w") as fp:
-            fp.write(RUN_SCRIPT_TEST_SUBPROCESS_FILE)
+            fp.write(RUN_FUNCTION_TEST_SUBPROCESS_FILE)
             
         command = ["python", file_path_to_run, student_file_name, function_name, str(int(input_echoing))]
         
@@ -245,12 +249,12 @@ def run_function_test(
             function_timeout_seconds
         )
         
-        load_data_object_from_file(test_data, "student.returned", SUBPROC_FUNC_RETURN_FILENAME)
-        load_data_object_from_file(test_data, "student.final_args", SUBPROC_FUNC_ARGS_FILENAME)
+        load_data_object_from_file(test_data.student, "returned", SUBPROC_FUNC_RETURN_FILENAME)
+        load_data_object_from_file(test_data.student, "final_args", SUBPROC_FUNC_ARGS_FILENAME)
         
         # This must be inside hidden file manager context so expected file checking can use hidden files.
         verify_program_output(test_data)
-        
+    
     return test_data
 
 ####################################################################
@@ -288,14 +292,15 @@ def run_script_test(
     check_arg_type([dict], hidden_file_dict=hidden_file_dict)
     
     test_data = TestData(TestData.TEST_SCRIPT)
+    test_data.success = True
     test_data.student_file_path_prefix = student_file_path_prefix
-    test_data.expected_stdout = expected_stdout
-    test_data.expected_stderr = expected_stderr
-    test_data.expected_files = expected_files
+    test_data.expected.stdout = expected_stdout
+    test_data.expected.stderr = expected_stderr
+    test_data.expected.filenames = expected_files
   
     test_data.msg.input = INPUT_FEEDBACK_MSG.format(format_test_in_out_data(input_data)) if input_data != "" else ""
     
-    test_data.msg.astcheck = run_astcheck_test(
+    astcheck_test_data = run_astcheck_test(
         student_file_name=student_file_name,
         student_file_path_prefix=student_file_path_prefix,
         non_allowed_nodes=non_allowed_nodes,
@@ -309,8 +314,9 @@ def run_script_test(
     )
     
     # Stops test, before running student code if unallowed features are used.
-    if test_data.msg.astcheck:
+    if astcheck_test_data.msg.astcheck:
         test_data.success = False
+        test_data.msg.astcheck = astcheck_test_data.msg.astcheck
         return test_data
     
     with HiddenFileManager(hidden_file_dict, files_to_reveal):
@@ -332,7 +338,7 @@ def run_script_test(
         
         # This must be inside hidden file manager context so expected file checking can use hidden files.
         verify_program_output(test_data)
-        
+
     return test_data
 
 ####################################################################
@@ -349,6 +355,8 @@ def run_pep8_test(
     check_arg_type([str], student_file_name=student_file_name, student_file_path_prefix=student_file_path_prefix, ignored_tests=ignored_tests)
 
     test_data = TestData(TestData.TEST_PEP8)
+    test_data.success = True
+    test_data.student_file_path_prefix = student_file_path_prefix
     
     filepath = student_file_path_prefix + student_file_name
     files_to_check = recursive_find_local_import_paths(filepath)
@@ -370,8 +378,6 @@ def run_pep8_test(
     
     if pep8_violations != "":
         test_data.msg.pep8 = PEP8_ERROR_MSG + pep8_violations
-    else:
-        test_data.success = True
             
     return test_data
 
@@ -400,6 +406,8 @@ def run_astcheck_test(
     check_arg_type([list, tuple], required_functions=required_functions, required_methods=required_methods, required_imports=required_imports)
     
     test_data = TestData(TestData.TEST_AST)
+    test_data.success = True
+    test_data.student_file_path_prefix = student_file_path_prefix
     
     # node checking allows for both passing an input as a list/tuple or nodes, or a dictionary
     # with node key, and description value. Passing a list uses the node names as the description
@@ -414,7 +422,16 @@ def run_astcheck_test(
  
     ast_violations = ""
     for student_file in files_to_check:
-        astchecker = AstChecker(student_file)
+        tree, ast_exception = create_ast_object(filepath)
+        if tree is None:
+            ast_violations += ast_exception
+            continue
+        
+        astchecker = AstChecker(student_file, tree)
+        
+        if astchecker.tree is None:
+            ast_violations += astchecker.ast_exception
+            break
 
         ast_violations += astchecker.astcheck_nodes(non_allowed_nodes, required_nodes)
         ast_violations += astchecker.astcheck_functions(non_allowed_functions, required_functions)
@@ -424,31 +441,32 @@ def run_astcheck_test(
     if ast_violations != "":
         ast_violations = AST_VIOLATION_MSG + ast_violations
         test_data.msg.astcheck = truncate_string(ast_violations, truncation_length, OUTPUT_TRUNCATION_MESSAGE)
-    else:
-        test_data.success = True
 
     return test_data
 
 ####################################################################
 
-class AstChecker():
-    def __init__(self, file):
-        self.file = file
-        self.tree = self.create_ast_object()
+def create_ast_object(file):
+    with open(file) as f:
+        source = f.read()
+        
+    tree = None
+    ast_exception = None
+    try:
+        tree = ast.parse(source, file)
+    except Exception:
+        ast_exception = traceback.format_exc()
+            
+    return tree, ast_exception
     
-    def create_ast_object(self):
-        with open(self.file) as f:
-            source = f.read()
-        try:
-            tree = ast.parse(source, self.file)
-        except:
-            assert False, traceback.format_exc(limit=-1)
-
-        return tree
+class AstChecker():
+    def __init__(self, file, tree):
+        self.file = file
+        self.ast_exception = None
+        self.tree = tree
         
     def find_imports(self):
         ''' Generate a list of import names from a given file '''
-        
         visitor = self.NodeTypeVisitor((ast.Import, ast.ImportFrom), self.tree)
         imports = []
         for node in visitor.nodes:
@@ -515,13 +533,13 @@ class AstChecker():
         ast_violations = ""
         
         # Non allowed imports
-        student_imports = self.find_imports(self.file)
+        student_imports = self.find_imports()
         for lib in student_imports:
             if lib in non_allowed_imports:
                 ast_violations += NON_ALLOWED_IMPORT_MSG.format(lib, self.file)
 
         # Required imports
-        student_imports = self.find_imports(self.file)
+        student_imports = self.find_imports()
         for lib in required_imports:
             if lib not in student_imports:
                 ast_violations += REQUIRED_IMPORT_MSG.format(lib)
@@ -541,106 +559,104 @@ class AstChecker():
 
 ####################################################################
 
-def verify_program_output(test_data ):
+def verify_program_output(test_data: TestData):
     ''' 
     Produce the errors displayed to students when a test fails. 
     '''
     if test_data.msg.timeout:
-        return test_data
+        test_data.success = False
     
     verify_expected_stderr(test_data)
-    verify_expected_stderr(test_data)
+    verify_expected_stdout(test_data)
     verify_function_return(test_data)
     verify_check_mutated_input(test_data)
     verify_expected_mutated_args(test_data)
     verify_expected_files(test_data)
-
+    
 ####################################################################
 
 def verify_expected_stderr(test_data: TestData):
      # Incorrect stderr messages
     if test_data.student.stderr != test_data.expected.stderr:
         if test_data.expected.stderr == "":
-            formatted_proc_stderr = test_data.proc_stderr  
+            formatted_proc_stderr = test_data.student.stderr  
         else: 
-            formatted_proc_stderr = format_test_in_out_data(test_data.proc.stderr)
+            formatted_proc_stderr = format_test_in_out_data(test_data.student.stderr)
         
-        test_data.msg.student.stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
-        test_data.msg.expected.stderr = EXPECTED_STDERR_MSG \
+        test_data.msg.student_stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
+        test_data.msg.expected_stderr = EXPECTED_STDERR_MSG \
             .format(format_test_in_out_data(test_data.expected.stderr)) if test_data.expected.stderr != "" else ""
-        
         test_data.success = False
 
-   
 def verify_expected_stdout(test_data: TestData):
      # Incorrect stdout messages
-    if test_data.proc_stdout != test_data.expected_stdout: 
-        if test_data.expected_stdout != "":
-            test_data.msg.student_stdout = WRONG_STDOUT_MSG.format(format_test_in_out_data(test_data.proc_stdout))
-            test_data.msg.expected_stdout = EXPECTED_STDOUT_MSG.format(format_test_in_out_data(test_data.expected_stdout))
+    if test_data.student.stdout != test_data.expected.stdout: 
+        if test_data.expected.stdout != "":
+            test_data.msg.student_stdout = WRONG_STDOUT_MSG.format(format_test_in_out_data(test_data.student.stdout))
+            test_data.msg.expected_stdout = EXPECTED_STDOUT_MSG.format(format_test_in_out_data(test_data.expected.stdout))
         else:
-            test_data.msg.student_stdout = UNEXPECTED_STDOUT_MSG.format(format_test_in_out_data(test_data.proc_stdout))
+            test_data.msg.student_stdout = UNEXPECTED_STDOUT_MSG.format(format_test_in_out_data(test_data.student.stdout))
             test_data.msg.expected_stdout = ""
-        
-        test_data.success = False
-
+        test_data.success = False    
 
 def verify_function_return(test_data: TestData):
     # Incorrect function return messages
-    if hasattr(test_data, "student.returned") and test_data.student.returned != test_data.expected.returned:
+    if test_data.test_type == TestData.TEST_FUNCTION: 
         
-        if test_data.student.func_succeeded:
-            test_data.msg.student_return = STUDENT_RETURN_MSG \
-                .format(
-                    type(test_data.student_func_ret ).__name__, 
-                    format_var_as_python_code(test_data.student_func_ret )
-                )
-        else:
+        if hasattr(test_data.student, "returned"):
+            if test_data.student.returned != test_data.expected.returned:
+                test_data.msg.student_return = STUDENT_RETURN_MSG \
+                    .format(
+                        type(test_data.student.returned).__name__, 
+                        format_var_as_python_code(test_data.student.returned)
+                    )
+        elif test_data.expected.stderr != test_data.student.stderr:
             test_data.msg.student_return = ERROR_RETURN_MSG
-        
-        test_data.msg.expected_return = EXPECTED_RETURN_MSG \
-            .format(
-                type(test_data.expected_func_ret).__name__, 
-                format_var_as_python_code(test_data.expected_func_ret)
+            test_data.msg.expected_return = EXPECTED_RETURN_MSG \
+                .format(
+                    type(test_data.expected.returned).__name__, 
+                    format_var_as_python_code(test_data.expected.returned)
             )
-            
+                
+    if test_data.msg.student_return or test_data.msg.expected_return:
         test_data.success = False
-
+                
 def verify_check_mutated_input(test_data: TestData):
     # Check for mutated input
-    if test_data.function_fail_on_mutated_args and test_data.student.final_args != test_data.expected.original_args:
-        test_data.msg.mutation_check = FAIL_ON_MUTATION_MSG + RECIEVED_ARGS_MSG.format(format_as_func_arg_string(test_data.student_func_args))
+    if test_data.test_type == TestData.TEST_FUNCTION and test_data.function_fail_on_mutated_args and test_data.student.final_args != test_data.expected.original_args:
+        test_data.msg.mutation_check = FAIL_ON_MUTATION_MSG + RECIEVED_ARGS_MSG.format(format_as_func_arg_string(test_data.student.final_args))
         test_data.success = False
-
-
+        
 def verify_expected_mutated_args(test_data: TestData):
     # Check for expected mutated arguments
-    if test_data.function_check_expected_mutated_args and test_data.student.final_args != test_data.expected.mutated_args:
+    if test_data.test_type == TestData.TEST_FUNCTION and test_data.function_check_expected_mutated_args and test_data.student.final_args != test_data.expected.mutated_args:
         test_data.msg.student_mutated = RECIEVED_ARGS_MSG.format(format_as_func_arg_string(test_data.student.final_args))
         test_data.msg.expected_mutated = EXPECTED_MUTATED_ARGS_MSG.format(format_as_func_arg_string(test_data.expected.mutated_args))
         test_data.success = False
 
+def check_files_equal(student_file_path, expected_file_path):
+    expected_file_feedback = ""
+    if not os.path.isfile(student_file_path):
+        expected_file_feedback += f"{student_file_path} does not exist!\n"
+    elif not os.path.isfile(expected_file_path):
+        expected_file_feedback += f"{expected_file_path} does not exist!\n"
+    elif not filecmp.cmp(student_file_path, expected_file_path, shallow=False):
+        expected_file_feedback += f"{student_file_path} and {expected_file_path} are not equal.\n"
+    return expected_file_feedback
 
 def verify_expected_files(test_data: TestData):
     expected_file_feedback = ""
     if (len(test_data.expected.filenames) > 0):
         for student_file, expected_file in test_data.expected.filenames:
-            expected_file_path = test_data.student_file_path_prefix + expected_file
             student_file_path = test_data.student_file_path_prefix + student_file
+            expected_file_path = test_data.student_file_path_prefix + expected_file
+            expected_file_feedback += check_files_equal(student_file_path, expected_file_path)
             
-            if not os.path.isfile(student_file_path):
-                expected_file_feedback +=  f"{student_file_path} does not exist!\n"
-            elif not os.path.isfile(expected_file_path):
-                expected_file_feedback += f"{expected_file_path} does not exist!\n"
-            elif not filecmp.cmp(student_file_path, expected_file_path, shallow=False):
-                expected_file_feedback += f"{student_file_path} and {expected_file_path} are not equal.\n"
-                
     if expected_file_feedback:
         test_data.success = False
         
     test_data.msg.expected_file = expected_file_feedback
 
-        
 ####################################################################
 # In order for safety checks to work properly all local imports from the 
 # file being tested must be found and checked accordingly for non allowed
@@ -653,9 +669,13 @@ def find_local_import_paths(filepath):
     if (len(file_path_components) > 1):
         path_prefix = file_path_components[0] + "/"
     
-    astchecker = AstChecker(filepath)
-    imports = astchecker.find_imports()
     local_import_paths = []
+    tree, ast_exception = create_ast_object(filepath)
+    if tree is None:
+        return local_import_paths
+    
+    astchecker = AstChecker(filepath, tree)
+    imports = astchecker.find_imports()
     for imported in imports:
         path = imported.split('.')
         path = path_prefix + "/".join(path) + ".py"
@@ -741,8 +761,6 @@ def truncate_string(string, truncation_length, truncation_message, from_start=Fa
         return string[:truncation_length] + truncation_message
     return string
 
-
-
 # class MaxFileSizeManager:
 #     ''' 
 #     Automatically truncate the file in this context if it is oversized on exit
@@ -768,9 +786,7 @@ def truncate_string(string, truncation_length, truncation_message, from_start=Fa
 #             # Ignore this exception as it is from the file being oversized.
 #             self.was_truncated = True
 #             return True
-        
-            
-            
+ 
 def subprocess_run_with_truncated_output(command, input_data, max_output_size, truncation_message, timeout_seconds=1):
     '''
     subprocess.run() cannot limit the amount of input received from stdout and stederr. Given the memory and disk constraints
@@ -975,18 +991,15 @@ def get_test_methods_in_order(SafeTestClass):
     
     return methods
 
-
 def generate_feedback_level(test_data: TestData, levels_to_reduce=0):
     if levels_to_reduce >= 1:
         pep8_truncation_length = max(DEFAULT_PEP8_TRUNCATION_LENGTH // levels_to_reduce, 200)
         ast_truncation_length = max(DEFAULT_AST_TRUNCATION_LENGTH // levels_to_reduce, 200)
         test_data.msg.pep8 = truncate_string(test_data.msg.pep8, pep8_truncation_length, OUTPUT_TRUNCATION_MESSAGE)
         test_data.msg.astcheck = truncate_string(test_data.msg.astcheck, ast_truncation_length, OUTPUT_TRUNCATION_MESSAGE)
-    
-    if test_data.test_type == TestData.TEST_PEP8:
-        return test_data.msg.pep8
-    
+        
     feedback_priority_order = [
+        test_data.msg.pep8,
         test_data.msg.function_call,
         test_data.msg.input,
         test_data.msg.astcheck,
@@ -1004,6 +1017,8 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce=0):
     ]
     
     if levels_to_reduce == 1:
+        student_stderr_truncation_length = max(len(test_data.msg.expected_stderr), 200)
+        test_data.msg.student_stderr = truncate_string(test_data.msg.student_stderr, student_stderr_truncation_length, OUTPUT_TRUNCATION_FROM_START_MSG, from_start=True)
         test_data.msg.student_stdout = truncate_string(test_data.msg.student_stdout, len(test_data.msg.expected_stdout), OUTPUT_TRUNCATION_MESSAGE)
         test_data.msg.student_return = truncate_string(test_data.msg.student_return, len(test_data.msg.expected_return), OUTPUT_TRUNCATION_MESSAGE)
         test_data.msg.student_mutated = truncate_string(test_data.msg.student_mutated, len(test_data.msg.expected_mutated), OUTPUT_TRUNCATION_MESSAGE)
@@ -1012,10 +1027,6 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce=0):
         test_data.msg.student_return = ""
         test_data.msg.student_mutated = ""
     
-    # This needs high priority to be shown, as it is the mechanism for showing error messages.
-    if levels_to_reduce >= 2:
-        student_stderr_truncation_length = max(MAX_SUBPROCESS_STDOUT_CHARS // levels_to_reduce, len(test_data.msg.expected_stderr))
-        test_data.msg.student_stderr = truncate_string(test_data.msg.student_stderr, student_stderr_truncation_length, OUTPUT_TRUNCATION_FROM_START_MSG, from_start=True)
         
     # remove all empty feedback messages, so they are not considered in the priority ordering
     for i in range(0,len(feedback_priority_order),-1):
@@ -1023,23 +1034,19 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce=0):
             feedback_priority_order.pop()
     
     # for a high enough level, feedback message will end up empty.
-    if levels_to_reduce >= 3:
-        for _ in range(levels_to_reduce - 1):
+    if levels_to_reduce > 2:
+        for _ in range(levels_to_reduce - 2):
             if len(feedback_priority_order) > 0:
                 feedback_priority_order.pop()
             else:
                 break
-    
+            
     return "".join(feedback_priority_order)
 
-def create_ed_test_json_obj(test_data_list: list[TestData]):
-    testcase_json_list = []
+def create_ed_test_json_obj(test_data_list: list[TestData], test_json_list: list[dict], file_path_prefix: str):
     grader_output = {}
-    grader_output["testcases"] = testcase_json_list
-    
-    for test_data in test_data_list:
-        testcase_json_list.append(test_data.test_dict)
-    
+    grader_output["testcases"] = test_json_list
+        
     if len(json.dumps(grader_output)) >= EDSTEM_MAX_GRADER_OUTPUT_CHARS:
         assert False, "Setup Issue: Too many test cases to have any output"
         
@@ -1047,70 +1054,192 @@ def create_ed_test_json_obj(test_data_list: list[TestData]):
     levels_to_reduce = 0
     
     while True:
-        for testcase, test_data in zip(testcase_json_list, test_data_list):
-            testcase["feedback"] = generate_feedback_level(test_data, levels_to_reduce)
-        json_dump = json.dumps(grader_output)
-        if len(json_dump) < EDSTEM_MAX_GRADER_OUTPUT_CHARS:
-            return json_dump
+        with open(file_path_prefix + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w", encoding="utf-8") as visible_fp:
+            with open(file_path_prefix + PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w", encoding="utf-8") as private_fp:
+                for test_data, test_json in zip(test_data_list, test_json_list):
+                    if test_data is not None:
+                        test_json["feedback"] = generate_feedback_level(test_data, levels_to_reduce)
+                        if levels_to_reduce == 0:
+                            if isinstance(test_data, TestData):
+                                test_visibility = "Visible"
+                                if test_json["hidden"]:
+                                    test_visibility = "Hidden"
+                                elif test_json["private"]:
+                                    test_visibility = "Private"
+                                
+                                if test_json["hidden"] or test_json["private"]:
+                                    fp = private_fp
+                                else:
+                                    fp = visible_fp
+                                    
+                                if test_data.test_type == TestData.TEST_FUNCTION or test_data.test_type == TestData.TEST_SCRIPT:
+                                    fp.write("="*100+'\n')
+                                    fp.write(f"{test_visibility} <{test_data.test_type}> '{test_json["name"]}':\n")
+                                    fp.write("="*100+'\n')
+                                    fp.write(test_data.msg.pep8)
+                                    fp.write(test_data.msg.astcheck)
+                                    fp.write(test_data.msg.function_call)
+                                    fp.write(test_data.msg.input)
+                                    fp.write(test_data.msg.timeout)
+                                    fp.write(test_data.msg.student_stderr)
+                                    fp.write(test_data.msg.expected_stderr)
+                                    fp.write(test_data.msg.student_stdout)
+                                    fp.write(test_data.msg.expected_stdout)
+                                    fp.write(test_data.msg.student_return)
+                                    fp.write(test_data.msg.expected_return)
+                                    fp.write(test_data.msg.mutation_check)
+                                    fp.write(test_data.msg.student_mutated)
+                                    fp.write(test_data.msg.expected_mutated)
+                                    fp.write(test_data.msg.expected_file)
+                                        
+                    
+            
+        if len(json.dumps(grader_output)) < EDSTEM_MAX_GRADER_OUTPUT_CHARS:
+            return grader_output
         
         levels_to_reduce += 1
-    
         
-def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True):
+def show_output_files(test_data: TestData):
+    output_files = []
+    if test_data.test_type == TestData.TEST_FUNCTION or test_data.test_type == TestData.TEST_SCRIPT:
+        for student_file, expected_file in test_data.expected.filenames:
+            student_file_path = test_data.student_file_path_prefix + student_file
+            expected_file_path = test_data.student_file_path_prefix + expected_file
+            if check_files_equal(student_file_path, expected_file_path) != "":
+                output_files.append({"path": student_file_path, "title": "", "required": False})
+            output_files.append({"path": expected_file_path, "title": "", "required": False})
+    return output_files
+
+VISIBLE_TEST_REPORT_FILENAME = "visible_test_report.txt"
+PRIVATE_TEST_REPORT_FILENAME = "private_test_report.txt"
+VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "visible_test_execution_transcript.txt"
+PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "private_test_execution_transcript.txt"
+
+def create_test_reports(test_data_list: list[TestData], test_json_list: list[dict], file_path_prefix: str):
+    INDENT_NUM = 0
+    INDENT_CTRL = "\n" + INDENT_NUM * " "
+    SECTION_INDENT = INDENT_NUM * " " + ">"
+    with open(file_path_prefix + VISIBLE_TEST_REPORT_FILENAME, "w", encoding="utf-8") as visible_fp:
+        with open(file_path_prefix + PRIVATE_TEST_REPORT_FILENAME, "w", encoding="utf-8") as private_fp:
+            for test_data, test_json in zip(test_data_list, test_json_list):
+                if isinstance(test_data, TestData):
+                    test_visibility = "Visible"
+                    if test_json["hidden"]:
+                        test_visibility = "Hidden"
+                    elif test_json["private"]:
+                        test_visibility = "Private"
+                    
+                    if test_json["hidden"] or test_json["private"]:
+                        fp = private_fp
+                    else:
+                        fp = visible_fp
+                        
+                    if test_data.test_type == TestData.TEST_FUNCTION or test_data.test_type == TestData.TEST_SCRIPT:
+                        fp.write("="*100+'\n')
+                        fp.write(f"{test_visibility} <{test_data.test_type}> '{test_json["name"]}':\n")
+                        fp.write("="*100+'\n')
+                        fp.write(test_data.msg.function_call.replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
+                        fp.write(test_data.msg.input.replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
+                        
+                        if hasattr(test_data.expected, "stderr"):
+                            fp.write(EXPECTED_STDERR_MSG.format(format_test_in_out_data(test_data.expected.stderr)).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
+                            
+                        if hasattr(test_data.expected, "stdout"):
+                            fp.write(EXPECTED_STDOUT_MSG.format(format_test_in_out_data(test_data.expected.stdout)).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
+                            
+                        if test_data.test_type == TestData.TEST_FUNCTION:
+                            if hasattr(test_data.expected, "returned"):
+                                fp.write(EXPECTED_RETURN_MSG.format(
+                                        type(test_data.expected.returned).__name__, 
+                                        format_var_as_python_code(test_data.expected.returned)
+                                ).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
+                                
+                            if test_data.function_fail_on_mutated_args:
+                                fp.write(FAIL_ON_MUTATION_MSG.replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
+                                
+                            if hasattr(test_data.expected, "mutated_args") and test_data.function_check_expected_mutated_args:
+                                fp.write(EXPECTED_MUTATED_ARGS_MSG.format(format_as_func_arg_string(test_data.expected.mutated_args)))
+                            
+                            if hasattr(test_data.expected, "filenames"): 
+                                fp.write(EXPECTED_FILES_MSG.format("".join(str(tup) for tup in test_data.expected.filenames)).replace("►", SECTION_INDENT).replace("\n", INDENT_CTRL).rstrip(" "))
+
+            
+        
+        
+def run_tests(SafeTestClass, setup_mode=False, show_all_passed_tests_first=True, file_path_prefix = DEFAULT_STUDENT_FILE_PATH_PREFIX):
     ''' Test Runner function that runs all test methods in a test class '''
-    global MAX_PROCESS_STDOUT_STDERR_OUTPUT_LENGTH_BEFORE_TRUNCATION
-    global MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK
     global FORMAT_TEST_IN_OUT_DATA_AS_STRING
     test_list = get_test_methods_in_order(SafeTestClass)
     
-    # Needs to be small enough so that each test can produce this much output on stdout and stderr
-    # while having enough free characters to have all the JSON syntax and other stuff also printed.
-    MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK = int(EDSTEM_MAX_GRADER_OUTPUT_CHARS / (1.5 * len(test_list)))
-    
     testbench = SafeTestClass()
     
-    setup_mode_testcase = {}
-    
-    # if setup_mode:
-    #     setup_mode_testcase = get_testcase_dict("Debug Data", "#name(Debug Data) #private #score(0)")
-    #     FORMAT_TEST_IN_OUT_DATA_AS_STRING = True
-    #     setup_mode_testcase["feedback"] = ""
-    #     setup_mode_testcase["feedback"] += "All tests fail when SETUP_MODE is enabled, so that it is not left enabled by accident.\n"
-    #     setup_mode_testcase["feedback"] += "FORMAT_TEST_IN_OUT_DATA_AS_STRING = True, so input and expected stdout/stderr can be copy pasted directly into testbench\n"
-    #     setup_mode_testcase["feedback"] += "Having more test cases decreases this value accordingly, to prevent grader from crashing\n"
-    #     setup_mode_testcase["feedback"] += f"> MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK : {MAX_TEST_FEEDBACK_LEN_BEFORE_ERROR_RISK} chars\n"
-    
     test_data_list = []
+    test_json_list = []
+    
+    visible_test_report_testcase = get_testcase_dict("", "#name(Test Case Report) #score(0)")
+    private_test_report_testcase = get_testcase_dict("", "#name(Private Test Case Report) #score(0) #private")
+    
+    test_data_list.append(None)
+    test_json_list.append(visible_test_report_testcase)
+    test_data_list.append(None)
+    test_json_list.append(private_test_report_testcase)
+    
     for test in test_list:
         test_method = getattr(testbench, test)
-        testcase = get_testcase_dict(test_method.__name__, test_method.__doc__)
+        testcase_dict = get_testcase_dict(test_method.__name__, test_method.__doc__)
+        prev_len = len(test_data_list)
         try:
             test_data: TestData = test_method()
-        
-            # Free up space
-            del test_data.student
-            del test_data.expected
-            
-            test_data.test_dict = testcase
-            test_data_list.append(test_data)
-            testcase["passed"] = test_data.success
+            if not isinstance(test_data, TestData):
+                testcase_dict["feedback"] = "Setup Issue: Test Method did not return TestData object"
+                testcase_dict["passed"] = False
+            else:
+                output_files = show_output_files(test_data)
+
+                if output_files != []:
+                    testcase_dict["output_files"] = output_files
+                
+                # Free up space
+                # del test_data.student
+                # del test_data.expected
+                
+                test_data_list.append(test_data)
+                testcase_dict["passed"] = test_data.success
             
         except Exception as e:
-            testcase["feedback"] = str(e)
-            testcase["passed"] = False
-            testcase["ok"] = False # Test Bench Error.
-            
+            if setup_mode:
+                raise Exception from e
+            testcase_dict["feedback"] = str(e)
+            testcase_dict["passed"] = False
+            testcase_dict["name"] = "FAILED TEST BENCH!!! " + testcase_dict["name"]
+            testcase_dict["ok"] = False # Test Bench Error.
+        
+        if prev_len == len(test_data_list):
+            # append dummy value to preserve ordering
+             test_data_list.append(None)
+             
         if setup_mode:
-            testcase["feedback"] = "Setup Issue: Disable SETUP_MODE\n"
-            testcase["passed"] = False
+            testcase_dict["feedback"] = "Setup Issue: Disable SETUP_MODE\n"
+            testcase_dict["passed"] = False
+            
+        test_json_list.append(testcase_dict)
         
     
-    ed_test_case_json = create_ed_test_json_obj(test_data_list)
-    # if setup_mode_testcase:
-    #     ed_test_case_json["testcases"].append(setup_mode_testcase)
+    ed_test_case_json = create_ed_test_json_obj(test_data_list, test_json_list, file_path_prefix)
     
     if show_all_passed_tests_first:
-        ed_test_case_json["testcases"].sort(key=lambda x: not x["passed"])    
+        ed_test_case_json["testcases"].sort(key=lambda x: not x["passed"])
+
+    visible_test_report_testcase["output_files"]= [
+        {"path": file_path_prefix + VISIBLE_TEST_REPORT_FILENAME, "title": "Visible Test Report", "required": False},
+        {"path": file_path_prefix + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "title": "Visible Execution Transcript", "required": False}
+    ]
+    private_test_report_testcase["output_files"]= [
+        {"path": file_path_prefix + PRIVATE_TEST_REPORT_FILENAME, "title": "Private Test Report", "required": False},
+        {"path": file_path_prefix + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "title": "Private Exectuion Transcript", "required": False}
+    ]
+    
+    create_test_reports(test_data_list, test_json_list, file_path_prefix)
     
     print(json.dumps(ed_test_case_json))
 
@@ -1165,9 +1294,9 @@ except Exception:
 
 SUBPROC_FILENAMES = \
 r'''
-SUBPROC_FUNC_INPUT_FILENAME = {0}
-SUBPROC_FUNC_RETURN_FILENAME = {1}
-SUBPROC_FUNC_ARGS_FILENAME = {2}
+SUBPROC_FUNC_INPUT_FILENAME = "{0}"
+SUBPROC_FUNC_RETURN_FILENAME = "{1}"
+SUBPROC_FUNC_ARGS_FILENAME = "{2}"
 '''.format(SUBPROC_FUNC_INPUT_FILENAME, SUBPROC_FUNC_RETURN_FILENAME, SUBPROC_FUNC_ARGS_FILENAME)
 
 RUN_FUNCTION_TEST_SUBPROCESS_FILE = INPUT_WITH_ECHOING_FUNCTION + SUBPROC_FILENAMES + \
