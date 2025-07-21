@@ -193,10 +193,11 @@ class SafeTesting:
         if self.show_all_passed_tests_first:
             ed_test_grader_output.test_cases.sort(key=lambda x: not x.passed)
         
+        set_test_output_files(ed_test_grader_output)
+        
         if self.show_test_reports:
             write_test_report_files(ed_test_grader_output.test_cases)
-            
-        set_test_output_files(ed_test_grader_output)
+
         ed_test_case_json = set_test_feedback_level(ed_test_grader_output)
         # Ed reads the test json from stdout
         print(ed_test_case_json)
@@ -282,7 +283,7 @@ class SafeTesting:
             expected_files                 : List of (student_file, test_file) tuples for file comp.
             files_to_reveal                : Filenames from hidden_file_dict to expose during test.
 
-            For ommited ast related parameters see run_astcheck_test() docstring.
+            For ommited ast related parameters see register_ast_test() docstring.
 
         Returns:
             None
@@ -391,7 +392,7 @@ class SafeTesting:
             expected_files         : List of (student_file, test_file) tuples for file comp.
             files_to_reveal        : Filenames from hidden_file_dict to expose during test.
 
-            For ommited ast related parameters see run_astcheck_test() docstring
+            For ommited ast related parameters see register_ast_test() docstring
 
         Returns:
             None
@@ -1029,16 +1030,13 @@ def verify_expected_stderr(test_data: TestData):
         formatted_proc_stderr = test_data.student.stderr
     else:
         formatted_proc_stderr = format_test_in_out_data(test_data.student.stderr)
-
-    test_data.msg.student_stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
     test_data.msg.expected_stderr = (
         EXPECTED_STDERR_MSG.format(
             format_test_in_out_data(test_data.expected.stderr)
         )
-        if test_data.expected.stderr != ""
-        else ""
     )
-
+    test_data.msg.student_stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
+    
 
 def verify_expected_stdout(test_data: TestData):
     # Incorrect stdout messages
@@ -1402,6 +1400,9 @@ def check_arg_type(valid_types: list[type] | tuple[type], **kwargs):
         assert False, f"Setup Issue:\n" + output
 
 
+#######################################################################################
+
+
 class EdCustomGraderJson:
     TESTCASES = "testcases"
 
@@ -1485,6 +1486,9 @@ class EdOutputFile:
             self.REQUIRED : self.required,
         }
         return entry
+
+
+#######################################################################################
 
 
 def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
@@ -1751,7 +1755,10 @@ def write_test_report_files(ed_test_list: list[EdTestCase]):
 def set_test_output_files(ed_test_grader_output: EdCustomGraderJson):
     for ed_test_obj in ed_test_grader_output.test_cases:
         if ed_test_obj.test_data is not None:
-            if ed_test_obj.test_data.test_type == TestData.TEST_FUNCTION or ed_test_obj.test_data.test_type == TestData.TEST_SCRIPT:
+            if (
+                ed_test_obj.test_data.test_type == TestData.TEST_FUNCTION 
+                or ed_test_obj.test_data.test_type == TestData.TEST_SCRIPT
+            ):
                 for file_name in find_relevant_output_files(ed_test_obj.test_data):
                     ed_test_obj.add_output_file(file_name, "", False)
 
