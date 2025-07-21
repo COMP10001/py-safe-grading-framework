@@ -21,1325 +21,1384 @@ RELEASE_TEST_CASES = False
 
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
-STUDENT_FILE_PATH_PREFIX = "/home/admin/git/safe-testing-framework/tests/" #"/home/"
+FILES_TO_HIDE = [] #["hidden.txt"] # eg ["abc.txt"]
+PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 
-SETUP_MODE = False
-SHOW_ALL_PASSED_TESTS_FIRST = True
+test_bench = SafeTesting(
+    setup_mode=False,
+    make_all_tests_visible=RELEASE_TEST_CASES,
+    show_all_passed_tests_first=True,
+    show_test_reports=True,
+    file_path_prefix='/home/admin/git/safe-testing-framework',
+)
 
-FILES_TO_HIDE = ["hidden.txt"] # eg ["abc.txt"]
-HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
-
-class SafeTesting():
-    @setname() 
-    @score(0)
-    def test_PEP8_Pass(self):
-        PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
-        run_pep8_test(
-            student_file_name="pep8_pass.py",         # File to test function from
-            student_file_path_prefix="/home/",   # File path prefix, could change by Ed, but otherwise does not need to be touched
-            ignored_tests=PEP8_IGNORED           # Modify as desired, this is the default value set in the framework.
-        )
-        
-    @setname()
-    @score(0)
-    def test_PEP8_Fail(self):
-        PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
-        run_pep8_test(
-            student_file_name="pep8_fail.py",         # File to test function from
-            student_file_path_prefix="/home/",   # File path prefix, could change by Ed, but otherwise does not need to be touched
-            ignored_tests=PEP8_IGNORED           # Modify as desired, this is the default value set in the framework.
-        )
-        
-    @setname()
-    @score(0)
-    def test_PEP8_Recursive_File_Check_Fail(self):
-        PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
-        run_pep8_test(
-            student_file_name="pep8_recursive_import_test.py",         # File to test function from
-            student_file_path_prefix="/home/",   # File path prefix, could change by Ed, but otherwise does not need to be touched
-            ignored_tests=PEP8_IGNORED           # Modify as desired, this is the default value set in the framework.
-        )
-
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Functions_Pass(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_non_allowed_functions.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-    
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Functions_Fail(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_non_allowed_functions.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=["print"],                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Imports_Pass(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_non_allowed_imports.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-    
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Imports_Fail(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_non_allowed_imports.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = ["sys"],                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-        
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Imports_Recursive_Check_Pass(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_recursive_import_test.py",
-            student_file_path_prefix="/home/", # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = ("signal", "subprocess"),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-    
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Imports_Recursive_Check_Fail(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_recursive_import_test.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = ("sys","subprocess"),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-        
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Nodes_Pass(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_non_allowed_nodes.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (ast.While,),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-    
-    @setname()
-    @score(0)
-    def testAST_Check_Non_Allowed_Nodes_Fail(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_non_allowed_nodes.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (ast.For,),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                 # Eg ast.Name, see ast library
-        )
-
-    @setname()
-    @score(0)
-    def testAST_Check_Required_Nodes_Pass(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_required_nodes.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(ast.For,),                                 # Eg ast.Name, see ast library
-        )
-    
-    @setname()
-    @score(0)
-    def testAST_Check_Required_Nodes_Fail(self): 
-        run_astcheck_test(
-            student_file_name="astcheck_required_nodes.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
-            non_allowed_nodes = (),            # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                          # Function names of any specific functions to disallow
-            non_allowed_imports = (),                          # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(ast.For, ast.While),                                 # Eg ast.Name, see ast library
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Not_Defined(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="missing_function",                           # Function to test
-            function_args=("hello",),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "Showing the fail formatting",                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=True,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Check_1_Input_Arg_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="check_1_input_arg",                           # Function to test
-            function_args=("hello",),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "Showing the fail formatting",                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=True,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Check_2_Input_Arg_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="check_2_input_arg",                           # Function to test
-            function_args=("hello",12345),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "Showing the fail formatting",                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=True,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Check_Mutate_Input_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="check_mutate_fail",                           # Function to test
-            function_args=([1,2,3],),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=True,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
+test_bench.cache_hidden_test_files(FILES_TO_HIDE)
 
 
-    @setname()
-    @score(0)
-    def testFunction_Return_Int_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_int",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = 1,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-
-    @setname()
-    @score(0)
-    def testFunction_Return_Int_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_int",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = 4,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Return_Str_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_str",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "abc\ndefgh\t\r\nhello",                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-
-    @setname()
-    @score(0)
-    def testFunction_Return_Str_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_str",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "1234\n1234\n1234",                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Return_Float_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_float",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = 1.0,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-
-    @setname()
-    @score(0)
-    def testFunction_Return_Float_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_float",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = 1.5,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Return_List_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_list",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = [1, 1.0, "abc", ("hi", 123)],                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-
-    @setname()
-    @score(0)
-    def testFunction_Return_List_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_list",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = [1,2,3,"abc"],                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Return_Tuple_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_tuple",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = (123, "abc", [1,2,3]),                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-
-    @setname()
-    @score(0)
-    def testFunction_Return_List_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_tuple",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = (1,2,3,"abc"),                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_Stdout_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_stdout",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="Abc\nabc\t\r\nabc\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_Stdout_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_stdout",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="1234\n1234\n\t\r\nasdfsdf",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_Stderr_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_stderr",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="Fake Error has occurred.\n",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_Stderr_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_stderr",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="Error",                                    # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Expected_Stderr_Exception_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_stderr_exception",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr='Traceback (most recent call last):\n  File "/home/function_tests.py", line 34, in expected_stderr_exception\n    raise Exception("An error occured")\nException: An error occured\n\n',                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_Stderr_Exception_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_stderr_exception",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="Error",                                    # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_Return_and_Stdout_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_and_stdout",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "abc",                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="abc\ndef\n",                                # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_Return_and_Stdout_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_return_and_stdout",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = "abc1234",                               # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="abc\ndef\nefgh\n",                                # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Timeout_1_second_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="timeout_fail",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Timeout_2_second_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="timeout_fail",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 2,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
 
 
-    @setname()
-    @score(0)
-    def testFunction_Hidden_File_Valid_Access_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="hidden_files_access",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Hidden_File_Invalid_Access_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="hidden_files_access",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="verysecretfilecontents\n",                 # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    
-    @setname()
-    @score(0)
-    def testFunction_Input_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="input_echoing",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Input_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="input_echoing",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
+PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
+test_bench.register_pep8_test(
+name = "test_PEP8_Pass",
+student_file_name="pep8_pass.py",        
+ignored_tests=PEP8_IGNORED          
+)
 
-    @setname()
-    @score(0)
-    def testFunction_Input_Echoing_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="input_echoing",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    
 
-    @setname()
-    @score(0)
-    def testFunction_Input_Echoing_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="input_echoing",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                                # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Spam_Print_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="spam_print",                                          # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Spam_Print_Stdout_and_Stderr_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="spam_print_stdout_stderr",                   # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Import_With_Dashes_Pass(self):
-        return run_function_test(
-            student_file_name="import-with-dashes.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="func",                   # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = 123,                                    # Expected value for function
-            function_timeout_seconds = 10,                               # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testFunction_Expected_File_Pass(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_file",                   # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                               # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            expected_files=[("student_file.txt", "expected_file1.txt")],
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testFunction_Expected_File_Fail(self):
-        return run_function_test(
-            student_file_name="function_tests.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            function_name="expected_file",                   # Function to test
-            function_args=(),                                           # Must be wrapped in a tuple like test() -> () or test(1) -> (1,)
-            function_expected = None,                                    # Expected value for function
-            function_timeout_seconds = 1,                               # Time in seconds until test fails due to timeout
-            function_check_mutate=False,                                          # Check if the function input was mutated
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            expected_files=[("student_file.txt", "expected_file2.txt")],
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports = (), # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-        
-    @setname()
-    @score(0)
-    def testScript_Input_Pass(self):
-        return run_script_test(
-            student_file_name="script_input_echoing.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    @setname()
-    @score(0)
-    def testScript_Input_Fail(self):
-        return run_script_test(
-            student_file_name="script_input_echoing.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = False,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    @setname()
-    @score(0)
-    def testScript_Input_Echoing_Pass(self):
-        return run_script_test(
-            student_file_name="script_input_echoing.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="1\n2\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-          
-    @setname()
-    @score(0)
-    def testScript_Input_Echoing_Fail(self):
-        return run_script_test(
-            student_file_name="script_input_echoing.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="1\n",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
 
-    @setname()
-    @score(0)
-    def testScript_Timeout_1_Second_Fail(self):
-        return run_script_test(
-            student_file_name="script_timeout_fail.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
 
-    @setname()
-    @score(0)
-    def testScript_Timeout_2_Second_Fail(self):
-        return run_script_test(
-            student_file_name="script_timeout_fail.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=2,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testScript_Expected_Stdout_Pass(self):
-        return run_script_test(
-            student_file_name="script_expected_stdout.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="hello\n1234\t\r\nsdfsfds\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testScript_Expected_Stdout_Fail(self):
-        return run_script_test(
-            student_file_name="script_expected_stdout.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="1234",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testScript_Expected_Stderr_Pass(self):
-        return run_script_test(
-            student_file_name="script_expected_stderr.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="hello\n1234\t\r\nsdfsfds\n",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testScript_Expected_Stderr_Fail(self):
-        return run_script_test(
-            student_file_name="script_expected_stderr.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="1234",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
+PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
+test_bench.register_pep8_test(
+name = "test_PEP8_Fail",
+student_file_name="pep8_fail.py",        
+ignored_tests=PEP8_IGNORED          
+)
 
-    @setname()
-    @score(0)
-    def testScript_Expected_Stderr_Exception_Pass(self):
-        return run_script_test(
-            student_file_name="script_expected_stderr_exception.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr='Traceback (most recent call last):\n  File "/home/script_expected_stderr_exception.py", line 1, in <module>\n    raise Exception("Test exception")\nException: Test exception\n\n',                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testScript_Expected_Stderr_Exception_Fail(self):
-        return run_script_test(
-            student_file_name="script_expected_stderr_exception.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="1234",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = {},                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testScript_Hidden_File_Valid_Access_Pass(self):
-        return run_script_test(
-            student_file_name="script_hidden_files.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = ["hidden.txt"],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testScript_Hidden_File_Invalid_Access_Fail(self):
-        return run_script_test(
-            student_file_name="script_hidden_files.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="verysecretfilecontents\n",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-    
-    @setname()
-    @score(0)
-    def testScript_Import_With_Dashes_Pass(self):
-        return run_script_test(
-            student_file_name="import-with-dashes.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testScript_Expected_File_Pass(self):
-        return run_script_test(
-            student_file_name="script_expected_file.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            expected_files=[("student_file.txt", "expected_file1.txt")],
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
-    @setname()
-    @score(0)
-    def testScript_Expected_File_Fail(self):
-        return run_script_test(
-            student_file_name="script_expected_file.py",
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,           # File path prefix
-            script_timeout_seconds=1,                                    # Time in seconds until test fails due to timeout
-            input_data="",                                                    # Input that can be read by input() seperated by newlines
-            input_echoing = True,                                        # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                          # Expected value in stdout
-            expected_stderr="",                                          # Expected value in stderr
-            expected_files=[("student_file.txt", "expected_file2.txt")],
-            non_allowed_nodes = (),                                      # Eg ast.Name, see run_astcheck_test and ast library
-            non_allowed_functions=(),                                    # Function names of any specific functions to disallow
-            non_allowed_imports=(),   # Imports that are not allowed anywhere in student file or any local imports
-            required_nodes=(),                                           # Eg ast.Name, see run_astcheck_test and ast library
-            files_to_reveal = [],                                        # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict = HIDDEN_FILE_DICT,                                       # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )
-        
 
-    @setname()
-    @hidden()
-    @score(0)
-    def testHidden(self):
-        pass
-    
-    @setname()
-    @private()
-    @score(0)
-    def testPrivate(self):
-        pass
 
-    @setname()
-    @score(1)
-    def testInt_Score(self):
-        pass
-    
-    @setname()
-    @score(0.5)
-    def testFloat_Score(self):
-        pass
+
+PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
+test_bench.register_pep8_test(
+name = "test_PEP8_Recursive_File_Check_Fail",
+student_file_name="pep8_recursive_import_test.py",        
+ignored_tests=PEP8_IGNORED          
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Functions_Pass ",
+student_file_name="astcheck_non_allowed_functions.py",
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Functions_Fail ",
+student_file_name="astcheck_non_allowed_functions.py",
+non_allowed_functions=["print"],                         
+)
+
+
+
+ 
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Imports_Pass",
+student_file_name="astcheck_non_allowed_imports.py",
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Imports_Fail ",
+student_file_name="astcheck_non_allowed_imports.py",
+non_allowed_imports = ["sys"],                         
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Imports_Recursive_Check_Pass ",
+student_file_name="astcheck_recursive_import_test.py",
+non_allowed_imports = ["signal", "subprocess"],
+
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Imports_Recursive_Check_Fail ",
+student_file_name="astcheck_recursive_import_test.py",
+non_allowed_imports = ["sys","subprocess"],                         
+
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Nodes_Pass ",
+student_file_name="astcheck_non_allowed_nodes.py",
+
+non_allowed_nodes = [ast.While],           
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Nodes_Fail ",
+student_file_name="astcheck_non_allowed_nodes.py",
+
+non_allowed_nodes = [ast.For],           
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Required_Nodes_Pass ",
+student_file_name="astcheck_required_nodes.py",
+required_nodes=[ast.For],                             
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Required_Nodes_Fail",
+student_file_name="astcheck_required_nodes.py",
+required_nodes=[ast.For, ast.While],                                 
+)
+
+
+
+ 
+test_bench.register_ast_test(
+name = "AST Check_Non_Allowed Nodes Custom Name Pass",
+student_file_name="astcheck_non_allowed_nodes.py",
+non_allowed_nodes = {ast.While: "while loop"},    
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Non_Allowed_Nodes_Custom_Name_Fail ",
+student_file_name="astcheck_non_allowed_nodes.py",
+non_allowed_nodes = {ast.For: "for loop"},            
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Required_Nodes_Custom_Name_Pass ",
+student_file_name="astcheck_required_nodes.py",
+required_nodes={ast.For: "for loop"},                              
+)
+
+
+
+
+test_bench.register_ast_test(
+name = "testAST_Check_Required_Nodes_Custom_Name_Fail ",
+student_file_name="astcheck_required_nodes.py",
+required_nodes={ast.For: "for loop", ast.While: "while loop"},                            
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Not_Defined",
+student_file_name="function_tests.py",
+
+function_name="missing_function",                          
+function_args=["hello"],                                           
+function_expected = "Showing the fail formatting",                                 
+function_timeout_seconds = 1,                               
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Missing_Body_Fail",
+student_file_name="missing_function_body.py",
+
+function_name="missing_body",                          
+function_args=[],                                           
+function_expected = "",                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Check_1_Input_Arg_Fail",
+student_file_name="function_tests.py",
+
+function_name="check_1_input_arg",                          
+function_args=("hello",),                                           
+function_expected = "Showing the fail formatting",                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=True,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Check_2_Input_Arg_Fail",
+student_file_name="function_tests.py",
+
+function_name="check_2_input_arg",                          
+function_args=["hello",12345],                                           
+function_expected = "Showing the fail formatting",                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=True,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testfunction_fail_on_mutated_args_Input_Fail",
+student_file_name="function_tests.py",
+
+function_name="check_mutate_fail",                          
+function_args=([1,2,3],),                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=True,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__Int_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected__int",                                         
+function_args=[],                                           
+function_expected = 1,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__Int_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected__int",                                         
+function_args=[],                                           
+function_expected = 4,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__Str_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected__str",                                         
+function_args=[],                                           
+function_expected = "abc\ndefgh\t\r\nhello",                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__Str_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected__str",                                         
+function_args=[],                                           
+function_expected = "1234\n1234\n1234",                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__Float_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected__float",                                         
+function_args=[],                                           
+function_expected = 1.0,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__Float_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected__float",                                         
+function_args=[],                                           
+function_expected = 1.5,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__List_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected__list",                                         
+function_args=[],                                           
+function_expected = [1, 1.0, "abc", ("hi", 123)],                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__List_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected__list",                                         
+function_args=[],                                           
+function_expected = [1,2,3,"abc"],                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__Tuple_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected__tuple",                                         
+function_args=[],                                           
+function_expected = (123, "abc", [1,2,3]),                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction__List_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected__tuple",                                         
+function_args=[],                                           
+function_expected = (1,2,3,"abc"),                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_Stdout_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected_stdout",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="Abc\nabc\t\r\nabc\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_Stdout_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected_stdout",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="1234\n1234\n\t\r\nasdfsdf",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_Stderr_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected_stderr",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="Fake Error has occurred.\n",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_Stderr_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected_stderr",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="Error",                                    
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_Stderr_Exception_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected_stderr_exception",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr='Traceback (most recent call last):\n  File "/home/function_tests.py", line 34, in expected_stderr_exception\n    raise Exception("An error occured")\nException: An error occured\n\n',
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_Stderr_Exception_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected_stderr_exception",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="Error",                                    
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected__and_Stdout_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected__and_stdout",                                         
+function_args=[],                                           
+function_expected = "abc",                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="abc\ndef\n",                               
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected__and_Stdout_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected__and_stdout",                                         
+function_args=[],                                           
+function_expected = "abc1234",                            
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="abc\ndef\nefgh\n",                               
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Timeout_1_second_Fail",
+student_file_name="function_tests.py",
+
+function_name="timeout_fail",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Timeout_2_second_Fail",
+student_file_name="function_tests.py",
+
+function_name="timeout_fail",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 2,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Hidden_File_Valid_Access_Pass",
+student_file_name="function_tests.py",
+
+function_name="hidden_files_access",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="verysecretfilecontents\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = ["hidden.txt"],
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Hidden_File_Invalid_Access_Fail",
+student_file_name="function_tests.py",
+
+function_name="hidden_files_access",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="verysecretfilecontents\n",                
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+)
+
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Input_Pass",
+student_file_name="function_tests.py",
+
+function_name="input_echoing",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="1\n2\n",                                                    
+input_echoing = False,                                        
+expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = ["hidden.txt"],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Input_Fail",
+student_file_name="function_tests.py",
+
+function_name="input_echoing",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="1\n",                                                    
+input_echoing = False,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = ["hidden.txt"],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Input_Echoing_Pass",
+student_file_name="function_tests.py",
+
+function_name="input_echoing",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="1\n2\n",                                                    
+input_echoing = True,                                        
+expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Input_Echoing_Fail",
+student_file_name="function_tests.py",
+
+function_name="input_echoing",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                               
+function_fail_on_mutated_args=False,                                      
+input_data="1\n",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Spam_Print_Fail",
+student_file_name="function_tests.py",
+
+function_name="spam_print",                                         
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 10,                              
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Spam_Print_Stdout_and_Stderr_Fail",
+student_file_name="function_tests.py",
+
+function_name="spam_print_stdout_stderr",                  
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 10,                              
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Import_With_Dashes_Pass",
+student_file_name="import-with-dashes.py",
+
+function_name="func",                  
+function_args=[],                                           
+function_expected = 123,                                 
+function_timeout_seconds = 10,                              
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_File_Pass",
+student_file_name="function_tests.py",
+
+function_name="expected_file",                  
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                              
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+expected_files=[("student_file.txt", "expected_file1.txt")],
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_function_test(
+name = "testFunction_Expected_File_Fail",
+student_file_name="function_tests.py",
+
+function_name="expected_file",                  
+function_args=[],                                           
+function_expected = None,                                 
+function_timeout_seconds = 1,                              
+function_fail_on_mutated_args=False,                                      
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+expected_files=[("student_file.txt", "expected_file2.txt")],
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports = [],
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Input_Pass",
+student_file_name="script_input_echoing.py",
+
+script_timeout_seconds=1,                                   
+input_data="1\n2\n",                                                    
+input_echoing = False,                                        
+expected_stdout="Type in 1:Type in 2:True\nTrue\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+test_bench.register_script_test(
+name = "testScript_Input_Fail",
+student_file_name="script_input_echoing.py",
+
+script_timeout_seconds=1,                                   
+input_data="1\n",                                                    
+input_echoing = False,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+test_bench.register_script_test(
+name = "testScript_Input_Echoing_Pass",
+student_file_name="script_input_echoing.py",
+
+script_timeout_seconds=1,                                   
+input_data="1\n2\n",                                                    
+input_echoing = True,                                        
+expected_stdout="Type in 1:1\nType in 2:2\nTrue\nTrue\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Input_Echoing_Fail",
+student_file_name="script_input_echoing.py",
+
+script_timeout_seconds=1,                                   
+input_data="1\n",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Timeout_1_Second_Fail",
+student_file_name="script_timeout_fail.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Timeout_2_Second_Fail",
+student_file_name="script_timeout_fail.py",
+
+script_timeout_seconds=2,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_Stdout_Pass",
+student_file_name="script_expected_stdout.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="hello\n1234\t\r\nsdfsfds\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_Stdout_Fail",
+student_file_name="script_expected_stdout.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="1234",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_Stderr_Pass",
+student_file_name="script_expected_stderr.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="hello\n1234\t\r\nsdfsfds\n",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_Stderr_Fail",
+student_file_name="script_expected_stderr.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="1234",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_Stderr_Exception_Pass",
+student_file_name="script_expected_stderr_exception.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr='Traceback (most recent call last):\n  File "/home/script_expected_stderr_exception.py", line 1, in <module>\n    raise Exception("Test exception")\nException: Test exception\n\n',
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_Stderr_Exception_Fail",
+student_file_name="script_expected_stderr_exception.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="1234",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Hidden_File_Valid_Access_Pass",
+student_file_name="script_hidden_files.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="verysecretfilecontents\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = ["hidden.txt"],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Hidden_File_Invalid_Access_Fail",
+student_file_name="script_hidden_files.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="verysecretfilecontents\n",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Import_With_Dashes_Pass",
+student_file_name="import-with-dashes.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_File_Pass",
+student_file_name="script_expected_file.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+expected_files=[("student_file.txt", "expected_file1.txt")],
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+
+test_bench.register_script_test(
+name = "testScript_Expected_File_Fail",
+student_file_name="script_expected_file.py",
+
+script_timeout_seconds=1,                                   
+input_data="",                                                    
+input_echoing = True,                                        
+expected_stdout="",                                         
+expected_stderr="",
+expected_files=[("student_file.txt", "expected_file2.txt")],
+non_allowed_nodes = [],                                     
+non_allowed_functions=[],                                   
+non_allowed_imports=[],  
+required_nodes=[],                                          
+files_to_reveal = [],                                  
+
+)
+
+
+
+# @hidden[]
+
+# testHidden
+# pass
+
+
+# @private[]
+
+# testPrivate
+# pass
+
+
+# @score(1)
+# testInt_Score
+# pass
+
+
+# @score(0.5)
+# testFloat_Score
+# pass
 
 if __name__ == "__main__":
-    run_tests(SafeTesting, setup_mode=SETUP_MODE, show_all_passed_tests_first=SHOW_ALL_PASSED_TESTS_FIRST)
+    test_bench.run_tests()
 
