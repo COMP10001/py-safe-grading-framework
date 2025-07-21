@@ -1,10 +1,11 @@
-# Safe Ed Assignment Testing Library V0.4.0 safetestingframework.py
-# Last Updated: 2025/07/18
-# Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
-# Faculty of Engineering and IT - The University of Melbourne
-# The latest version and documentation can be found in the COMP10001 Worksheet Repository
-# https://edstem.org/au/courses/20912/lessons/79913/slides/539891
-
+"""
+Safe Ed Assignment Testing Library V0.4.0 safetestingframework.py
+Last Updated: 2025/07/18
+Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
+Faculty of Engineering and IT - The University of Melbourne
+The latest version and documentation can be found in the COMP10001 Worksheet Repository
+https://edstem.org/au/courses/20912/lessons/79913/slides/539891
+"""
 import os
 import subprocess
 import pickle
@@ -13,10 +14,10 @@ import traceback
 import json
 import re
 import filecmp
+from typing import Any
 
 # DANGER: Be careful if developing locally, as importing this code will cause it to be
 # irreplaceably removed, unlike on Ed.
-
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 os.remove(__file__)
 
@@ -109,6 +110,7 @@ VISIBLE_TEST_REPORT_FILENAME = "visible_test_report.txt"
 PRIVATE_TEST_REPORT_FILENAME = "private_test_report.txt"
 VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "visible_test_execution_transcript.txt"
 PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME = "private_test_execution_transcript.txt"
+RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
 
 #######################################################################################
 
@@ -144,28 +146,28 @@ class TestData:
         self.test_type = test_type
         self.success: bool
         self.student_file_path_prefix: str
-        self.function_check_expected_mutated_args: bool
         self.function_fail_on_mutated_args: bool
+        self.astcheck_data: TestData
 
         self.msg = self.Messages()
         self.expected = self.Expected()
         self.student = self.Student()
-
+        
     class Expected:
         def __init__(self):
             self.stdout: str
             self.stderr: str
-            self.returned: any
-            self.original_args: list | tuple
-            self.mutated_args: list | tuple
+            self.returned: Any
+            self.original_args: list[Any] | tuple[Any]
+            self.mutated_args: list[Any] | tuple[Any] | None
             self.filenames: list[tuple[str, str]]
 
     class Student:
         def __init__(self):
             self.stdout: str
             self.stderr: str
-            self.returned: any
-            self.final_args: list | tuple
+            self.returned: Any
+            self.final_args: list[Any] | tuple[Any]
             # self.testproc_ret: subprocess.CompletedProcess
 
     class Messages:
@@ -193,26 +195,26 @@ class TestData:
 def run_function_test(
     student_file_name: str = "",
     function_name: str = "",
-    function_args: list | tuple = [],
-    function_expected: any = None,
+    function_args: list[Any] | tuple[Any] = [],
+    function_expected: Any = None,
     function_timeout_seconds: int = 1,
     function_fail_on_mutated_args: bool = False,
-    function_expected_mutated_args: list | tuple = None,
+    function_expected_mutated_args: list[Any] | tuple[Any] | None = None,
     input_data: str = "",
     input_echoing: bool = True,
     expected_stdout: str = "",
     expected_stderr: str = "",
-    non_allowed_nodes: list[ast.Node] | dict[ast.Node, str] = DEFAULT_NON_ALLOWED_NODES,
+    non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
     non_allowed_functions: list[str] = DEFAULT_NON_ALLOWED_FUNCTIONS,
     non_allowed_methods: list[str] = DEFAULT_NON_ALLOWED_METHODS,
     non_allowed_imports: list[str] = DEFAULT_NON_ALLOWED_IMPORTS,
-    required_nodes: list[ast.Node] | dict[ast.Node : str] = [],
+    required_nodes: list[type] | dict[type, str] = [],
     required_functions: list[str] = [],
     required_methods: list[str] = [],
     required_imports: list[str] = [],
     expected_files: list[tuple[str, str]] = [],
     files_to_reveal: list[str] = [],
-    hidden_file_dict: dict[str:str] = {},
+    hidden_file_dict: dict[str, str] = {},
 ) -> TestData:
     """
     Description:
@@ -244,7 +246,6 @@ def run_function_test(
     Returns:
         Instance of TestData class.
     """
-
     check_arg_type(
         [str], 
         student_file_name=student_file_name, 
@@ -288,9 +289,6 @@ def run_function_test(
     test_data.expected.original_args = function_args
     test_data.expected.mutated_args = function_expected_mutated_args
     test_data.function_fail_on_mutated_args = function_fail_on_mutated_args
-    test_data.function_check_expected_mutated_args = (
-        function_expected_mutated_args is not None
-    )
 
     test_data.msg.function_call = FUNCTION_CALLED_MSG.format(
         f"{function_name}{format_as_func_arg_string(function_args)}"
@@ -301,7 +299,7 @@ def run_function_test(
         else ""
     )
 
-    test_data.astcheck_msg = run_astcheck_test(
+    test_data.astcheck_data = run_astcheck_test(
         student_file_name=student_file_name,
         non_allowed_nodes=non_allowed_nodes,
         non_allowed_functions=non_allowed_functions,
@@ -314,7 +312,7 @@ def run_function_test(
     )
 
     # Stops test, before running student code if unallowed features are used.
-    if test_data.msg.astcheck:
+    if test_data.astcheck_data.msg.astcheck:
         test_data.success = False
         return test_data
 
@@ -369,11 +367,11 @@ def run_script_test(
     input_echoing: bool = True,
     expected_stdout: str = "",
     expected_stderr: str = "",
-    non_allowed_nodes: list[ast.Node] | dict[ast.Node, str] = DEFAULT_NON_ALLOWED_NODES,
+    non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
     non_allowed_functions: list[str] = DEFAULT_NON_ALLOWED_FUNCTIONS,
     non_allowed_methods: list[str] = DEFAULT_NON_ALLOWED_METHODS,
     non_allowed_imports: list[str] = DEFAULT_NON_ALLOWED_IMPORTS,
-    required_nodes: list[ast.Node] | dict[ast.Node, str] = [],
+    required_nodes: list[type] | dict[type, str] = [],
     required_functions: list[str] = [],
     required_methods: list[str] = [],
     required_imports: list[str] = [],
@@ -540,11 +538,11 @@ def run_pep8_test(
 
 def run_astcheck_test(
     student_file_name="",
-    non_allowed_nodes: list[ast.Node] | dict[ast.Node, str] = [],
+    non_allowed_nodes: list[type] | dict[type, str] = [],
     non_allowed_functions: list[str] = [],
     non_allowed_methods: list[str] = [],
     non_allowed_imports: list[str] = [],
-    required_nodes: list[ast.Node] | dict[ast.Node, str] = [],
+    required_nodes: list[type] | dict[type, str] = [],
     required_functions: list[str] = [],
     required_methods: list[str] = [],
     required_imports: list[str] = [],
@@ -608,15 +606,11 @@ def run_astcheck_test(
     ast_violations = ""
     for student_file in files_to_check:
         tree, ast_exception = create_ast_object(filepath)
-        if tree is None:
+        if tree is None and ast_exception is not None:
             ast_violations += ast_exception
             continue
 
         astchecker = AstChecker(student_file, tree)
-
-        if astchecker.tree is None:
-            ast_violations += astchecker.ast_exception
-            break
 
         ast_violations += astchecker.astcheck_nodes(
             non_allowed_nodes, 
@@ -794,20 +788,21 @@ def verify_program_output(test_data: TestData):
 def verify_expected_stderr(test_data: TestData):
     # Incorrect stderr messages
     if test_data.student.stderr != test_data.expected.stderr:
-        if test_data.expected.stderr == "":
-            formatted_proc_stderr = test_data.student.stderr
-        else:
-            formatted_proc_stderr = format_test_in_out_data(test_data.student.stderr)
-
-        test_data.msg.student_stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
-        test_data.msg.expected_stderr = (
-            EXPECTED_STDERR_MSG.format(
-                format_test_in_out_data(test_data.expected.stderr)
-            )
-            if test_data.expected.stderr != ""
-            else ""
-        )
         test_data.success = False
+    
+    if test_data.expected.stderr == "":
+        formatted_proc_stderr = test_data.student.stderr
+    else:
+        formatted_proc_stderr = format_test_in_out_data(test_data.student.stderr)
+
+    test_data.msg.student_stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
+    test_data.msg.expected_stderr = (
+        EXPECTED_STDERR_MSG.format(
+            format_test_in_out_data(test_data.expected.stderr)
+        )
+        if test_data.expected.stderr != ""
+        else ""
+    )
 
 
 def verify_expected_stdout(test_data: TestData):
@@ -817,15 +812,18 @@ def verify_expected_stdout(test_data: TestData):
             test_data.msg.student_stdout = WRONG_STDOUT_MSG.format(
                 format_test_in_out_data(test_data.student.stdout)
             )
-            test_data.msg.expected_stdout = EXPECTED_STDOUT_MSG.format(
-                format_test_in_out_data(test_data.expected.stdout)
-            )
         else:
             test_data.msg.student_stdout = UNEXPECTED_STDOUT_MSG.format(
                 format_test_in_out_data(test_data.student.stdout)
             )
-            test_data.msg.expected_stdout = ""
         test_data.success = False
+    
+    if test_data.expected.stdout != "":
+        test_data.msg.expected_stdout = EXPECTED_STDOUT_MSG.format(
+            format_test_in_out_data(test_data.expected.stdout)
+        )
+    else:
+        test_data.msg.expected_stdout = ""
 
 
 def verify_function_return(test_data: TestData):
@@ -837,21 +835,18 @@ def verify_function_return(test_data: TestData):
                     type(test_data.student.returned).__name__,
                     format_var_as_python_code(test_data.student.returned),
                 )
-                test_data.msg.expected_return = EXPECTED_RETURN_MSG.format(
-                    type(test_data.expected.returned).__name__,
-                    format_var_as_python_code(test_data.expected.returned),
-                )
         elif test_data.expected.stderr != test_data.student.stderr:
             # If there is an expected stderr *WHEN* the function does not return
             # that means it was the student code that triggered it, and it was not
             # the subprocess code running file.
             test_data.msg.student_return = ERROR_RETURN_MSG
-            test_data.msg.expected_return = EXPECTED_RETURN_MSG.format(
-                type(test_data.expected.returned).__name__,
-                format_var_as_python_code(test_data.expected.returned),
-            )
 
-    if test_data.msg.student_return or test_data.msg.expected_return:
+        test_data.msg.expected_return = EXPECTED_RETURN_MSG.format(
+            type(test_data.expected.returned).__name__,
+            format_var_as_python_code(test_data.expected.returned),
+        )
+
+    if test_data.msg.student_return:
         test_data.success = False
 
 
@@ -872,12 +867,12 @@ def verify_expected_mutated_args(test_data: TestData):
     # Check for expected mutated arguments
     if (
         test_data.test_type == TestData.TEST_FUNCTION
-        and test_data.function_check_expected_mutated_args
-        and test_data.student.final_args != test_data.expected.mutated_args
+        and test_data.expected.mutated_args is not None
     ):
-        test_data.msg.student_mutated = RECIEVED_ARGS_MSG.format(
-            format_as_func_arg_string(test_data.student.final_args)
-        )
+        if test_data.student.final_args != test_data.expected.mutated_args:
+            test_data.msg.student_mutated = RECIEVED_ARGS_MSG.format(
+                format_as_func_arg_string(test_data.student.final_args)
+            )
         test_data.msg.expected_mutated = EXPECTED_MUTATED_ARGS_MSG.format(
             format_as_func_arg_string(test_data.expected.mutated_args)
         )
@@ -919,7 +914,7 @@ def verify_expected_files(test_data: TestData):
 # features or libraries, formatting etc.
 
 
-def find_local_import_paths(filepath):
+def find_local_import_paths(filepath: str) -> list[str]:
     """Create a list of relative local import paths"""
     file_path_components = filepath.rsplit("/", 1)
     path_prefix = ""
@@ -942,7 +937,7 @@ def find_local_import_paths(filepath):
     return local_import_paths
 
 
-def recursive_find_local_import_paths(filepath):
+def recursive_find_local_import_paths(filepath: str) -> list[str]:
     """Create a list of every local import in the import tree"""
     local_imports = find_local_import_paths(filepath)
     files_checked = [filepath]
@@ -959,28 +954,28 @@ def recursive_find_local_import_paths(filepath):
 #######################################################################################
 
 
-def format_test_in_out_data(data):
+def format_test_in_out_data(data: Any) -> str:
     """Return string so it shows invisible characters and line wrapping"""
     if FORMAT_TEST_IN_OUT_DATA_AS_STRING:
         return format_var_as_python_code(data)
     return str([data])[2:-2].replace("\\n", "\\n\n").strip("\n").replace("\\'", "'")
 
 
-def format_var_as_python_code(data):
+def format_var_as_python_code(data: Any) -> str:
     """Return variable as string so it prints exactly as required for python assignment"""
     if type(data) == str:
         return str([data])[1:-1]
     return str(data)
 
 
-def format_as_func_arg_string(data):
+def format_as_func_arg_string(data: list[Any] | tuple[Any]) -> str:
     return f"({str(list(data))[1:-1]})"
 
 
 #######################################################################################
 
 
-def cache_hidden_test_files(files: list[tuple[str,str]]):
+def cache_hidden_test_files(files: list[str]) -> dict[str, str]:
     """
     Create a dictionary of Key, Value = Filename, File Content String
     for each file and remove it from path. The files can then be revealed
@@ -1023,7 +1018,7 @@ class HiddenFileManager:
 #######################################################################################
 
 
-def truncate_string(string: str, truncation_length: int, truncation_message: str, from_start: bool = False):
+def truncate_string(string: str, truncation_length: int, truncation_message: str, from_start: bool = False) -> str:
     assert truncation_length >= 0, "Setup Issue: truncate_string: truncation_length <=0"
     if len(string) > truncation_length:
         if from_start:
@@ -1063,7 +1058,11 @@ def truncate_string(string: str, truncation_length: int, truncation_message: str
 
 
 def subprocess_run_with_truncated_output(
-    command: str, input_data: bytes , max_output_size: int, truncation_message: str, timeout_seconds: int = 1
+    command: list[str] | tuple[str], 
+    input_data: bytes , 
+    max_output_size: int, 
+    truncation_message: str, 
+    timeout_seconds: int = 1
 ):
     """
     subprocess.run() cannot limit the amount of input received from stdout and stederr. Given the memory and disk constraints
@@ -1082,11 +1081,10 @@ def subprocess_run_with_truncated_output(
     # Two layers of try-except, one for each of stdout, stderr, as closing a file causes the
     # buffered contents to be written to disk which can cause a new OSError due to insufficient space.
     proc_ret = None
+    stdout_fp = open("stdout.txt", "wb")
+    stderr_fp = open("stderr.txt", "wb")
     try:
         try:
-            stdout_fp = open("stdout.txt", "wb")
-            stderr_fp = open("stderr.txt", "wb")
-
             try:
                 proc_ret = subprocess.run(
                     command,
@@ -1166,7 +1164,6 @@ def private(release_test_cases: bool = False):
     released to students easily.
     """
     private = "#private" if release_test_cases == False else ""
-
     def dec(obj):
         if (obj.__doc__) == None:
             obj.__doc__ = " "
@@ -1181,7 +1178,6 @@ def score(score: (int | float)):
     Set the score given for passing the test when per-testcase scoring is
     enabled. 
     """
-
     def dec(obj):
         if (obj.__doc__) == None:
             obj.__doc__ = " "
@@ -1196,7 +1192,6 @@ def setname(name_override: (str | None) = None):
     Set the student visible testcase name from the test function name eg
     testVisible_1 shows as "Visible 1" or allows a direct override.
     """
-
     def dec(obj):
         name = obj.__name__ if name_override == None else name_override
         if (obj.__doc__) == None:
@@ -1216,20 +1211,20 @@ def setname(name_override: (str | None) = None):
 # All testing happens on the subprocess to avoid the main testing code from crashing.
 
 
-def encode_obj_data(input_data, filename):
+def encode_obj_data(input_data: Any, filename: str):
     """Create a file with python variable as binary data"""
     with open(filename, "wb") as f:
         pickle.dump(input_data, f)
 
 
-def decode_obj_data(filename):
+def decode_obj_data(filename: str):
     """Load python variable from binary encoded python variable file"""
     with open(filename, "rb") as f:
         data = pickle.load(f)
     return data
 
 
-def load_data_object_from_file(class_obj, attr, file):
+def load_data_object_from_file(class_obj, attr: str, file: str):
     obj_exists = os.path.isfile(file)
     if obj_exists:
         setattr(class_obj, attr, decode_obj_data(file))
@@ -1239,7 +1234,7 @@ def load_data_object_from_file(class_obj, attr, file):
 #######################################################################################
 
 
-def check_arg_type(valid_types, **kwargs):
+def check_arg_type(valid_types: list[type] | tuple[type], **kwargs):
     """Error out if the given keyword arguments have the wrong type, to prevent setup mistakes"""
     output = ""
     for name, arg in kwargs.items():
@@ -1251,7 +1246,91 @@ def check_arg_type(valid_types, **kwargs):
         assert False, f"Setup Issue:\n" + output
 
 
-def get_testcase_dict(function_name, docstring):
+class EdCustomGraderJson:
+    TESTCASES = "testcases"
+
+    def __init__(self):
+        self.test_cases: list[EdTestCase] = []
+
+    def add_test_case(
+        self, name: str, score: float | int, hidden: bool, private: bool, passed: bool, ok: bool, feedback: str
+    ):
+        test_case = EdTestCase(name, score, hidden, private, passed, ok, feedback)
+        self.test_cases.append(test_case)
+        return test_case
+    
+    def to_dict(self):
+        entry = {}
+        test_cases_as_dict = []
+        for test_case in self.test_cases:
+            test_cases_as_dict.append(test_case.to_dict())
+        entry[self.TESTCASES] = test_cases_as_dict
+
+
+class EdTestCase:
+        NAME = "name"
+        SCORE = "score"
+        OK = "ok"
+        PASSED = "passed"
+        HIDDEN = "hidden"
+        PRIVATE = "private"
+        FEEDBACK = "feedback"
+        OUTPUT_FILES = "output_files"
+
+        def __init__(
+            self, name: str, score: float | int, hidden: bool, private: bool, passed: bool, ok: bool, feedback: str
+        ): 
+            self.name = name
+            self.score = score
+            self.hidden = hidden
+            self.private = private
+            self.passed = passed
+            self.ok = ok
+            self.feedback = feedback
+            self.output_files: list[EdOutputFile] = []
+            self.test_data: TestData | None = None
+        
+        def add_output_file(self, path: str, title: str, required: bool):
+            self.output_files.append(EdOutputFile(path, title, required))
+    
+        def to_dict(self):
+            entry = {
+                self.NAME : self.name,
+                self.SCORE : self.score,
+                self.HIDDEN : self.hidden,
+                self.PRIVATE : self.private,
+                self.PASSED : self.passed,
+                self.OK : self.ok,
+                self.FEEDBACK : self.feedback,
+            }
+            if self.output_files:
+                output_files_as_dict = []
+                for output_file in self.output_files:
+                    output_files_as_dict.append(output_file.to_dict())
+                entry[self.OUTPUT_FILES] = output_files_as_dict
+
+            return entry
+
+
+class EdOutputFile:
+    PATH = "path"
+    TITLE = "title"
+    REQUIRED = "required"
+    def __init__(self, path: str, title: str, required: bool):
+        self.path = path
+        self.title = title
+        self.required = required
+
+    def to_dict(self):
+        entry = {
+            self.PATH : self.path,
+            self.TITLE : self.title,
+            self.REQUIRED : self.required,
+        }
+        return entry
+
+
+def parse_test_info(function_name:str, docstring: str | None):
     """
     Parse the given docstring of a function for #score() #name() #hidden #private
     and create a dictionary using the format specified by Edstem's custom grader json.
@@ -1278,15 +1357,8 @@ def get_testcase_dict(function_name, docstring):
 
     private = True if "#private" in docstring else False
     hidden = True if "#hidden" in docstring and private == False else False
-    testcase = {}
-    testcase["name"] = name
-    testcase["score"] = score
-    testcase["ok"] = True
-    testcase["passed"] = True
-    testcase["hidden"] = hidden
-    testcase["private"] = private
 
-    return testcase
+    return name, score, hidden, private
 
 
 def get_test_methods_in_order(SafeTestClass):
@@ -1307,7 +1379,7 @@ def get_test_methods_in_order(SafeTestClass):
     return methods
 
 
-def generate_feedback_level(test_data: TestData, levels_to_reduce=0):
+def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
     if levels_to_reduce >= 1:
         pep8_truncation_length = max(
             DEFAULT_PEP8_TRUNCATION_LENGTH // levels_to_reduce, 200
@@ -1384,30 +1456,27 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce=0):
     return "".join(feedback_priority_order)
 
 
-def create_ed_test_json_obj(test_data_list: list[TestData], test_json_list: list[dict]):
-    grader_output = {}
-    grader_output["testcases"] = test_json_list
+def set_test_feedback_level(ed_test_grader_output: EdCustomGraderJson):
 
-    if len(json.dumps(grader_output)) >= EDSTEM_MAX_GRADER_OUTPUT_CHARS:
+    if len(json.dumps(ed_test_grader_output.to_dict())) >= EDSTEM_MAX_GRADER_OUTPUT_CHARS:
         assert False, "Setup Issue: Too many test cases to have any output"
 
     # Show as much output as possible without exceeding the output limit which would crash grader.
     levels_to_reduce = 0
-
     while True:
-        for test_data, test_json in zip(test_data_list, test_json_list):
-            if test_data is not None:
-                test_json["feedback"] = generate_feedback_level(
-                    test_data, levels_to_reduce
+        for ed_test_obj in ed_test_grader_output.test_cases:
+            if ed_test_obj.test_data is not None:
+                ed_test_obj.feedback = generate_feedback_level(
+                    ed_test_obj.test_data, levels_to_reduce
                 )
-
-        if len(json.dumps(grader_output)) < EDSTEM_MAX_GRADER_OUTPUT_CHARS:
-            return grader_output
+        ed_grader_json = json.dumps(ed_test_grader_output.to_dict())
+        if len(ed_grader_json) < EDSTEM_MAX_GRADER_OUTPUT_CHARS:
+            return ed_grader_json
 
         levels_to_reduce += 1
 
 
-def show_output_files(test_data: TestData):
+def find_relevant_output_files(test_data: TestData):
     output_files = []
     if (
         test_data.test_type == TestData.TEST_FUNCTION
@@ -1418,34 +1487,35 @@ def show_output_files(test_data: TestData):
             expected_file_path = STUDENT_FILE_PATH_PREFIX + expected_file
 
             if check_files_equal(student_file_path, expected_file_path) != "":
-                output_files.append(
-                    {"path": student_file_path, "title": "", "required": False}
-                )
-            output_files.append(
-                {"path": expected_file_path, "title": "", "required": False}
-            )
+                output_files.append(student_file_path)
+
+            output_files.append(expected_file_path)
 
     return output_files
 
 
-def write_to_test_log(test_data: TestData, test_json: dict, visible_log_fp, private_log_fp, *msgs: str):
+def write_to_test_log(ed_test_obj: EdTestCase, visible_log_fp, private_log_fp, *msgs: str):
     test_visibility = "Visible"
-    pass_or_fail = "FAILED"
-    fp = private_log_fp
-    if test_json["hidden"]:
+    if ed_test_obj.hidden:
         test_visibility = "Hidden"
-    elif test_json["private"]:
+    elif ed_test_obj.private:
         test_visibility = "Private"
 
-    if test_json["passed"]:
+    pass_or_fail = "FAILED"
+    if ed_test_obj.passed:
         pass_or_fail = "PASSED"
 
-    if not test_json["hidden"] and not test_json["private"]:
+    fp = private_log_fp
+    if not ed_test_obj.hidden and not ed_test_obj.private:
         fp = visible_log_fp
-    
+
+    test_type = "unspecified-test"
+    if ed_test_obj.test_data is not None:
+        test_type = ed_test_obj.test_data.test_type
+
     fp.write("=" * 100 + "\n")
     fp.write(
-        f"{pass_or_fail} {test_visibility} <{test_data.test_type}> '{test_json["name"]}':\n"
+        f"{pass_or_fail} {test_visibility} <{test_type}> '{ed_test_obj.name}':\n"
     )
     fp.write("=" * 100 + "\n")
     for msg in msgs:
@@ -1460,48 +1530,18 @@ def generate_test_report_entry(test_data: TestData):
     
     *Still has file size limitations etc, so some truncation may be needed.
     """
-    messages = []
-    messages.append(test_data.msg.function_call)
-    messages.append(test_data.msg.input)
-    if hasattr(test_data.expected, "stderr"):
-        messages.append(EXPECTED_STDERR_MSG.format(
-                    format_test_in_out_data(test_data.expected.stderr)
-                )
-        )
-    if hasattr(test_data.expected, "stdout"):
-        messages.append(EXPECTED_STDOUT_MSG.format(
-                    format_test_in_out_data(test_data.expected.stdout)
-                )
-        )
-    
-    if test_data.test_type == TestData.TEST_FUNCTION:
-        if hasattr(test_data.expected, "returned"):
-            messages.append(EXPECTED_RETURN_MSG.format(
-                        type(test_data.expected.returned).__name__,
-                        format_var_as_python_code(test_data.expected.returned),
-                    )
-            )
-        if test_data.function_fail_on_mutated_args:
-            messages.append(FAIL_ON_MUTATION_MSG)
-            
-        if (
-            hasattr(test_data.expected, "mutated_args")
-            and test_data.function_check_expected_mutated_args
-        ):
-            messages.append(EXPECTED_MUTATED_ARGS_MSG.format(
-                        format_as_func_arg_string(
-                            test_data.expected.mutated_args
-                        )
-                    )
-            )
-        
-        if hasattr(test_data.expected, "filenames"):
-            messages.append(EXPECTED_FILES_MSG.format(
-                    "".join(
-                        str(tup) for tup in test_data.expected.filenames
-                    )
-                )
-            )
+    messages = [
+        test_data.msg.function_call,
+        test_data.msg.input,
+        test_data.msg.timeout,
+        test_data.msg.expected_stderr,
+        test_data.msg.expected_stdout,
+        test_data.msg.expected_return,
+        test_data.msg.mutation_check,
+        test_data.msg.expected_mutated,
+        test_data.msg.expected_file,  
+    ]
+    messages = [msg.replace("►", ">") for msg in messages]
     
     return messages
     
@@ -1513,62 +1553,101 @@ def generate_execution_transcript_entry(test_data: TestData):
         test_data.msg.function_call,
         test_data.msg.input,
         test_data.msg.timeout,
-        test_data.msg.student_stderr,
-        test_data.msg.expected_stderr,
-        test_data.msg.student_stdout,
-        test_data.msg.expected_stdout,
-        test_data.msg.student_return,
-        test_data.msg.expected_return,
-        test_data.msg.mutation_check,
-        test_data.msg.student_mutated,
-        test_data.msg.expected_mutated,
-        test_data.msg.expected_file,  
     ]
+
+    if test_data.msg.student_stderr:
+        execution_transcript.append(test_data.msg.expected_stderr)
+    if test_data.msg.student_stdout:
+        execution_transcript.append(test_data.msg.expected_stdout)
+    if test_data.msg.student_return:
+        execution_transcript.append(test_data.msg.expected_return)
+    execution_transcript.append(test_data.msg.mutation_check)
+    if test_data.msg.student_mutated:
+        execution_transcript.append(test_data.msg.expected_mutated)
+    execution_transcript.append(test_data.msg.expected_file)
+    
     # Ed does not display unicode chars in the file preview correctly.
     execution_transcript = [msg.replace("►", ">") for msg in execution_transcript]
     return execution_transcript
 
 
-def create_test_report_testcases():
-    visible_test_report_testcase = get_testcase_dict(
-        "", "#name(Test Case Report) #score(0)"
+def create_test_report_testcases(ed_test_grader_output: EdCustomGraderJson):
+    visible_test_report = ed_test_grader_output.add_test_case(
+        "Test Case Report", 0, False, False, True, True, ""
     )
-    private_test_report_testcase = get_testcase_dict(
-        "", "#name(Private Test Case Report) #score(0) #private"
+    visible_test_report.add_output_file(
+        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_REPORT_FILENAME,
+        "Visible Test Report",
+        False,
     )
-    visible_test_report_testcase["output_files"] = [
-        {
-            "path": STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_REPORT_FILENAME,
-            "title": "Visible Test Report",
-            "required": False,
-        },
-        {
-            "path": STUDENT_FILE_PATH_PREFIX
-            + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME,
-            "title": "Visible Execution Transcript",
-            "required": False,
-        },
-    ]
-    private_test_report_testcase["output_files"] = [
-        {
-            "path": STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_REPORT_FILENAME,
-            "title": "Private Test Report",
-            "required": False,
-        },
-        {
-            "path": STUDENT_FILE_PATH_PREFIX
-            + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME,
-            "title": "Private Exectuion Transcript",
-            "required": False,
-        },
-    ]
-    return visible_test_report_testcase, private_test_report_testcase
+    visible_test_report.add_output_file(
+        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME,
+        "Visible Test Execution Transcript",
+        False,
+    )
+    private_test_report = ed_test_grader_output.add_test_case(
+        "Private Test Case Report", 0, False, False, True, True, ""
+    )
+    private_test_report.add_output_file(
+        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_REPORT_FILENAME,
+        "Private Test Report",
+        False,
+    )
+    private_test_report.add_output_file(
+        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME,
+        "Private Test Execution Transcript",
+        False,
+    )
+
+def write_test_report_files(ed_test_list: list[EdTestCase]):    
+    visible_transcript_fp = open(
+        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w"
+    )
+    private_transcript_fp = open(
+        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w"
+    )
+    visible_report_fp = open(
+        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_REPORT_FILENAME, "w"
+    )
+    private_report_fp = open(
+        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_REPORT_FILENAME, "w"
+    )
+    for ed_test_obj in ed_test_list:
+        if ed_test_obj.test_data is not None:
+            write_to_test_log(
+                ed_test_obj, 
+                visible_report_fp, 
+                private_report_fp, 
+                *generate_test_report_entry(ed_test_obj.test_data)
+            )
+            write_to_test_log(
+                ed_test_obj, 
+                visible_transcript_fp, 
+                private_transcript_fp, 
+                *generate_execution_transcript_entry(ed_test_obj.test_data)
+            )
+            # Free up space as these are not used again later, only msg fields
+            del ed_test_obj.test_data.student
+            del ed_test_obj.test_data.expected
+
+    visible_transcript_fp.close()
+    private_transcript_fp.close()
+    visible_report_fp.close()
+    private_report_fp.close()
+
+
+def set_test_output_files(ed_test_grader_output: EdCustomGraderJson):
+    for ed_test_obj in ed_test_grader_output.test_cases:
+        if ed_test_obj.test_data is not None:
+            for file_name in find_relevant_output_files(ed_test_obj.test_data):
+                ed_test_obj.add_output_file(file_name, "", False)
+
 
 def run_tests(
     SafeTestClass,
-    setup_mode=False,
-    show_all_passed_tests_first=True,
-    file_path_prefix=DEFAULT_STUDENT_FILE_PATH_PREFIX,
+    setup_mode: bool = False,
+    show_all_passed_tests_first: bool = True,
+    file_path_prefix: str = DEFAULT_STUDENT_FILE_PATH_PREFIX,
 ):
     """Test Runner function that runs all test methods in a test class"""
     global STUDENT_FILE_PATH_PREFIX
@@ -1578,108 +1657,49 @@ def run_tests(
     test_list = get_test_methods_in_order(SafeTestClass)
     testbench = SafeTestClass()
 
-    test_data_list = []
-    test_json_list = []
-
-    (
-        visible_test_report_testcase, 
-        private_test_report_testcase
-    ) = create_test_report_testcases()
-
-    # Preserve the ordering by adding None into data list.
-    test_data_list.append(None)
-    test_data_list.append(None)
-    test_json_list.append(visible_test_report_testcase)
-    test_json_list.append(private_test_report_testcase)
-    
-    visible_transcript_file = STUDENT_FILE_PATH_PREFIX 
-    visible_transcript_file += VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME
-    private_transcript_file = STUDENT_FILE_PATH_PREFIX 
-    private_transcript_file += PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME
-    visible_report_file = STUDENT_FILE_PATH_PREFIX 
-    visible_report_file += VISIBLE_TEST_REPORT_FILENAME
-    private_report_file = STUDENT_FILE_PATH_PREFIX 
-    private_report_file += PRIVATE_TEST_REPORT_FILENAME
-    
-    visible_transcript_fp = open(visible_transcript_file, "w")
-    private_transcript_fp = open(private_transcript_file, "w")
-    visible_report_fp = open(visible_report_file, "w")
-    private_report_fp = open(private_report_file, "w")
+    ed_test_grader_output = EdCustomGraderJson()
+    create_test_report_testcases(ed_test_grader_output)
 
     for test in test_list:
         test_method = getattr(testbench, test)
-        testcase_dict = get_testcase_dict(test_method.__name__, test_method.__doc__)
-        prev_len = len(test_data_list)
+        name, score, hidden, private = parse_test_info(test_method.__name, test_method.__docstring)
+        passed, ok, feedback  = False, True, ""
         try:
-            test_data: TestData = test_method()
+            test_data: TestData | None = test_method()
             if not isinstance(test_data, TestData):
-                testcase_dict["feedback"] = (
+                test_data = None
+                feedback = (
                     "Setup Issue: Test Method did not return TestData object"
                 )
-                testcase_dict["passed"] = False
             else:
-                output_files = show_output_files(test_data)
-                if output_files != []:
-                    testcase_dict["output_files"] = output_files
-                    
-
-                test_data_list.append(test_data)
-                testcase_dict["passed"] = test_data.success
-                write_to_test_log(
-                    test_data, 
-                    testcase_dict, 
-                    visible_report_fp, 
-                    private_report_fp, 
-                    *generate_test_report_entry(test_data)
-                )
-                write_to_test_log(
-                    test_data, 
-                    testcase_dict, 
-                    visible_transcript_fp, 
-                    private_transcript_fp, 
-                    *generate_execution_transcript_entry(test_data)
-                )
-                # Free up space as these are not used again later, only msg fields
-                del test_data.student
-                del test_data.expected
+                passed = test_data.success
 
         except Exception as e:
             if setup_mode:
                 raise Exception from e
-            testcase_dict["feedback"] = str(e)
-            testcase_dict["passed"] = False
-            testcase_dict["name"] = "FAILED TEST BENCH!!! " + testcase_dict["name"]
-            testcase_dict["ok"] = False  # Test Bench Error.
-
-        if prev_len == len(test_data_list):
-            # append dummy value to preserve ordering
-            test_data_list.append(None)
-
+            feedback = str(e)
+            ok = False  # Test Bench Error.
+            test_data = None
+            
         if setup_mode:
-            testcase_dict["feedback"] = "Setup Issue: Disable SETUP_MODE\n"
-            testcase_dict["passed"] = False
+            feedback = "Setup Issue: Disable SETUP_MODE\n"
 
-        test_json_list.append(testcase_dict)
-
-    visible_transcript_fp.close()
-    private_transcript_fp.close()
-    visible_report_fp.close()
-    private_report_fp.close()
-    
-    ed_test_case_json = create_ed_test_json_obj(test_data_list, test_json_list)
+        ed_test_obj = ed_test_grader_output.add_test_case(name, score, hidden, private, passed, ok, feedback)
+        ed_test_obj.test_data = test_data
 
     if show_all_passed_tests_first:
-        ed_test_case_json["testcases"].sort(key=lambda x: not x["passed"])
+        ed_test_grader_output.test_cases.sort(key=lambda x: not x.passed)
     
-    print(json.dumps(ed_test_case_json))
+    write_test_report_files(ed_test_grader_output.test_cases)
+    set_test_output_files(ed_test_grader_output)
+    ed_test_case_json = set_test_feedback_level(ed_test_grader_output)
+    # Ed reads the test json from stdout
+    print(ed_test_case_json)
 
 
 #######################################################################################
 # The runtestsubprocess files must be removed from path before running student code, so it is
 # convient to store it directly in here, to avoid version control inconvenience.
-
-
-RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
 
 INPUT_WITH_ECHOING_FUNCTION = r"""
 def input_with_echoing(prompt):
