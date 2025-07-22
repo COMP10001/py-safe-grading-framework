@@ -1298,37 +1298,37 @@ def truncate_string(
     return string
 
 
-# class MaxFileSizeManager:
-#     '''
-#     Automatically truncate the file in this context if it is oversized on exit
-#     due to being finished with it, or an error erorring.
-#     '''
-#     def __init__(self, filename, open_opt, truncation_size, truncation_message):
-#         self.filename = filename
-#         self.open_opt = open_opt
-#         self.truncation_size = truncation_size
-#         self.truncation_message = truncation_message
-#         self.was_truncated = False
+class MaxFileSizeManager:
+    '''
+    Automatically truncate the file in this context if it is oversized on exit
+    due to being finished with it, or an error erorring.
+    '''
+    def __init__(self, filename: str, open_opt: str, truncation_size: int):
+        self.filename = filename
+        self.open_opt = open_opt
+        self.truncation_size = truncation_size
+        self.was_truncated = False
 
-#     def __enter__(self):
-#         self.file_fp  = open(self.filename, self.open_opt)
+    def __enter__(self):
+        self.file_fp  = open(self.filename, self.open_opt)
+        return self
 
-#     def __exit__(
-#         self,
-#         exc_type: type[BaseException] | None,
-#         exc_val: BaseException | None,
-#         exc_tb: TracebackType | None,
-#     ) -> bool | None:
-#         self.file_fp.close()
-#         if (os.path.getsize(self.filename) > self.truncation_size):
-#             # immediately truncate over sized output file, to avoid a new OSError.
-#             stdout_fp = open("stdout.txt", "a")
-#             stdout_fp.truncate(self.truncation_size)
-#             stdout_fp.close()
-#         if exc_type == OSError:
-#             # Ignore this exception as it is from the file being oversized.
-#             self.was_truncated = True
-#             return True
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        self.file_fp.close()
+        if (os.path.getsize(self.filename) > self.truncation_size):
+            # immediately truncate over sized output file, to avoid a new OSError.
+            stdout_fp = open("stdout.txt", "a")
+            stdout_fp.truncate(self.truncation_size)
+            stdout_fp.close()
+        if exc_type == OSError:
+            # Ignore this exception as it is from the file being oversized.
+            self.was_truncated = True
+            return True
 
 
 def subprocess_run_with_truncated_output(
@@ -1356,15 +1356,13 @@ def subprocess_run_with_truncated_output(
     # Two layers of try-except, one for each of stdout, stderr, as closing a file causes the
     # buffered contents to be written to disk which can cause a new OSError due to insufficient space.
     proc_ret = None
-    stdout_fp = open("stdout.txt", "wb")
-    stderr_fp = open("stderr.txt", "wb")
-    try:
-        try:
+    with MaxFileSizeManager("stdout.txt", "wb", max_output_size) as stdout_file:
+        with MaxFileSizeManager("stderr.txt", "wb", max_output_size) as stderr_file:
             try:
                 proc_ret = subprocess.run(
                     command,
-                    stdout=stdout_fp,
-                    stderr=stderr_fp,
+                    stdout=stdout_file.file_fp,
+                    stderr=stderr_file.file_fp,
                     input=input_data,
                     timeout=timeout_seconds,
                 )
@@ -1373,39 +1371,16 @@ def subprocess_run_with_truncated_output(
                     timeout_seconds, timeout_suffix
                 )
 
-            stdout_fp.close()
+            if stdout_file.was_truncated:
+                stdout_file.file_fp.write(truncation_message.encode())
+            if stderr_file.was_truncated:
+                stderr_file.file_fp.write(truncation_message.encode())
 
-        except OSError:
-            # If too much output is generated there will be no more space on device
-            pass
-
-        if os.path.getsize("stdout.txt") > max_output_size:
-            # immediately truncate over sized output file, to avoid a new OSError.
-            stdout_fp = open("stdout.txt", "a")
-            stdout_fp.truncate(max_output_size)
-            stdout_fp.close()
-            proc_stdout += truncation_message
-
-        stdout_fp = open("stdout.txt", "rb")
-        proc_stdout = stdout_fp.read().decode() + proc_stdout
-        stdout_fp.close()
-        os.remove("stdout.txt")
-        stderr_fp.close()
-
-    except OSError:
-        # If too much output is generated there will be no more space on device
-        pass
-
-    if os.path.getsize("stderr.txt") > max_output_size:
-        # immediately truncate over sized output file, to avoid a new OSError.
-        stderr_fp = open("stderr.txt", "a")
-        stderr_fp.truncate(max_output_size)
-        stderr_fp.close()
-        proc_stderr += truncation_message
-
-    stderr_fp = open("stderr.txt", "rb")
-    proc_stderr = stderr_fp.read().decode() + proc_stderr
-    stderr_fp.close()
+    with open("stdout.txt") as stdout_fp:
+        proc_stdout = stdout_fp.read()
+    with open("stderr.txt") as stderr_fp:
+        proc_stderr = stderr_fp.read()
+    os.remove("stdout.txt")
     os.remove("stderr.txt")
 
     return proc_ret, proc_stdout, proc_stderr, timeout_message
