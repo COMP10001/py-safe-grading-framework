@@ -21,69 +21,69 @@ RELEASE_TEST_CASES = False
 
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
-FILES_TO_HIDE = [] #["hidden.txt"] # eg ["abc.txt"]
+FILES_TO_HIDE = ["hidden.txt"] # eg ["abc.txt"]
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 
 test_bench = SafeTesting(
-    setup_mode=False,
+    setup_mode=True,
     make_all_tests_visible=RELEASE_TEST_CASES,
     show_all_passed_tests_first=True,
     show_test_reports=True,
-    file_path_prefix='/home/admin/git/safe-testing-framework',
+    file_path_prefix='/home/',
 )
 
 test_bench.cache_hidden_test_files(FILES_TO_HIDE)
 
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 test_bench.register_pep8_test(
-    name = "test_PEP8_Pass",
+   name = "PEP8 Pass",
     student_file_name="pep8_pass.py",        
     ignored_tests=PEP8_IGNORED          
 )
 
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 test_bench.register_pep8_test(
-    name = "test_PEP8_Fail",
+   name = "PEP8 Fail",
     student_file_name="pep8_fail.py",        
     ignored_tests=PEP8_IGNORED          
 )
 
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 test_bench.register_pep8_test(
-    name = "test_PEP8_Recursive_File_Check_Fail",
+   name = "PEP8 Recursive File Check Fail",
     student_file_name="pep8_recursive_import_test.py",        
     ignored_tests=PEP8_IGNORED          
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Functions_Pass ",
+   name = "AST Check Non Allowed Functions Pass ",
     student_file_name="astcheck_non_allowed_functions.py",
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Functions_Fail ",
+   name = "AST Check Non Allowed Functions Fail ",
     student_file_name="astcheck_non_allowed_functions.py",
     non_allowed_functions=["print"],                         
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Imports_Pass",
+   name = "AST Check Non Allowed Imports Pass",
     student_file_name="astcheck_non_allowed_imports.py",
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Imports_Fail ",
+   name = "AST Check Non Allowed Imports Fail",
     student_file_name="astcheck_non_allowed_imports.py",
     non_allowed_imports = ["sys"],                         
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Imports_Recursive_Check_Pass ",
+   name = "AST Check Non Allowed Imports Recursive Check Pass ",
     student_file_name="astcheck_recursive_import_test.py",
     non_allowed_imports = ["signal", "subprocess"],
 
@@ -91,7 +91,7 @@ test_bench.register_ast_test(
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Imports_Recursive_Check_Fail ",
+   name = "AST Check Non Allowed Imports Recursive Check Fail ",
     student_file_name="astcheck_recursive_import_test.py",
     non_allowed_imports = ["sys","subprocess"],                         
 
@@ -99,63 +99,63 @@ test_bench.register_ast_test(
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Nodes_Pass ",
+   name = "AST Check Non Allowed Nodes Pass ",
     student_file_name="astcheck_non_allowed_nodes.py",
     non_allowed_nodes = [ast.While],           
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Nodes_Fail ",
+   name = "AST Check Non Allowed Nodes Fail ",
     student_file_name="astcheck_non_allowed_nodes.py",
     non_allowed_nodes = [ast.For],           
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Required_Nodes_Pass ",
+   name = "AST Check Required Nodes Pass ",
     student_file_name="astcheck_required_nodes.py",
     required_nodes=[ast.For],                             
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Required_Nodes_Fail",
+   name = "AST Check Required Nodes Fail",
     student_file_name="astcheck_required_nodes.py",
     required_nodes=[ast.For, ast.While],                                 
 )
 
 
 test_bench.register_ast_test(
-    name = "AST Check_Non_Allowed Nodes Custom Name Pass",
+   name = "AST Check Non Allowed Nodes Custom Name Pass",
     student_file_name="astcheck_non_allowed_nodes.py",
     non_allowed_nodes = {ast.While: "while loop"},    
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Non_Allowed_Nodes_Custom_Name_Fail ",
+   name = "AST Check Non Allowed Nodes Custom Name Fail ",
     student_file_name="astcheck_non_allowed_nodes.py",
     non_allowed_nodes = {ast.For: "for loop"},            
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Required_Nodes_Custom_Name_Pass ",
+   name = "AST Check Required Nodes Custom Name Pass ",
     student_file_name="astcheck_required_nodes.py",
     required_nodes={ast.For: "for loop"},                              
 )
 
 
 test_bench.register_ast_test(
-    name = "testAST_Check_Required_Nodes_Custom_Name_Fail ",
+   name = "AST Check Required Nodes Custom Name Fail ",
     student_file_name="astcheck_required_nodes.py",
     required_nodes={ast.For: "for loop", ast.While: "while loop"},                            
 )
 
 
 test_bench.register_function_test(
-    name = "testFunction_Not_Defined",
+   name = "Function Not Defined",
     student_file_name="function_tests.py",
     function_name="missing_function",                          
     function_args=["hello"],                                           
@@ -169,7 +169,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Missing_Body_Fail",
+   name = "Function Missing Body Fail",
     student_file_name="missing_function_body.py",
     function_name="missing_body",                          
     function_args=[],                                           
@@ -184,7 +184,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Check_1_Input_Arg_Fail",
+   name = "Function Check 1 Input Arg Fail",
     student_file_name="function_tests.py",
     function_name="check_1_input_arg",                          
     function_args=("hello",),                                           
@@ -199,7 +199,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Check_2_Input_Arg_Fail",
+   name = "Function Check 2 Input Arg Fail",
     student_file_name="function_tests.py",
 
     function_name="check_2_input_arg",                          
@@ -216,7 +216,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testfunction_fail_on_mutated_args_Input_Fail",
+   name = "function fail on mutated args Input Fail",
     student_file_name="function_tests.py",
     function_name="check_mutate_fail",                          
     function_args=([1,2,3],),                                           
@@ -237,9 +237,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__Int_Pass",
+   name = "Function Return Int Pass",
     student_file_name="function_tests.py",
-    function_name="expected__int",                                         
+    function_name="expected_return_int",                                         
     function_args=[],                                           
     function_expected = 1,                                 
     function_timeout_seconds = 1,                               
@@ -257,9 +257,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__Int_Fail",
+   name = "Function Return Int Fail",
     student_file_name="function_tests.py",
-    function_name="expected__int",                                         
+    function_name="expected_return_int",                                         
     function_args=[],                                           
     function_expected = 4,                                 
     function_timeout_seconds = 1,                               
@@ -277,9 +277,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__Str_Pass",
+   name = "Function  Str Pass",
     student_file_name="function_tests.py",
-    function_name="expected__str",                                         
+    function_name="expected_return_str",                                         
     function_args=[],                                           
     function_expected = "abc\ndefgh\t\r\nhello",                                 
     function_timeout_seconds = 1,                               
@@ -297,9 +297,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__Str_Fail",
+   name = "Function Return Str Fail",
     student_file_name="function_tests.py",
-    function_name="expected__str",                                         
+    function_name="expected_return_str",                                         
     function_args=[],                                           
     function_expected = "1234\n1234\n1234",                                 
     function_timeout_seconds = 1,                               
@@ -317,9 +317,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__Float_Pass",
+   name = "Function Return Float Pass",
     student_file_name="function_tests.py",
-    function_name="expected__float",                                         
+    function_name="expected_return_float",                                         
     function_args=[],                                           
     function_expected = 1.0,                                 
     function_timeout_seconds = 1,                               
@@ -337,9 +337,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__Float_Fail",
+   name = "Function Return Float Fail",
     student_file_name="function_tests.py",
-    function_name="expected__float",                                         
+    function_name="expected_return_float",                                         
     function_args=[],                                           
     function_expected = 1.5,                                 
     function_timeout_seconds = 1,                               
@@ -357,9 +357,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__List_Pass",
+   name = "Function Return List Pass",
     student_file_name="function_tests.py",
-    function_name="expected__list",                                         
+    function_name="expected_return_list",                                         
     function_args=[],                                           
     function_expected = [1, 1.0, "abc", ("hi", 123)],                                 
     function_timeout_seconds = 1,                               
@@ -377,9 +377,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__List_Fail",
+   name = "Function Return List Fail",
     student_file_name="function_tests.py",
-    function_name="expected__list",                                         
+    function_name="expected_return_list",                                         
     function_args=[],                                           
     function_expected = [1,2,3,"abc"],                                 
     function_timeout_seconds = 1,                               
@@ -397,9 +397,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__Tuple_Pass",
+   name = "Function Return Tuple Pass",
     student_file_name="function_tests.py",
-    function_name="expected__tuple",                                         
+    function_name="expected_return_tuple",                                         
     function_args=[],                                           
     function_expected = (123, "abc", [1,2,3]),                                 
     function_timeout_seconds = 1,                               
@@ -417,9 +417,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction__List_Fail",
+   name = "Function Return Tuple Fail",
     student_file_name="function_tests.py",
-    function_name="expected__tuple",                                         
+    function_name="expected_return_tuple",                                         
     function_args=[],                                           
     function_expected = (1,2,3,"abc"),                                 
     function_timeout_seconds = 1,                               
@@ -437,7 +437,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_Stdout_Pass",
+   name = "Function Expected Stdout Pass",
     student_file_name="function_tests.py",
     function_name="expected_stdout",                                         
     function_args=[],                                           
@@ -457,7 +457,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_Stdout_Fail",
+   name = "Function Expected Stdout Fail",
     student_file_name="function_tests.py",
     function_name="expected_stdout",                                         
     function_args=[],                                           
@@ -477,7 +477,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_Stderr_Pass",
+   name = "Function Expected Stderr Pass",
     student_file_name="function_tests.py",
     function_name="expected_stderr",                                         
     function_args=[],                                           
@@ -497,7 +497,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_Stderr_Fail",
+   name = "Function Expected Stderr Fail",
     student_file_name="function_tests.py",
     function_name="expected_stderr",                                         
     function_args=[],                                           
@@ -517,7 +517,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_Stderr_Exception_Pass",
+   name = "Function Expected Stderr Exception Pass",
     student_file_name="function_tests.py",
     function_name="expected_stderr_exception",                                         
     function_args=[],                                           
@@ -537,7 +537,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_Stderr_Exception_Fail",
+   name = "Function Expected Stderr Exception Fail",
     student_file_name="function_tests.py",
     function_name="expected_stderr_exception",                                         
     function_args=[],                                           
@@ -557,9 +557,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected__and_Stdout_Pass",
+   name = "Function Expected Return and Stdout Pass",
     student_file_name="function_tests.py",
-    function_name="expected__and_stdout",                                         
+    function_name="expected_return_and_stdout",                                         
     function_args=[],                                           
     function_expected = "abc",                                 
     function_timeout_seconds = 1,                               
@@ -577,9 +577,9 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected__and_Stdout_Fail",
+   name = "Function Expected Return and Stdout Fail",
     student_file_name="function_tests.py",
-    function_name="expected__and_stdout",                                         
+    function_name="expected_return_and_stdout",                                         
     function_args=[],                                           
     function_expected = "abc1234",                            
     function_timeout_seconds = 1,                               
@@ -597,7 +597,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Timeout_1_second_Fail",
+   name = "Function Timeout 1 second Fail",
     student_file_name="function_tests.py",
     function_name="timeout_fail",                                         
     function_args=[],                                           
@@ -617,7 +617,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Timeout_2_second_Fail",
+   name = "Function Timeout 2 second Fail",
     student_file_name="function_tests.py",
     function_name="timeout_fail",                                         
     function_args=[],                                           
@@ -637,7 +637,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Hidden_File_Valid_Access_Pass",
+   name = "Function Hidden File Valid Access Pass",
     student_file_name="function_tests.py",
     function_name="hidden_files_access",                                         
     function_args=[],                                           
@@ -657,7 +657,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Hidden_File_Invalid_Access_Fail",
+   name = "Function Hidden File Invalid Access Fail",
     student_file_name="function_tests.py",
     function_name="hidden_files_access",                                         
     function_args=[],                                           
@@ -677,7 +677,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Input_Pass",
+   name = "Function Input Pass",
     student_file_name="function_tests.py",
     function_name="input_echoing",                                         
     function_args=[],                                           
@@ -697,7 +697,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Input_Fail",
+   name = "Function Input Fail",
     student_file_name="function_tests.py",
     function_name="input_echoing",                                         
     function_args=[],                                           
@@ -717,7 +717,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Input_Echoing_Pass",
+   name = "Function Input Echoing Pass",
     student_file_name="function_tests.py",
     function_name="input_echoing",                                         
     function_args=[],                                           
@@ -737,7 +737,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Input_Echoing_Fail",
+   name = "Function Input Echoing Fail",
     student_file_name="function_tests.py",
     function_name="input_echoing",                                         
     function_args=[],                                           
@@ -757,7 +757,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Spam_Print_Fail",
+   name = "Function Spam Print Fail",
     student_file_name="function_tests.py",
     function_name="spam_print",                                         
     function_args=[],                                           
@@ -777,7 +777,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Spam_Print_Stdout_and_Stderr_Fail",
+   name = "Function Spam Print Stdout and Stderr Fail",
     student_file_name="function_tests.py",
     function_name="spam_print_stdout_stderr",                  
     function_args=[],                                           
@@ -797,7 +797,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Import_With_Dashes_Pass",
+   name = "Function Import With Dashes Pass",
     student_file_name="import-with-dashes.py",
     function_name="func",                  
     function_args=[],                                           
@@ -817,7 +817,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_File_Pass",
+   name = "Function Expected File Pass",
     student_file_name="function_tests.py",
     function_name="expected_file",                  
     function_args=[],                                           
@@ -838,7 +838,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-    name = "testFunction_Expected_File_Fail",
+   name = "Function Expected File Fail",
     student_file_name="function_tests.py",
     function_name="expected_file",                  
     function_args=[],                                           
@@ -859,7 +859,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Input_Pass",
+   name = "Script Input Pass",
     student_file_name="script_input_echoing.py",
     script_timeout_seconds=1,                                   
     input_data="1\n2\n",                                                    
@@ -875,7 +875,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Input_Fail",
+   name = "Script Input Fail",
     student_file_name="script_input_echoing.py",
     script_timeout_seconds=1,                                   
     input_data="1\n",                                                    
@@ -891,7 +891,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Input_Echoing_Pass",
+   name = "Script Input Echoing Pass",
     student_file_name="script_input_echoing.py",
     script_timeout_seconds=1,                                   
     input_data="1\n2\n",                                                    
@@ -907,7 +907,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Input_Echoing_Fail",
+   name = "Script Input Echoing Fail",
     student_file_name="script_input_echoing.py",
     script_timeout_seconds=1,                                   
     input_data="1\n",                                                    
@@ -923,7 +923,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Timeout_1_Second_Fail",
+   name = "Script Timeout 1 Second Fail",
     student_file_name="script_timeout_fail.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -939,7 +939,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Timeout_2_Second_Fail",
+   name = "Script Timeout 2 Second Fail",
     student_file_name="script_timeout_fail.py",
     script_timeout_seconds=2,                                   
     input_data="",                                                    
@@ -955,7 +955,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_Stdout_Pass",
+   name = "Script Expected Stdout Pass",
     student_file_name="script_expected_stdout.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -971,7 +971,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_Stdout_Fail",
+   name = "Script Expected Stdout Fail",
     student_file_name="script_expected_stdout.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -987,7 +987,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_Stderr_Pass",
+   name = "Script Expected Stderr Pass",
     student_file_name="script_expected_stderr.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1003,7 +1003,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_Stderr_Fail",
+   name = "Script Expected Stderr Fail",
     student_file_name="script_expected_stderr.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1019,7 +1019,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_Stderr_Exception_Pass",
+   name = "Script Expected Stderr Exception Pass",
     student_file_name="script_expected_stderr_exception.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1035,7 +1035,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_Stderr_Exception_Fail",
+   name = "Script Expected Stderr Exception Fail",
     student_file_name="script_expected_stderr_exception.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1051,7 +1051,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Hidden_File_Valid_Access_Pass",
+   name = "Script Hidden File Valid Access Pass",
     student_file_name="script_hidden_files.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1067,7 +1067,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Hidden_File_Invalid_Access_Fail",
+   name = "Script Hidden File Invalid Access Fail",
     student_file_name="script_hidden_files.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1083,7 +1083,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Import_With_Dashes_Pass",
+   name = "Script Import With Dashes Pass",
     student_file_name="import-with-dashes.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1099,7 +1099,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_File_Pass",
+   name = "Script Expected File Pass",
     student_file_name="script_expected_file.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
@@ -1116,7 +1116,7 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-    name = "testScript_Expected_File_Fail",
+   name = "Script Expected File Fail",
     student_file_name="script_expected_file.py",
     script_timeout_seconds=1,                                   
     input_data="",                                                    
