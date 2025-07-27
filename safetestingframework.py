@@ -17,7 +17,7 @@ import sys
 import dill
 
 from pydantic import validate_call, PlainValidator
-from typing import Any, Annotated
+from typing import Any, Annotated, Callable
 from types import TracebackType
 if sys.version_info >= (3, 12):
     from collections.abc import Buffer
@@ -146,6 +146,104 @@ def validate_exception_instance(v):
 ExceptionInstance = Annotated[Exception, PlainValidator(validate_exception_instance)]
 
 #######################################################################################
+
+class TestData:
+    TEST_FUNCTION = "function-test"
+    TEST_SCRIPT = "script-test"
+    TEST_AST = "ast-test"
+    TEST_PEP8 = "pep8-test"
+
+    def __init__(self, name, score, hidden, private, student_file_name, test_type):
+        
+        self.test_type: str  = test_type
+        self.name: str = name
+        self.score: float | int = score
+        self.hidden: bool = hidden
+        self.private: bool = private
+        self.student_file_name: str = student_file_name
+        self.success: bool = False
+        self.test_timeout: int = 1
+
+        self.input_data: str
+        self.input_echoing: bool
+        self.files_to_reveal: list[str] 
+        self.hidden_file_dict: dict[str, str]
+
+        self.function_name: str
+        self.function_fail_on_mutated_args: bool
+        
+        self.custom_verification_function: Callable | None
+        self.custom_verification_timeout: int
+        self.custom_verification_timeout_msg: str
+        
+        self.non_allowed_nodes: list[type] | dict[type, str]
+        self.non_allowed_functions: list[str]
+        self.non_allowed_methods: list[str]
+        self.non_allowed_imports: list[str]
+        self.required_nodes: list[type] | dict[type, str]
+        self.required_functions: list[str]
+        self.required_methods: list[str]
+        self.required_imports: list[str]
+        
+        self.pep8_ignored_tests: str
+        self.msg = self.Messages()
+        self.expected = self.Expected()
+        self.student = self.Student()
+    
+    def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
+        if self.test_type == self.TEST_FUNCTION:
+            run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_SCRIPT:
+            run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_AST:
+            run_astcheck_test(self, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_PEP8:
+            run_pep8_test(self)
+
+    class Expected:
+        def __init__(self):
+            self.stdout: str
+            self.stderr: str
+            self.returned: Any
+            self.exception: ExceptionInstance | None = None
+            self.original_args: list[Any] | tuple[Any]
+            self.mutated_args: list[Any] | tuple[Any] | None
+            self.filenames: list[tuple[str, str]]
+
+
+    class Student:
+        def __init__(self):
+            self.stdout: str
+            self.stderr: str
+            # Note that because returned can be Any type, the absence of this 
+            # variable being assigned at confirms whether the student function
+            # finished correctly.
+            self.returned: Any
+            self.exception: ExceptionInstance | None = None
+            self.final_args: list[Any] | tuple[Any]
+            # self.testproc_ret: subprocess.CompletedProcess
+
+    class Messages:
+        def __init__(self):
+            self.pep8: str = ""
+            self.astcheck: str = ""
+            self.function_call: str = ""
+            self.input: str = ""
+            self.timeout: str = ""
+            self.custom_verification_hook: str = ""
+            self.student_exception: str = ""
+            self.expected_exception: str = ""
+            self.student_stderr: str = ""
+            self.expected_stderr: str = ""
+            self.student_stdout: str = ""
+            self.expected_stdout: str = ""
+            self.student_return: str = ""
+            self.expected_return: str = ""
+            self.mutation_check: str = ""
+            self.student_mutated: str = ""
+            self.expected_mutated: str = ""
+            self.expected_file: str = ""
+            
 
 class SafeTesting:
     DEFAULT_PEP8_IGNORED = (
@@ -307,6 +405,9 @@ class SafeTesting:
         expected_exception: ExceptionInstance | None = None,
         expected_files: list[tuple[str, str]] = [],
         files_to_reveal: list[str] = [],
+        custom_verification_function: Callable | None = None,
+        custom_verification_timeout: int = 1,
+        custom_verification_timeout_msg: str = "",
         non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
         non_allowed_functions: list[str] = DEFAULT_NON_ALLOWED_FUNCTIONS,
         non_allowed_methods: list[str] = DEFAULT_NON_ALLOWED_METHODS,
@@ -368,6 +469,9 @@ class SafeTesting:
         test_data.expected.exception = expected_exception
         test_data.expected.filenames = expected_files
         test_data.files_to_reveal = files_to_reveal
+        test_data.custom_verification_function = custom_verification_function
+        test_data.custom_verification_timeout = custom_verification_timeout
+        test_data.custom_verification_timeout_msg = custom_verification_timeout_msg
         test_data.non_allowed_nodes = non_allowed_nodes
         test_data.non_allowed_functions = non_allowed_functions
         test_data.non_allowed_methods = non_allowed_methods
@@ -396,6 +500,9 @@ class SafeTesting:
         expected_exception: ExceptionInstance | None = None,
         expected_files: list[tuple[str, str]] = [],
         files_to_reveal: list[str] = [],
+        custom_verification_function: Callable | None = None,
+        custom_verification_timeout: int = 1,
+        custom_verification_timeout_msg: str = "",
         non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
         non_allowed_functions: list[str] = DEFAULT_NON_ALLOWED_FUNCTIONS,
         non_allowed_methods: list[str] = DEFAULT_NON_ALLOWED_METHODS,
@@ -438,6 +545,11 @@ class SafeTesting:
         test_data.expected.stdout = expected_stdout
         test_data.expected.stderr = expected_stderr
         test_data.expected.exception = expected_exception
+        test_data.expected.filenames = expected_files
+        test_data.files_to_reveal = files_to_reveal
+        test_data.custom_verification_function = custom_verification_function
+        test_data.custom_verification_timeout = custom_verification_timeout
+        test_data.custom_verification_timeout_msg = custom_verification_timeout_msg
         test_data.non_allowed_nodes = non_allowed_nodes
         test_data.non_allowed_functions = non_allowed_functions
         test_data.non_allowed_methods = non_allowed_methods
@@ -446,8 +558,6 @@ class SafeTesting:
         test_data.required_functions = required_functions
         test_data.required_methods = required_methods
         test_data.required_imports = required_imports
-        test_data.expected.filenames = expected_files
-        test_data.files_to_reveal = files_to_reveal
         
         self.test_cases.append(test_data)
 
@@ -538,98 +648,6 @@ class SafeTesting:
         
         self.test_cases.append(test_data)
         
-
-class TestData:
-    TEST_FUNCTION = "function-test"
-    TEST_SCRIPT = "script-test"
-    TEST_AST = "ast-test"
-    TEST_PEP8 = "pep8-test"
-
-    def __init__(self, name, score, hidden, private, student_file_name, test_type):
-        
-        self.test_type: str  = test_type
-        self.name: str = name
-        self.score: float | int = score
-        self.hidden: bool = hidden
-        self.private: bool = private
-        self.student_file_name: str = student_file_name
-        self.success: bool = False
-        self.test_timeout: int = 1
-
-        self.input_data: str
-        self.input_echoing: bool
-        self.files_to_reveal: list[str] 
-        self.hidden_file_dict: dict[str, str]
-
-        self.function_name: str
-        self.function_fail_on_mutated_args: bool
-        
-        self.non_allowed_nodes: list[type] | dict[type, str]
-        self.non_allowed_functions: list[str]
-        self.non_allowed_methods: list[str]
-        self.non_allowed_imports: list[str]
-        self.required_nodes: list[type] | dict[type, str]
-        self.required_functions: list[str]
-        self.required_methods: list[str]
-        self.required_imports: list[str]
-        
-        self.pep8_ignored_tests: str
-        self.msg = self.Messages()
-        self.expected = self.Expected()
-        self.student = self.Student()
-    
-    def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
-        if self.test_type == self.TEST_FUNCTION:
-            run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_SCRIPT:
-            run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_AST:
-            run_astcheck_test(self, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_PEP8:
-            run_pep8_test(self)
-
-    class Expected:
-        def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            self.returned: Any
-            self.exception: ExceptionInstance | None = None
-            self.original_args: list[Any] | tuple[Any]
-            self.mutated_args: list[Any] | tuple[Any] | None
-            self.filenames: list[tuple[str, str]]
-
-    class Student:
-        def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            # Note that because returned can be Any type, the absence of this 
-            # variable being assigned at confirms whether the student function
-            # finished correctly.
-            self.returned: Any
-            self.exception: ExceptionInstance | None = None
-            self.final_args: list[Any] | tuple[Any]
-            # self.testproc_ret: subprocess.CompletedProcess
-
-    class Messages:
-        def __init__(self):
-            self.pep8: str = ""
-            self.astcheck: str = ""
-            self.function_call: str = ""
-            self.input: str = ""
-            self.timeout: str = ""
-            self.student_exception: str = ""
-            self.expected_exception: str = ""
-            self.student_stderr: str = ""
-            self.expected_stderr: str = ""
-            self.student_stdout: str = ""
-            self.expected_stdout: str = ""
-            self.student_return: str = ""
-            self.expected_return: str = ""
-            self.mutation_check: str = ""
-            self.student_mutated: str = ""
-            self.expected_mutated: str = ""
-            self.expected_file: str = ""
-
 
 #######################################################################################
 
@@ -914,6 +932,14 @@ def run_astcheck_test(
 
 
 #######################################################################################
+import signal 
+def handle_timeout(signum, frame):
+        raise TimeoutError
+
+
+
+
+    
 
 
 def verify_program_output(
@@ -925,6 +951,15 @@ def verify_program_output(
     """
     if test_data.msg.timeout:
         test_data.success = False
+    
+    if test_data.custom_verification_function is not None:
+        signal.signal(signal.SIGALRM, handle_timeout)
+        signal.alarm(test_data.custom_verification_timeout)  # seconds
+        try:
+            test_data.custom_verification_function(test_data)
+        except TimeoutError:
+            test_data.success = False
+            test_data.msg.custom_verification_hook = test_data.custom_verification_timeout_msg
         
     verify_expected_exception(test_data)
     
@@ -943,6 +978,13 @@ def verify_program_output(
 
 
 #######################################################################################
+
+def custom_verification_hook(test_data: TestData):
+    """ 
+    Designed to be monkey patched with safetestingframework.custom_verification_hook = ... 
+    to do some special test, and output to test_data.msg.custom_verification_hook
+    """
+    pass
 
 
 def verify_expected_exception(test_data: TestData):
@@ -1645,6 +1687,7 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
         test_data.msg.function_call,
         test_data.msg.input,
         test_data.msg.timeout,
+        test_data.msg.custom_message_hook,
     ]
     # Only include information about the tests that have failed due to 
     # limitations on stdout.
@@ -1694,6 +1737,7 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
             OUTPUT_TRUNCATION_MSG,
         )
     elif levels_to_reduce == 2:
+        test_data.msg.custom_message_hook = ""
         test_data.msg.student_stdout = ""
         test_data.msg.student_return = ""
         test_data.msg.student_mutated = ""
@@ -1789,6 +1833,7 @@ def generate_test_report_entry(test_data: TestData):
         test_data.msg.function_call,
         test_data.msg.input,
         test_data.msg.timeout,
+        test_data.msg.custom_verification_hook,
         test_data.msg.expected_exception,
         test_data.msg.expected_stderr,
         test_data.msg.expected_stdout,
