@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.0 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.1 safetestingframework.py
 Last Updated: July 2025 
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 Faculty of Engineering and IT - The University of Melbourne
@@ -1687,7 +1687,7 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
         test_data.msg.function_call,
         test_data.msg.input,
         test_data.msg.timeout,
-        test_data.msg.custom_message_hook,
+        test_data.msg.custom_verification_hook,
     ]
     # Only include information about the tests that have failed due to 
     # limitations on stdout.
@@ -1737,7 +1737,7 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
             OUTPUT_TRUNCATION_MSG,
         )
     elif levels_to_reduce == 2:
-        test_data.msg.custom_message_hook = ""
+        test_data.msg.custom_verification_hook = ""
         test_data.msg.student_stdout = ""
         test_data.msg.student_return = ""
         test_data.msg.student_mutated = ""
