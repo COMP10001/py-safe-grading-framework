@@ -40,9 +40,10 @@ INPUT_FEEDBACK_MSG = "► Input:\n{0}\n"
 EXPECTED_RETURN_MSG = "► Expected Return <{0}>:\n{1}\n"
 STUDENT_RETURN_MSG = "► Returned <{0}>:\n{1}\n"
 
-STUDENT_EXCEPTION_MSG = "► Your program produced the following Exception:\n{}(\'{}\')\n"
+UNEXPECTED_EXCEPTION_MSG = "► Your program produced the following Exception when no exception was expected:\n{}({})\n"
+STUDENT_EXCEPTION_MSG = "► Your program produced the following Exception:\n{}({})\n"
 MISSING_EXCEPTION_MSG = "► Your program produced no exception when one was required.\n"
-EXPECTED_EXCEPTION_MSG = "► The expected exception is:\n{}(\'{}\')\n"
+EXPECTED_EXCEPTION_MSG = "► The expected exception is:\n{}({})\n"
 
 ERROR_RETURN_MSG = "► No value was returned due to errors\n"
 WRONG_STDERR_MSG = "► Your program produced the following stderr output:\n{0}\n"
@@ -134,7 +135,7 @@ EDSTEM_STUDENT_DATA_MAX_SIZE_MB = 20
 #######################################################################################
 
 def validate_exception_instance(v):
-    """ Custom validator to enforce only exception instances for pydantic """
+    """ Custom validator to enforce exception instance type for pydantic """
     if isinstance(v, type) and issubclass(v, Exception):
         raise TypeError("Expected an exception instance, got an exception class.")
     if not isinstance(v, Exception):
@@ -340,7 +341,7 @@ class SafeTesting:
             input_echoing                  : If True, echoes input to stdout like an interactive shell.
             expected_stdout                : Expected string output to stdout.
             expected_stderr                : Expected string output to stderr.
-            expected_exceptions            : Dict of {exc_type: exc_message} required
+            expected_exceptions            : Instance of exception class eg ValueError("yourerrormessage")
             expected_files                 : List of (student_file, test_file) tuples for file comp.
             files_to_reveal                : Files hidden with self.cache_hidden_test_files() to add back to path
 
@@ -382,7 +383,7 @@ class SafeTesting:
     @validate_call
     def register_script_test(
         self,
-       name: str | None = None,
+        name: str | None = None,
         score: float | int  = 0,
         hidden: bool = False,
         private: bool = False,
@@ -422,7 +423,7 @@ class SafeTesting:
             input_echoing          : If True, echoes input to stdout like an interactive shell.
             expected_stdout        : Expected string output to stdout.
             expected_stderr        : Expected string output to stderr.
-            expected_exceptions    : Exception Object required eg ValueError("my error")
+            expected_exceptions    : Instance of exception class eg ValueError("yourerrormessage")
             expected_files         : List of (student_file, test_file) tuples for file comp.
             files_to_reveal        : Files hidden with self.cache_hidden_test_files() to add back to path
 
@@ -475,7 +476,7 @@ class SafeTesting:
             name                   : Test visible name. Default to "Visible/Hidden/Private {n_tests}" if None
             score                  : Points to give testcase pass if Ed's Per-Testcase scoring is enabled
             hidden                 : Hidden tests have pass/fail visible; students cannot see the input/output
-            Private                : Private tests are completely invisible to students
+            private                : Private tests are completely invisible to students
             student_file_name      : Root file to run astcheck on
             non_allowed_nodes      : Eg [ast.For, ast.While] or {ast.For: "for loop"}
             non_allowed_functions  : Disallowed function call names.
@@ -490,7 +491,8 @@ class SafeTesting:
             - AST checking for methods and functions cannot distinguish shadowed function such as `a = exec; a(123)`
               finds the function call name as "a". Runtime or more creative ast checking required for this to be fixed.
         """        
-        name = self._set_default_test_name(name, hidden, private)
+        if name is None:
+            name = "AST Check"
 
         test_data = TestData(name, score, hidden, private, student_file_name, TestData.TEST_AST)
         test_data.non_allowed_nodes = non_allowed_nodes
@@ -523,11 +525,12 @@ class SafeTesting:
             name                : Test visible name. Default to "Visible/Hidden/Private {n_tests}" if None
             score               : Points to give testcase pass if Ed's Per-Testcase scoring is enabled
             hidden              : Hidden tests have pass/fail visible; students cannot see the input/output
-            Private             : Private tests are completely invisible to students
+            private             : Private tests are completely invisible to students
             student_file_name   : Root file to run pep8 check on
             ignored_tests       : Names of tests to ignore when run with `flake8 --ignore={ignored_tests}`
         """        
-        name = self._set_default_test_name(name, hidden, private)
+        if name is None:
+            name = "PEP8 Check"
 
         test_data = TestData(name, score, hidden, private, student_file_name, TestData.TEST_PEP8)
         test_data.success = False
@@ -662,14 +665,14 @@ def run_function_test(
         else ""
     )
 
-    run_astcheck_test(test_data, format_test_in_out_data_as_str)
-
-    # Stops test, before running student code if unallowed features are used.
-    if test_data.msg.astcheck:
-        test_data.success = False
-        return test_data
-
     with HiddenFileManager(hidden_file_dict, test_data.files_to_reveal):
+        run_astcheck_test(test_data, format_test_in_out_data_as_str)
+
+        # Stops test, before running student code if unallowed features are used.
+        if test_data.msg.astcheck:
+            test_data.success = False
+            return test_data
+        
         encode_obj_data(test_data.expected.original_args, SUBPROC_FUNC_INPUT_FILENAME)
         # This is automatically removed after each function run
         file_path_to_run = STUDENT_FILE_PATH_PREFIX + RUN_TEST_SUBPROCESS_FILENAME
@@ -743,14 +746,15 @@ def run_script_test(
         else ""
     )
 
-    run_astcheck_test(test_data, format_test_in_out_data_as_str)
-
-    # Stops test, before running student code if unallowed features are used.
-    if test_data.msg.astcheck:
-        test_data.success = False
-        return test_data
-
     with HiddenFileManager(hidden_file_dict, test_data.files_to_reveal):
+        
+        run_astcheck_test(test_data, format_test_in_out_data_as_str)
+
+        # Stops test, before running student code if unallowed features are used.
+        if test_data.msg.astcheck:
+            test_data.success = False
+            return test_data
+        
         # This is automatically removed after each function run
         file_path_to_run = STUDENT_FILE_PATH_PREFIX + RUN_TEST_SUBPROCESS_FILENAME
         with open(file_path_to_run, "w") as fp:
@@ -921,10 +925,18 @@ def verify_program_output(
     """
     if test_data.msg.timeout:
         test_data.success = False
+        
     verify_expected_exception(test_data)
-    verify_expected_stderr(test_data, format_test_in_out_data_as_str)
-    verify_expected_stdout(test_data, format_test_in_out_data_as_str)
-    verify_function_return(test_data)
+    
+    # Cannot check expected stderr if checking for an exception
+    if test_data.expected.exception is None:
+        verify_expected_stderr(test_data, format_test_in_out_data_as_str)
+        
+        # Cannot check expected return if checking for a non empty stderr 
+        if test_data.expected.stderr == "":
+            verify_function_return(test_data)
+        
+    verify_expected_stdout(test_data, format_test_in_out_data_as_str)   
     verify_check_mutated_input(test_data)
     verify_expected_mutated_args(test_data)
     verify_expected_files(test_data)
@@ -934,25 +946,31 @@ def verify_program_output(
 
 
 def verify_expected_exception(test_data: TestData):
-    if test_data.expected.exception is not None:
+    
+    if(type(test_data.expected.exception) != type(test_data.student.exception) 
+        or str(test_data.expected.exception) != str(test_data.student.exception)
+        ):
         
+        test_data.success = False
         if test_data.student.exception is None:
             test_data.msg.student_exception = MISSING_EXCEPTION_MSG
-            test_data.success = False
         else:
-            if(type(test_data.expected.exception) != type(test_data.student.exception) 
-               or str(test_data.expected.exception) != str(test_data.student.exception)):
+            if test_data.expected.exception is None:
+                test_data.msg.student_exception = UNEXPECTED_EXCEPTION_MSG.format(
+                    type(test_data.student.exception).__name__,
+                    repr(str(test_data.student.exception)),
+                )
+            else:
                 test_data.msg.student_exception = STUDENT_EXCEPTION_MSG.format(
                     type(test_data.student.exception).__name__,
-                    str(test_data.student.exception),
+                    repr(str(test_data.student.exception)),
                 )
-                test_data.success = False
-    
+    if test_data.expected.exception is not None:
         test_data.msg.expected_exception = EXPECTED_EXCEPTION_MSG.format(
             type(test_data.expected.exception).__name__,
             str(test_data.expected.exception),
         )
-            
+                            
 
 def verify_expected_stderr(
         test_data: TestData, 
@@ -980,7 +998,7 @@ def verify_expected_stderr(
             )
         )
 
-    if test_data.student.stderr != test_data.expected.stderr and test_data.expected.exception is None:
+    if test_data.student.stderr != test_data.expected.stderr:
         test_data.msg.student_stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
         test_data.success = False
 
@@ -1031,10 +1049,7 @@ def verify_function_return(test_data: TestData):
                     type(test_data.student.returned).__name__,
                     repr(test_data.student.returned),
                 )
-        elif test_data.expected.stderr != test_data.student.stderr and test_data.expected.exception is None:
-            # If there is an expected stderr *WHEN* the function does not return
-            # that means it was the student code that triggered it, and it was not
-            # the subprocess code running file.
+        else:
             test_data.msg.student_return = ERROR_RETURN_MSG
 
         test_data.msg.expected_return = EXPECTED_RETURN_MSG.format(
@@ -1759,14 +1774,14 @@ def write_to_test_log(ed_test_obj: EdTestCase, visible_log_fp, private_log_fp, i
     test_type = "unspecified-test"
     if ed_test_obj.test_data is not None:
         test_type = ed_test_obj.test_data.test_type
-
-    fp.write("=" * 100 + "\n")
+    seperator = "=" * 100 + "\n"
+    fp.write(seperator.encode())
     fp.write(
-        f"{pass_or_fail}{test_visibility} <{test_type}> '{ed_test_obj.name}':\n"
+        f"{pass_or_fail}{test_visibility} <{test_type}> '{ed_test_obj.name}':\n".encode()
     )
-    fp.write("=" * 100 + "\n")
+    fp.write(seperator.encode())
     for msg in msgs:
-        fp.write(msg)
+        fp.write(msg.encode())
         
         
 def generate_test_report_entry(test_data: TestData):
@@ -1825,16 +1840,16 @@ def create_test_report_testcases(ed_test_grader_output: EdCustomGraderJson):
 
 def write_test_report_files(ed_test_list: list[EdTestCase]):    
     visible_transcript_fp = open(
-        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w"
+        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "wb",
     )
     private_transcript_fp = open(
-        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "w"
+        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_EXECUTION_TRANSCRIPT_FILENAME, "wb"
     )
     visible_report_fp = open(
-        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_REPORT_FILENAME, "w"
+        STUDENT_FILE_PATH_PREFIX + VISIBLE_TEST_REPORT_FILENAME, "wb"
     )
     private_report_fp = open(
-        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_REPORT_FILENAME, "w"
+        STUDENT_FILE_PATH_PREFIX + PRIVATE_TEST_REPORT_FILENAME, "wb"
     )
     for ed_test_obj in ed_test_list:
         if ed_test_obj.test_data is not None:
