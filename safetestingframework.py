@@ -147,103 +147,6 @@ ExceptionInstance = Annotated[Exception, PlainValidator(validate_exception_insta
 
 #######################################################################################
 
-class TestData:
-    TEST_FUNCTION = "function-test"
-    TEST_SCRIPT = "script-test"
-    TEST_AST = "ast-test"
-    TEST_PEP8 = "pep8-test"
-
-    def __init__(self, name, score, hidden, private, student_file_name, test_type):
-        
-        self.test_type: str  = test_type
-        self.name: str = name
-        self.score: float | int = score
-        self.hidden: bool = hidden
-        self.private: bool = private
-        self.student_file_name: str = student_file_name
-        self.success: bool = False
-        self.test_timeout: int = 1
-
-        self.input_data: str
-        self.input_echoing: bool
-        self.files_to_reveal: list[str] 
-        self.hidden_file_dict: dict[str, str]
-
-        self.function_name: str
-        self.function_fail_on_mutated_args: bool
-        
-        self.custom_verification_function: Callable | None
-        self.custom_verification_timeout: int
-        self.custom_verification_timeout_msg: str
-        
-        self.non_allowed_nodes: list[type] | dict[type, str]
-        self.non_allowed_functions: list[str]
-        self.non_allowed_methods: list[str]
-        self.non_allowed_imports: list[str]
-        self.required_nodes: list[type] | dict[type, str]
-        self.required_functions: list[str]
-        self.required_methods: list[str]
-        self.required_imports: list[str]
-        
-        self.pep8_ignored_tests: str
-        self.msg = self.Messages()
-        self.expected = self.Expected()
-        self.student = self.Student()
-    
-    def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
-        if self.test_type == self.TEST_FUNCTION:
-            run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_SCRIPT:
-            run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_AST:
-            run_astcheck_test(self, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_PEP8:
-            run_pep8_test(self)
-
-    class Expected:
-        def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            self.returned: Any
-            self.exception: ExceptionInstance | None = None
-            self.original_args: list[Any] | tuple[Any]
-            self.mutated_args: list[Any] | tuple[Any] | None
-            self.filenames: list[tuple[str, str]]
-
-
-    class Student:
-        def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            # Note that because returned can be Any type, the absence of this 
-            # variable being assigned at confirms whether the student function
-            # finished correctly.
-            self.returned: Any
-            self.exception: ExceptionInstance | None = None
-            self.final_args: list[Any] | tuple[Any]
-            # self.testproc_ret: subprocess.CompletedProcess
-
-    class Messages:
-        def __init__(self):
-            self.pep8: str = ""
-            self.astcheck: str = ""
-            self.function_call: str = ""
-            self.input: str = ""
-            self.timeout: str = ""
-            self.custom_verification_hook: str = ""
-            self.student_exception: str = ""
-            self.expected_exception: str = ""
-            self.student_stderr: str = ""
-            self.expected_stderr: str = ""
-            self.student_stdout: str = ""
-            self.expected_stdout: str = ""
-            self.student_return: str = ""
-            self.expected_return: str = ""
-            self.mutation_check: str = ""
-            self.student_mutated: str = ""
-            self.expected_mutated: str = ""
-            self.expected_file: str = ""
-            
 
 class SafeTesting:
     DEFAULT_PEP8_IGNORED = (
@@ -649,6 +552,105 @@ class SafeTesting:
         self.test_cases.append(test_data)
         
 
+class TestData:
+    TEST_FUNCTION = "function-test"
+    TEST_SCRIPT = "script-test"
+    TEST_AST = "ast-test"
+    TEST_PEP8 = "pep8-test"
+
+    def __init__(self, name, score, hidden, private, student_file_name, test_type):
+        
+        self.test_type: str  = test_type
+        self.name: str = name
+        self.score: float | int = score
+        self.hidden: bool = hidden
+        self.private: bool = private
+        self.student_file_name: str = student_file_name
+        self.success: bool = False
+        self.test_timeout: int = 1
+
+        self.input_data: str
+        self.input_echoing: bool
+        self.files_to_reveal: list[str] 
+        self.hidden_file_dict: dict[str, str]
+
+        self.function_name: str
+        self.function_fail_on_mutated_args: bool
+        
+        self.custom_verification_function: Callable | None
+        self.custom_verification_timeout: int
+        self.custom_verification_timeout_msg: str
+        
+        self.non_allowed_nodes: list[type] | dict[type, str]
+        self.non_allowed_functions: list[str]
+        self.non_allowed_methods: list[str]
+        self.non_allowed_imports: list[str]
+        self.required_nodes: list[type] | dict[type, str]
+        self.required_functions: list[str]
+        self.required_methods: list[str]
+        self.required_imports: list[str]
+        
+        self.pep8_ignored_tests: str
+        self.msg = self.Messages()
+        self.expected = self.Expected()
+        self.student = self.Student()
+    
+    def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
+        if self.test_type == self.TEST_FUNCTION:
+            run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_SCRIPT:
+            run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_AST:
+            run_astcheck_test(self, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_PEP8:
+            run_pep8_test(self)
+
+    class Expected:
+        def __init__(self):
+            self.stdout: str
+            self.stderr: str
+            self.returned: Any
+            self.exception: ExceptionInstance | None = None
+            self.original_args: list[Any] | tuple[Any]
+            self.mutated_args: list[Any] | tuple[Any] | None
+            self.filenames: list[tuple[str, str]]
+
+
+    class Student:
+        def __init__(self):
+            self.stdout: str
+            self.stderr: str
+            # Note that because returned can be Any type, the absence of this 
+            # variable being assigned at confirms whether the student function
+            # finished correctly.
+            self.returned: Any
+            self.exception: ExceptionInstance | None = None
+            self.final_args: list[Any] | tuple[Any]
+            # self.testproc_ret: subprocess.CompletedProcess
+
+    class Messages:
+        def __init__(self):
+            self.pep8: str = ""
+            self.astcheck: str = ""
+            self.function_call: str = ""
+            self.input: str = ""
+            self.timeout: str = ""
+            self.custom_verification_hook: str = ""
+            self.student_exception: str = ""
+            self.expected_exception: str = ""
+            self.student_stderr: str = ""
+            self.expected_stderr: str = ""
+            self.student_stdout: str = ""
+            self.expected_stdout: str = ""
+            self.student_return: str = ""
+            self.expected_return: str = ""
+            self.mutation_check: str = ""
+            self.student_mutated: str = ""
+            self.expected_mutated: str = ""
+            self.expected_file: str = ""
+            
+            
+            
 #######################################################################################
 
 
