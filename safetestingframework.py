@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.1 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.2 safetestingframework.py
 Last Updated: July 2025 
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 Faculty of Engineering and IT - The University of Melbourne
@@ -15,9 +15,11 @@ import json
 import filecmp
 import sys
 import dill
+import signal
 
 from pydantic import validate_call, PlainValidator
-from typing import Any, Annotated, Callable
+from collections.abc import Callable
+from typing import Any, Annotated
 from types import TracebackType
 if sys.version_info >= (3, 12):
     from collections.abc import Buffer
@@ -48,6 +50,9 @@ EXPECTED_EXCEPTION_MSG = "► The expected exception is:\n{}({})\n"
 ERROR_RETURN_MSG = "► No value was returned due to errors\n"
 WRONG_STDERR_MSG = "► Your program produced the following stderr output:\n{0}\n"
 EXPECTED_STDERR_MSG = "► The expected stderr output is:\n{0}\n"
+
+STUDENT_RECURSION_COUNT_MSG = "► Your program produced the following recursive call counts:\n"
+EXPECTED_RECURSION_COUNT_MSG = "► The expected number of recursive calls in a called function is {}.\n"
 
 UNEXPECTED_STDOUT_MSG = (
     "► Your program printed the following output when no printing was expected:\n{0}\n"
@@ -105,6 +110,7 @@ SUBPROC_FUNC_INPUT_FILENAME = "subproc-func-input"
 SUBPROC_FUNC_RETURN_FILENAME = "subproc-func-return"
 SUBPROC_FUNC_ARGS_FILENAME = "subproc-func-args"
 SUBPROC_EXC_FILENAME = "subproc-exception"
+SUBPROC_RECURSION_COUNT_FILENAME = "subproc-recursion-count"
 
 SUBPROC_STDOUT_FILENAME = "stdout.txt"
 SUBPROC_STDERR_FILENAME = "stderr.txt"
@@ -146,6 +152,110 @@ def validate_exception_instance(v):
 ExceptionInstance = Annotated[Exception, PlainValidator(validate_exception_instance)]
 
 #######################################################################################
+
+
+class TestData:
+    TEST_FUNCTION = "function-test"
+    TEST_SCRIPT = "script-test"
+    TEST_AST = "ast-test"
+    TEST_PEP8 = "pep8-test"
+
+    def __init__(self, name, score, hidden, private, student_file_name, test_type):
+        
+        self.test_type: str  = test_type
+        self.name: str = name
+        self.score: float | int = score
+        self.hidden: bool = hidden
+        self.private: bool = private
+        self.student_file_name: str = student_file_name
+        self.success: bool = False
+        self.test_timeout: int = 1
+
+        self.input_data: str
+        self.input_echoing: bool
+        self.files_to_reveal: list[str] 
+        self.hidden_file_dict: dict[str, str]
+
+        self.function_name: str
+        self.function_fail_on_mutated_args: bool
+        
+        self.custom_verification_function: Callable[[TestData], None] | None
+        self.custom_verification_data: Any
+        self.custom_verification_timeout: int
+        self.custom_verification_timeout_msg: str
+        
+        self.non_allowed_nodes: list[type] | dict[type, str]
+        self.non_allowed_functions: list[str]
+        self.non_allowed_methods: list[str]
+        self.non_allowed_imports: list[str]
+
+        self.required_nodes: list[type] | dict[type, str]
+        self.required_functions: list[str]
+        self.required_methods: list[str]
+        self.required_imports: list[str]
+        
+        self.pep8_ignored_tests: str
+        self.msg = self.Messages()
+        self.expected = self.Expected()
+        self.student = self.Student()
+    
+    def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
+        if self.test_type == self.TEST_FUNCTION:
+            run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_SCRIPT:
+            run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_AST:
+            run_astcheck_test(self, format_test_in_out_data_as_str)
+        elif self.test_type == self.TEST_PEP8:
+            run_pep8_test(self)
+
+    class Expected:
+        def __init__(self):
+            self.stdout: str
+            self.stderr: str
+            self.returned: Any
+            self.exception: ExceptionInstance | None = None
+            self.original_args: list[Any] | tuple[Any]
+            self.mutated_args: list[Any] | tuple[Any] | None
+            self.filenames: list[tuple[str, str]]
+            self.recursive_call_counts: list[int]
+
+
+    class Student:
+        def __init__(self):
+            self.stdout: str
+            self.stderr: str
+            # Note that because returned can be Any type, the absence of this 
+            # variable being assigned at confirms whether the student function
+            # finished correctly.
+            self.returned: Any
+            self.exception: ExceptionInstance | None = None
+            self.final_args: list[Any] | tuple[Any]
+            self.recursive_call_count: dict[str, int]
+            # self.testproc_ret: subprocess.CompletedProcess
+
+    class Messages:
+        def __init__(self):
+            self.pep8: str = ""
+            self.astcheck: str = ""
+            self.function_call: str = ""
+            self.input: str = ""
+            self.timeout: str = ""
+            self.custom_verification_hook: str = ""
+            self.student_recursion_count: str = ""
+            self.expected_recursion_count: str = ""
+            self.student_exception: str = ""
+            self.expected_exception: str = ""
+            self.student_stderr: str = ""
+            self.expected_stderr: str = ""
+            self.student_stdout: str = ""
+            self.expected_stdout: str = ""
+            self.student_return: str = ""
+            self.expected_return: str = ""
+            self.mutation_check: str = ""
+            self.student_mutated: str = ""
+            self.expected_mutated: str = ""
+            self.expected_file: str = ""
 
 
 class SafeTesting:
@@ -301,6 +411,7 @@ class SafeTesting:
         function_timeout_seconds: int = 1,
         function_fail_on_mutated_args: bool = False,
         function_expected_mutated_args: list[Any] | tuple[Any] | None = None,
+        function_expected_recursive_calls: list[int] = [],
         input_data: str = "",
         input_echoing: bool = True,
         expected_stdout: str = "",
@@ -308,7 +419,8 @@ class SafeTesting:
         expected_exception: ExceptionInstance | None = None,
         expected_files: list[tuple[str, str]] = [],
         files_to_reveal: list[str] = [],
-        custom_verification_function: Callable | None = None,
+        custom_verification_function: Callable[[TestData],None] | None = None,
+        custom_verification_data: Any = None,
         custom_verification_timeout: int = 1,
         custom_verification_timeout_msg: str = "",
         non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
@@ -341,6 +453,12 @@ class SafeTesting:
             function_timeout_seconds       : Timeout in seconds for function execution.
             function_fail_on_mutated_args  : Fail if input args are mutated unexpectedly.
             function_expected_mutated_args : Expected post-call state of args. None if not checked.
+            function_expected_recursive_calls : A list of acceptable recursive call counts, ignored if empty.
+            custom_verification_function   : Function object to run during verify_program_output, that can modify the 
+                state of the testcase messages etc, and whether the test fails, to patch in extra checks. Takes in TestData instance.
+            custom_verification_data       : Arbitrary data to use inside the custom_verification_function as attribute of TestData  
+            custom_verification_timeout    : Safety Timeout for the custom_verification_function, to prevent testbench crashing.
+            custom_verification_timeout_msg: What to assign to test_data.msg.custom_verification_hook on fail
             input_data                     : Input fed into input(); mmultiple lines separated by newline characters
             input_echoing                  : If True, echoes input to stdout like an interactive shell.
             expected_stdout                : Expected string output to stdout.
@@ -372,7 +490,9 @@ class SafeTesting:
         test_data.expected.exception = expected_exception
         test_data.expected.filenames = expected_files
         test_data.files_to_reveal = files_to_reveal
+        test_data.expected.recursive_call_counts = function_expected_recursive_calls
         test_data.custom_verification_function = custom_verification_function
+        test_data.custom_verification_data = custom_verification_data
         test_data.custom_verification_timeout = custom_verification_timeout
         test_data.custom_verification_timeout_msg = custom_verification_timeout_msg
         test_data.non_allowed_nodes = non_allowed_nodes
@@ -403,7 +523,8 @@ class SafeTesting:
         expected_exception: ExceptionInstance | None = None,
         expected_files: list[tuple[str, str]] = [],
         files_to_reveal: list[str] = [],
-        custom_verification_function: Callable | None = None,
+        custom_verification_function: Callable[[TestData], None] | None = None,
+        custom_verification_data: Any = None,
         custom_verification_timeout: int = 1,
         custom_verification_timeout_msg: str = "",
         non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
@@ -436,6 +557,11 @@ class SafeTesting:
             expected_exceptions    : Instance of exception class eg ValueError("yourerrormessage")
             expected_files         : List of (student_file, test_file) tuples for file comp.
             files_to_reveal        : Files hidden with self.cache_hidden_test_files() to add back to path
+            custom_verification_function   : Function object to run during verify_program_output, that can modify the 
+                state of the testcase messages etc, and whether the test fails, to patch in extra checks. Takes in TestData instance.
+            custom_verification_data       : Arbitrary data to use inside the custom_verification_function as attribute of TestData  
+            custom_verification_timeout    : Safety Timeout for the custom_verification_function, to prevent testbench crashing.
+            custom_verification_timeout_msg: What to assign to test_data.msg.custom_verification_hook on fail
 
             For ommited ast related parameters see register_ast_test() docstring
         """
@@ -451,6 +577,7 @@ class SafeTesting:
         test_data.expected.filenames = expected_files
         test_data.files_to_reveal = files_to_reveal
         test_data.custom_verification_function = custom_verification_function
+        test_data.custom_verification_data = custom_verification_data
         test_data.custom_verification_timeout = custom_verification_timeout
         test_data.custom_verification_timeout_msg = custom_verification_timeout_msg
         test_data.non_allowed_nodes = non_allowed_nodes
@@ -551,105 +678,6 @@ class SafeTesting:
         
         self.test_cases.append(test_data)
         
-
-class TestData:
-    TEST_FUNCTION = "function-test"
-    TEST_SCRIPT = "script-test"
-    TEST_AST = "ast-test"
-    TEST_PEP8 = "pep8-test"
-
-    def __init__(self, name, score, hidden, private, student_file_name, test_type):
-        
-        self.test_type: str  = test_type
-        self.name: str = name
-        self.score: float | int = score
-        self.hidden: bool = hidden
-        self.private: bool = private
-        self.student_file_name: str = student_file_name
-        self.success: bool = False
-        self.test_timeout: int = 1
-
-        self.input_data: str
-        self.input_echoing: bool
-        self.files_to_reveal: list[str] 
-        self.hidden_file_dict: dict[str, str]
-
-        self.function_name: str
-        self.function_fail_on_mutated_args: bool
-        
-        self.custom_verification_function: Callable | None
-        self.custom_verification_timeout: int
-        self.custom_verification_timeout_msg: str
-        
-        self.non_allowed_nodes: list[type] | dict[type, str]
-        self.non_allowed_functions: list[str]
-        self.non_allowed_methods: list[str]
-        self.non_allowed_imports: list[str]
-        self.required_nodes: list[type] | dict[type, str]
-        self.required_functions: list[str]
-        self.required_methods: list[str]
-        self.required_imports: list[str]
-        
-        self.pep8_ignored_tests: str
-        self.msg = self.Messages()
-        self.expected = self.Expected()
-        self.student = self.Student()
-    
-    def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
-        if self.test_type == self.TEST_FUNCTION:
-            run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_SCRIPT:
-            run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_AST:
-            run_astcheck_test(self, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_PEP8:
-            run_pep8_test(self)
-
-    class Expected:
-        def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            self.returned: Any
-            self.exception: ExceptionInstance | None = None
-            self.original_args: list[Any] | tuple[Any]
-            self.mutated_args: list[Any] | tuple[Any] | None
-            self.filenames: list[tuple[str, str]]
-
-
-    class Student:
-        def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            # Note that because returned can be Any type, the absence of this 
-            # variable being assigned at confirms whether the student function
-            # finished correctly.
-            self.returned: Any
-            self.exception: ExceptionInstance | None = None
-            self.final_args: list[Any] | tuple[Any]
-            # self.testproc_ret: subprocess.CompletedProcess
-
-    class Messages:
-        def __init__(self):
-            self.pep8: str = ""
-            self.astcheck: str = ""
-            self.function_call: str = ""
-            self.input: str = ""
-            self.timeout: str = ""
-            self.custom_verification_hook: str = ""
-            self.student_exception: str = ""
-            self.expected_exception: str = ""
-            self.student_stderr: str = ""
-            self.expected_stderr: str = ""
-            self.student_stdout: str = ""
-            self.expected_stdout: str = ""
-            self.student_return: str = ""
-            self.expected_return: str = ""
-            self.mutation_check: str = ""
-            self.student_mutated: str = ""
-            self.expected_mutated: str = ""
-            self.expected_file: str = ""
-            
-            
             
 #######################################################################################
 
@@ -728,6 +756,9 @@ def run_function_test(
         )
         load_data_object_from_file(
             test_data.student, "exception", SUBPROC_EXC_FILENAME
+        )
+        load_data_object_from_file(
+            test_data.student, "recursive_call_count", SUBPROC_RECURSION_COUNT_FILENAME
         )
 
         # This must be inside hidden file manager context for expected file checking
@@ -934,14 +965,6 @@ def run_astcheck_test(
 
 
 #######################################################################################
-import signal 
-def handle_timeout(signum, frame):
-        raise TimeoutError
-
-
-
-
-    
 
 
 def verify_program_output(
@@ -972,6 +995,7 @@ def verify_program_output(
         # Cannot check expected return if checking for a non empty stderr 
         if test_data.expected.stderr == "":
             verify_function_return(test_data)
+            verify_expected_recursive_call_counts(test_data)
         
     verify_expected_stdout(test_data, format_test_in_out_data_as_str)   
     verify_check_mutated_input(test_data)
@@ -980,13 +1004,6 @@ def verify_program_output(
 
 
 #######################################################################################
-
-def custom_verification_hook(test_data: TestData):
-    """ 
-    Designed to be monkey patched with safetestingframework.custom_verification_hook = ... 
-    to do some special test, and output to test_data.msg.custom_verification_hook
-    """
-    pass
 
 
 def verify_expected_exception(test_data: TestData):
@@ -1103,6 +1120,28 @@ def verify_function_return(test_data: TestData):
 
     if test_data.msg.student_return:
         test_data.success = False
+
+
+def verify_expected_recursive_call_counts(test_data: TestData):
+    """
+    Check if the called function or any returned function calls in the called function
+    (which could be recursive helper functions) have the expected number of recursive calls
+    """
+    if test_data.test_type == TestData.TEST_FUNCTION:
+        if len(test_data.expected.recursive_call_counts) > 0 and hasattr(test_data.student, "recursive_call_count"):
+            message = STUDENT_RECURSION_COUNT_MSG
+            any_matches = False
+            for func_name, call_count in test_data.student.recursive_call_count.items():
+                    message += f"{func_name} has {call_count} recursive calls\n"
+                    if (call_count in test_data.expected.recursive_call_counts):
+                        any_matches = True
+
+            test_data.success = any_matches
+            if not any_matches:
+                test_data.msg.student_recursion_count = message
+            test_data.msg.expected_recursion_count = EXPECTED_RECURSION_COUNT_MSG.format(
+                str(test_data.expected.recursive_call_counts)[1:-1].replace(",", " or")
+            )
 
 
 def verify_check_mutated_input(test_data: TestData):
@@ -1577,6 +1616,10 @@ def load_data_object_from_file(class_obj, attr: str, file: str):
         os.remove(file)
 
 
+def handle_timeout(signum, frame):
+        raise TimeoutError
+
+
 #######################################################################################
 
 
@@ -1705,6 +1748,9 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
     if test_data.msg.student_return:
         feedback_priority_order.append(test_data.msg.student_return)
         feedback_priority_order.append(test_data.msg.expected_return)
+    if test_data.msg.student_recursion_count:
+        feedback_priority_order.append(test_data.msg.student_recursion_count)
+        feedback_priority_order.append(test_data.msg.expected_recursion_count)
     feedback_priority_order.append(test_data.msg.mutation_check)
     if test_data.msg.student_mutated:
         feedback_priority_order.append(test_data.msg.student_mutated)
@@ -1840,6 +1886,7 @@ def generate_test_report_entry(test_data: TestData):
         test_data.msg.expected_stderr,
         test_data.msg.expected_stdout,
         test_data.msg.expected_return,
+        test_data.msg.expected_recursion_count,
         test_data.msg.mutation_check,
         test_data.msg.expected_mutated,
         test_data.msg.expected_file, 
@@ -1961,6 +2008,61 @@ def input_with_echoing(prompt):
     return out
 """
 
+RECURSION_CHECKER_CLASS = r"""
+import functools
+import inspect
+
+class RecursionChecker:
+    def __init__(self):
+        self._count = 0
+        self.name = ""
+
+    def __call__(self, fn):
+        self.name = fn.__name__
+        @functools.wraps(fn)
+        def wrapped_fn(*args, **kwargs):
+            # Grab the call stack.
+            stack = inspect.stack()
+
+            # Check to see if the call to this function is recursive.
+            # Find the first call to the original function.
+            i = 0
+            is_recursive = False
+            while i < len(stack) and not is_recursive:
+                if stack[i].frame.f_code.co_name == 'wrapped_fn' and stack[i].frame.f_locals.get('self') is self:
+                    # Check for a caller also being the original function further down the stack.
+                    j = i + 1
+                    while j < len(stack):
+                        if stack[j].frame.f_code.co_name == 'wrapped_fn' and stack[j].frame.f_locals.get('self') is self:
+                            is_recursive = True
+                            break
+                        j += 1
+                i += 1
+            if is_recursive:
+                self._count += 1
+
+            # Call the original function.
+            return fn(*args, **kwargs)
+        return wrapped_fn
+
+    @property
+    def count(self):
+        '''Returns the number of recursive calls to the function'''
+        return self._count
+"""
+
+ENCODING_FUNCTIONS = r"""
+import dill
+
+def encode_obj_data(input_data, filename):
+    with open(filename,"wb") as f:
+        dill.dump(input_data, f)
+
+def decode_obj_data(filename):
+    with open(filename,"rb") as f:
+        return dill.load(f)
+"""
+
 
 SUBPROC_SCRIPT_FILENAMES = r"""
 SUBPROC_EXC_FILENAME = "{0}"
@@ -1972,6 +2074,7 @@ SUBPROC_EXC_FILENAME = "{0}"
 RUN_SCRIPT_TEST_SUBPROCESS_FILE = (
     INPUT_WITH_ECHOING_FUNCTION
     + SUBPROC_SCRIPT_FILENAMES
+    + ENCODING_FUNCTIONS
     + r"""
 import os
 import sys
@@ -1979,17 +2082,12 @@ import traceback
 import builtins
 import importlib.util
 from builtins import input
-import dill
 
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
 
 STUDENT_FILE_NAME = sys.argv[1]
 INPUT_ECHOING = bool(int(sys.argv[2]))
-
-def encode_obj_data(input_data, filename):
-    with open(filename,"wb") as f:
-        dill.dump(input_data, f)
 
 if INPUT_ECHOING == True:
     builtins.input = input_with_echoing
@@ -2009,22 +2107,26 @@ SUBPROC_FUNC_INPUT_FILENAME = "{0}"
 SUBPROC_FUNC_RETURN_FILENAME = "{1}"
 SUBPROC_FUNC_ARGS_FILENAME = "{2}"
 SUBPROC_EXC_FILENAME = "{3}"
+SUBPROC_RECURSION_COUNT_FILENAME = "{4}"
 """.format(
     SUBPROC_FUNC_INPUT_FILENAME,
     SUBPROC_FUNC_RETURN_FILENAME,
     SUBPROC_FUNC_ARGS_FILENAME,
     SUBPROC_EXC_FILENAME,
+    SUBPROC_RECURSION_COUNT_FILENAME,
 )
 
 RUN_FUNCTION_TEST_SUBPROCESS_FILE = (
     INPUT_WITH_ECHOING_FUNCTION
+    + ENCODING_FUNCTIONS
+    + RECURSION_CHECKER_CLASS
     + SUBPROC_FUNC_FILENAMES
     + r"""
 import sys
-import dill
 import os
 import traceback
 import importlib
+from collections import defaultdict
 
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
@@ -2032,14 +2134,6 @@ os.remove(__file__)
 STUDENT_FILE_NAME = sys.argv[1]
 FUNCTION_NAME = sys.argv[2]
 INPUT_ECHOING = bool(int(sys.argv[3]))
-
-def encode_obj_data(input_data, filename):
-    with open(filename,"wb") as f:
-        dill.dump(input_data, f)
-
-def decode_obj_data(filename):
-    with open(filename,"rb") as f:
-        return dill.load(f)
 
 FUNCTION_INPUT = decode_obj_data(SUBPROC_FUNC_INPUT_FILENAME)
 os.remove(SUBPROC_FUNC_INPUT_FILENAME)
@@ -2049,14 +2143,30 @@ os.remove(SUBPROC_FUNC_INPUT_FILENAME)
 try: 
     # Use importlib instead of import keyword in case the studentfile has dashes eg student-file.py
     student_module = importlib.import_module(STUDENT_FILE_NAME.removesuffix(".py"))
+
+     # Wrap all functions in the call counting decorator.
+    checkers = []
+    for attr in dir(student_module):
+        obj = getattr(student_module, attr)
+        if inspect.isfunction(obj):
+            checker = RecursionChecker()
+            checkers.append(checker)
+            wrapped_func = checker(obj)
+            setattr(student_module, attr, wrapped_func)
+
     if INPUT_ECHOING == True:
         # patch the input function to echo the input to stdout
         student_module.input = input_with_echoing
 
     student_function = getattr(student_module, FUNCTION_NAME)
     got = student_function(*FUNCTION_INPUT)
+
     encode_obj_data(got, SUBPROC_FUNC_RETURN_FILENAME)
     encode_obj_data(FUNCTION_INPUT, SUBPROC_FUNC_ARGS_FILENAME)
+    recursion_counts = defaultdict(int)
+    for checker in checkers:
+        recursion_counts[checker.name] = checker.count
+    encode_obj_data(recursion_counts, SUBPROC_RECURSION_COUNT_FILENAME)
 
 except Exception as e:
     encode_obj_data(e, SUBPROC_EXC_FILENAME)
