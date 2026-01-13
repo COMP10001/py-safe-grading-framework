@@ -1,12 +1,13 @@
-# Minimal Example Testbench for safe testing framework
-# Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
-#
-# Depends on Safe Ed Assignment Unit Testing Framework V0.3.1
-# Last Updated: 2025/06/09
-# Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
-# Faculty of Engineering and IT - The University of Melbourne
-# The latest version and documentation can be found in the COMP10001 Worksheet Repository
-# https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+"""
+Minimal Testbench Example
+
+Depends on Safe Ed Assignment Unit Testing Framework V0.4.5
+Last Updated: 2025/08/21
+Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
+Faculty of Engineering and IT - The University of Melbourne
+The latest version and documentation can be found in the COMP10001 Worksheet Repository
+https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+"""
 from safetestingframework import *
 
 ### ENSURE PER TESTCASE SCORING IS ENABLED!
@@ -45,6 +46,46 @@ test_bench.register_ast_test(
     non_allowed_functions=["print"]
     
 )
-    
+
+test_bench.register_function_test(
+    name = None,
+    score = 0,
+    hidden = False,
+    private = False,
+    student_file_name = STUDENT_FILE_NAME,
+    function_name = STUDENT_FUNCTION,
+    function_args = [],
+    function_expected = None,
+    function_timeout_seconds = 1,
+    function_fail_on_mutated_args = False,
+    function_expected_mutated_args = None,
+    function_expected_recursive_calls=[],
+    input_data = "",
+    input_echoing = True,
+    expected_stdout = "",
+    expected_stderr = "",
+    expected_files = [],
+    files_to_reveal = [],
+    # custom verification function/feedback injection available
+    # ast check options available
+)
+
+test_bench.register_script_test(
+    name = None,
+    score = 0,
+    hidden = False,
+    private = False,
+    student_file_name = STUDENT_FILE_NAME,
+    script_timeout_seconds = 1,
+    input_data = "",
+    input_echoing = True,
+    expected_stdout = "",
+    expected_stderr = "",
+    expected_files = [],
+    files_to_reveal = [],
+    # custom verification function/feedback injection available
+    # ast check options available
+)
+
 if __name__ == "__main__":
     test_bench.run_tests()

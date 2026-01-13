@@ -1,4 +1,4 @@
-# Testbench Template Generator for V.0.4.0 Safe Testing Framework
+# Testbench Template Generator for V.0.4.5 Safe Testing Framework
 # Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 # Choose from these options to generate a testbench file template
 ASSIGNMENT_DESC = "Assignment 1 Testbench"
@@ -18,14 +18,16 @@ STUDENT_FILE_PATH_PREFIX = "/home/"
 ############################################################################################
 
 PREAMBLE = \
-r'''# {0}
-#
-# Depends on Safe Ed Assignment Unit Testing Framework V0.4.0
-# Last Updated: 2025/07/18
-# Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
-# Faculty of Engineering and IT - The University of Melbourne
-# The latest version and documentation can be found in the COMP10001 Worksheet Repository
-# https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+r'''"""
+{0}
+
+Depends on Safe Ed Assignment Unit Testing Framework V0.4.5
+Last Updated: 2025/08/21
+Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
+Faculty of Engineering and IT - The University of Melbourne
+The latest version and documentation can be found in the COMP10001 Worksheet Repository
+https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+"""
 from safetestingframework import *
 
 ### ENSURE PER TESTCASE SCORING IS ENABLED!
@@ -90,45 +92,47 @@ r'''
 
 RUN_FUNCTION_TEST = \
 r'''
-        return run_function_test(
-            student_file_name=STUDENT_FILE_NAME,                                      # File to test function from
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                        # File path prefix
-            function_name=STUDENT_FUNCTION,                                           # Function to test
-            function_args=[],                                                         # Must be wrapped in a tuple/list like test() -> [] or test(1) -> [1]
-            function_expected=None,                                                   # Expected value for function
-            function_timeout_seconds=1,                                               # Time in seconds until test fails due to timeout
-            function_fail_on_mutated_args=False,                                      # Fail if function input was mutated
-            function_expected_mutated_args=[],                                        # Required mutated_args
-            function_check_expected_mutated_args=False,                               # Check if the function input was mutated to match function_expected_mutated_args, ignored if fail_on_mutated_args
-            input_data="",                                                            # Input that can be read by input() seperated by newlines
-            input_echoing=True,                                                       # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                                       # Expected value in stdout
-            expected_stderr="",                                                       # Expected value in stderr
-            required_nodes=[],                                                        # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
-            non_allowed_nodes=[],                                                     # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
-            non_allowed_functions=["exec"],                                           # Function names of any specific functions to disallow
-            non_allowed_imports=["sys", "os", "subprocess", "signal", "importlib"],   # Imports that are not allowed anywhere in student file or any local imports
-            files_to_reveal=[],                                                       # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict=HIDDEN_FILE_DICT,                                        # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )'''
+test_bench.register_function_test(
+    name = None,
+    score = 0,
+    hidden = False,
+    private = False,
+    student_file_name = STUDENT_FILE_NAME,
+    function_name = STUDENT_FUNCTION,
+    function_args = [],
+    function_expected = None,
+    function_timeout_seconds = 1,
+    function_fail_on_mutated_args = False,
+    function_expected_mutated_args = None,
+    function_expected_recursive_calls=[],
+    input_data = "",
+    input_echoing = True,
+    expected_stdout = "",
+    expected_stderr = "",
+    expected_files = [],
+    files_to_reveal = [],
+    # custom verification function/feedback injection available
+    # ast check options available
+)'''
 
 RUN_SCRIPT_TEST = \
 r'''
-        return run_script_test(
-            student_file_name=STUDENT_FILE_NAME,                                      # File to test function from
-            student_file_path_prefix=STUDENT_FILE_PATH_PREFIX,                        # File path prefix
-            script_timeout_seconds=1,                                                 # Time in seconds until test fails due to timeout
-            input_data="",                                                            # Input that can be read by input() seperated by newlines
-            input_echoing=True,                                                       # When enabled, all input is echoed to stdout when read, similar to interactive terminal
-            expected_stdout="",                                                       # Expected value in stdout
-            expected_stderr="",                                                       # Expected value in stderr
-            required_nodes=[],                                                        # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
-            non_allowed_nodes=[],                                                     # Eg [ast.For, ast.While] as a list/tuple or with description eg {ast.For: "for loop"}, see run_astcheck_test
-            non_allowed_functions=["exec"],                                           # Function names of any specific functions to disallow
-            non_allowed_imports=["sys", "os", "subprocess", "signal", "importlib"],   # Imports that are not allowed anywhere in student file or any local imports
-            files_to_reveal=[],                                                       # Filenames in the hidden_file_dict keys to add to the path while this function runs
-            hidden_file_dict=HIDDEN_FILE_DICT,                                        # Key: Filename, Value: File Content String | See cache_hidden_test_files function
-        )'''
+test_bench.register_script_test(
+    name = None,
+    score = 0,
+    hidden = False,
+    private = False,
+    student_file_name = STUDENT_FILE_NAME,
+    script_timeout_seconds = 1,
+    input_data = "",
+    input_echoing = True,
+    expected_stdout = "",
+    expected_stderr = "",
+    expected_files = [],
+    files_to_reveal = [],
+    # custom verification function/feedback injection available
+    # ast check options available
+)'''
 
 
 TEST_VISIBLE = \

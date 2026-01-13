@@ -1,7 +1,7 @@
 """
-Safe Ed Assignment Testing Library V0.4.4 safetestingframework.py
-Last Updated: July 2025 
-Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
+Safe Ed Assignment Testing Library V0.4.5 safetestingframework.py
+Last Updated: 21 Aug 2025 
+Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 The latest version and documentation can be found in the COMP10001 Worksheet Repository
 https://edstem.org/au/courses/20912/lessons/79913/slides/539891
@@ -914,9 +914,12 @@ def run_astcheck_test(
     test_data.student.stderr = ""
     function_defs = set()
     for student_file in files_to_check:
-        tree, ast_exception = create_ast_object(filepath)
-        if tree is None and ast_exception is not None:
-            test_data.student.stderr += ast_exception
+        tree, ast_exception = create_ast_object(student_file)
+        if tree is None:
+            if ast_exception is not None:
+                test_data.student.stderr += ast_exception
+            ast_violations += f"Checking {student_file} caused errors.\n"
+            test_data.success = False
             continue
 
         astchecker = AstChecker(student_file, tree)
@@ -1231,7 +1234,7 @@ def create_ast_object(file: str) -> tuple[ast.Module | None, str | None]:
     try:
         tree = ast.parse(source, file)
     except Exception:
-        ast_exception = traceback.format_exc()
+        ast_exception = traceback.format_exc(limit=0)
 
     return tree, ast_exception
 
@@ -1860,11 +1863,14 @@ def write_to_test_log(ed_test_obj: EdTestCase, visible_log_fp, private_log_fp, i
         test_visibility = "Private"
 
     pass_or_fail = "FAILED "
+    score_str = f"0 of {ed_test_obj.score}"
     if ed_test_obj.passed:
         pass_or_fail = "PASSED "
+        score_str = f"{ed_test_obj.score} of {ed_test_obj.score}"
     
     # only show pass or fail if is execution transcript
     if is_test_report:
+        score_str = f"{ed_test_obj.score}"
         pass_or_fail = ""
 
     fp = private_log_fp
@@ -1877,7 +1883,7 @@ def write_to_test_log(ed_test_obj: EdTestCase, visible_log_fp, private_log_fp, i
     seperator = "=" * 100 + "\n"
     fp.write(seperator.encode())
     fp.write(
-        f"{pass_or_fail}{test_visibility} <{test_type}> '{ed_test_obj.name}':\n".encode()
+        f"{pass_or_fail}{test_visibility} <{test_type}> '{ed_test_obj.name}' ({score_str} points):\n".encode()
     )
     fp.write(seperator.encode())
     for msg in msgs:
