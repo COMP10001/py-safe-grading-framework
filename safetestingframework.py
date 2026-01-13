@@ -1,6 +1,6 @@
 """
-Safe Ed Assignment Testing Library V0.4.7DEV8 safetestingframework.py
-Last Updated: 23 Oct 2025
+Safe Ed Assignment Testing Library V0.4.7DEV10 safetestingframework.py
+Last Updated: 30 Oct 2025
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 The latest version and documentation can be found in the COMP10001 Worksheet Repository
@@ -32,7 +32,7 @@ else:
 # DANGER: Be careful if developing locally, as importing this code will cause it to be
 # irreplaceably removed, unlike on Ed.
 # Remove the test file after loading by Ed, to prevent ability to print out contents
-#os.remove(__file__)
+os.remove(__file__)
 
 # Disable Printing to STDOUT as this breaks the Ed integration if done accidentally
 ORIGINAL_STDOUT = sys.stdout
@@ -97,7 +97,7 @@ FAIL_ON_MUTATION_MSG = "► Your code should not mutate the function input!\n"
 RECIEVED_ARGS_MSG = "► Input Arguments after mutation:\n{0}\n"
 EXPECTED_MUTATED_ARGS_MSG = "► Expected Mutated Input Arguments:\n{0}\n"
 
-EXPECTED_FILES_MSG = "► Expected Files:\n{}\n"
+EXPECTED_FILES_MSG = "► The following file issues were found:\n"
 
 TIMEOUT_ERROR_MSG = (
     "► Your program took too long to run and was terminated after {0} second{1}. "
@@ -190,10 +190,12 @@ class TestData:
         self.test_type: str  = test_type
         self.name: str = name
         self.score: float | int = score
+        self.max_score: float | int = score
         self.hidden: bool = hidden
         self.private: bool = private
         self.student_file_name: str = student_file_name
         self.success: bool = False
+        self.give_half_marks: bool = False
         self.test_timeout: int = 1
 
         self.input_data: str
@@ -260,7 +262,7 @@ class TestData:
             # finished correctly.
             self.returned: Any
             self.failed_return: str
-            self.exception: list[str] | None  = None
+            self.exception: ExceptionInstance | None = None
             self.final_args: list[Any] | tuple[Any]
             self.recursive_call_count: dict[str, int]
             # self.testproc_ret: subprocess.CompletedProcess
@@ -324,7 +326,7 @@ class SafeTesting:
             - run the tests eg: test_bench.run_tests()
         
         Parameters:
-            debug_mode : Exceptions are reraised instead of showing test error, but completing remaining test pass/fail 
+            debug_mode : Test running exceptions are reraised instead of showing test error and completing the remaining tests
             format_test_in_out_data_as_str : All input/stdout/stderr is printed as string repr() for easy setup copy pasting
             make_all_tests_visible : Override, hidden and private testcases to become visible
             show_all_passed_tests_first : Sort passed tests first, preserving relative order
@@ -353,7 +355,6 @@ class SafeTesting:
         test case reports and output the required json test object for Edstem 
         """
         
-
         memory_limit_bytes = EDSTEM_SOFTLIMIT_MEMORY_FOOTPRINT_MB  * MEGABYTE_TO_BYTES
         resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
             
@@ -380,19 +381,32 @@ class SafeTesting:
             if self.make_all_tests_visible:
                 test.hidden = False
                 test.private = False
+            
+
+            if test.success == False:
+                if test.give_half_marks:
+                    test.score /= 2
+                else:
+                    test.score = 0
 
             ed_test_obj = ed_test_grader_output.add_test_case(
-                test.name, test.score, test.hidden, test.private, test.success, ok, feedback
+                test.name, test.score, test.hidden, test.private, test.success, ok, feedback, test.max_score
             )
             ed_test_obj.test_data = test
 
         if self.show_all_passed_tests_first:
             ed_test_grader_output.test_cases.sort(key=lambda x: not x.passed)
         
+        flag_manual_intervention_testcase(ed_test_grader_output, self.test_cases)
+
         set_test_output_files(ed_test_grader_output)
         
         if self.show_test_reports:
             write_test_report_files(ed_test_grader_output.test_cases)
+
+        for filename, filedata in self.hidden_file_dict.items():
+            with open(filename, "wb") as fp:
+                fp.write(filedata)
 
         ed_test_case_json = set_test_feedback_level(ed_test_grader_output)
 
@@ -503,7 +517,7 @@ class SafeTesting:
             input_echoing                  : If True, echoes input to stdout like an interactive shell.
             expected_stdout                : Expected string output to stdout.
             expected_stderr                : Expected string output to stderr.
-            expected_exceptions            : Instance of exception class eg ValueError("yourerrormessage")
+            expected_exception             : Instance of exception class eg ValueError("yourerrormessage")
             expected_files                 : List of (student_file, test_file) tuples for file comp.
             files_to_reveal                : Files hidden with self.cache_hidden_test_files() to add back to path
 
@@ -603,7 +617,7 @@ class SafeTesting:
             input_echoing          : If True, echoes input to stdout like an interactive shell.
             expected_stdout        : Expected string output to stdout.
             expected_stderr        : Expected string output to stderr.
-            expected_exceptions    : Instance of exception class eg ValueError("yourerrormessage")
+            expected_exception     : Instance of exception class eg ValueError("yourerrormessage")
             expected_files         : List of (student_file, test_file) tuples for file comp.
             files_to_reveal        : Files hidden with self.cache_hidden_test_files() to add back to path
             custom_verification_function   : Function object to run during verify_program_output, that can modify the 
@@ -971,6 +985,7 @@ def run_astcheck_test(
     ast_violations = ""
     test_data.student.stderr = ""
     function_defs = set()
+
     for student_file in files_to_check:
         tree, ast_exception = create_ast_object(student_file)
         if tree is None:
@@ -1067,6 +1082,18 @@ def verify_program_output(
     verify_expected_mutated_args(test_data)
     verify_expected_files(test_data)
 
+    # If there are no issues with the code except extra printed output, give half marks
+    if (test_data.expected.stdout == "" 
+        and test_data.msg.student_stdout != ""
+        and test_data.msg.student_exception == ""
+        and test_data.msg.student_return == ""
+        and test_data.msg.student_recursion_count == ""
+        and test_data.msg.student_stderr == ""
+        and test_data.msg.student_mutated == ""
+        
+    ):
+        test_data.give_half_marks = True
+
 
 #######################################################################################
 
@@ -1080,15 +1107,9 @@ def verify_expected_exception(test_data: TestData):
         student code, only the name and the message are checked. Eg for ValueError('ABC')
         compares the strings 'ValueError' and 'ABC' against the expected.
     """
-    if test_data.student.exception is not None:
-        student_exception_name = test_data.student.exception[0]
-        student_exception_msg = test_data.student.exception[1]
-    else :
-        student_exception_name = ""
-        student_exception_msg = ""
 
-    if(type(test_data.expected.exception).__name__ != student_exception_name
-        or str(test_data.expected.exception) != student_exception_msg
+    if(type(test_data.expected.exception).__name__ != type(test_data.student.exception).__name__
+        or str(test_data.expected.exception) != str(test_data.student.exception)
     ):
         
         test_data.success = False
@@ -1097,18 +1118,18 @@ def verify_expected_exception(test_data: TestData):
         else:
             if test_data.expected.exception is None:
                 test_data.msg.student_exception = UNEXPECTED_EXCEPTION_MSG.format(
-                    student_exception_name,
-                    repr(student_exception_msg)
+                    type(test_data.student.exception).__name__,
+                    repr(str(test_data.student.exception))
                 )
             else:
                 test_data.msg.student_exception = STUDENT_EXCEPTION_MSG.format(
-                    student_exception_name,
-                    repr(student_exception_msg)
+                    type(test_data.student.exception).__name__,
+                    repr(str(test_data.student.exception))
                 )
     if test_data.expected.exception is not None:
         test_data.msg.expected_exception = EXPECTED_EXCEPTION_MSG.format(
             type(test_data.expected.exception).__name__,
-            str(test_data.expected.exception),
+            repr(str(test_data.expected.exception)),
         )
                  
                             
@@ -1257,14 +1278,15 @@ def verify_expected_mutated_args(test_data: TestData):
         test_data.test_type == TestData.TEST_FUNCTION
         and test_data.expected.mutated_args is not None
     ):
-        if test_data.student.final_args != test_data.expected.mutated_args:
+        if list(test_data.student.final_args) != list(test_data.expected.mutated_args):
             test_data.msg.student_mutated = RECIEVED_ARGS_MSG.format(
                 format_as_func_arg_string(test_data.student.final_args)
             )
+            test_data.success = False
+
         test_data.msg.expected_mutated = EXPECTED_MUTATED_ARGS_MSG.format(
             format_as_func_arg_string(test_data.expected.mutated_args)
         )
-        test_data.success = False
 
 
 def check_files_equal(student_file_path, expected_file_path):
@@ -1292,6 +1314,7 @@ def verify_expected_files(test_data: TestData):
             )
 
     if expected_file_feedback:
+        expected_file_feedback = EXPECTED_FILES_MSG + expected_file_feedback
         test_data.success = False
 
     test_data.msg.expected_file = expected_file_feedback
@@ -1393,7 +1416,7 @@ class AstChecker:
         """ Check for all required methods """
         ast_violations = ""
         for method in required_methods:
-            if method not in self.visitor.method_calls:
+            if method not in [name for name, _ in self.visitor.method_calls]:
                 ast_violations += REQUIRED_METHOD_MSG.format(method)
 
         return ast_violations
@@ -1431,15 +1454,16 @@ class CustomNodeVisitor(ast.NodeVisitor):
         self.visit(tree)
 
         # Seperate out module functions and methods
-        for tup in self.attribute_paths:
-            if tup[-1] in self.attributes_called:
-                if tup[-2] in self.imports:
-                    self.function_calls.add(tup[-1])
-                else:
-                    self.method_calls.add(tup[-1])
+        for callable_name, line_no in self.attributes_called:
+            for path in self.attribute_paths:
+                if callable_name == path[-1]:
+                    if path[-2] in self.imports:
+                        self.function_calls.add((callable_name, line_no))
+                    else:
+                        self.method_calls.add((callable_name, line_no))
 
     def visit(self, node) -> None:
-        if isinstance(node, self.types):
+        if any(isinstance(node, node_type) for node_type in self.types):
             self.nodes.append(node)
         super().visit(node)
 
@@ -1478,6 +1502,8 @@ class CustomNodeVisitor(ast.NodeVisitor):
     
     def visit_FunctionDef(self, node: ast.FunctionDef):
         self.defined_functions.add(node.name)
+        for sub_node in node.body:
+            self.visit(sub_node)
 
 
 #######################################################################################
@@ -1553,7 +1579,7 @@ def truncate_string(
             )
         return string[:truncation_length] + truncation_message
     return string
-
+# 
 
 #######################################################################################
 
@@ -1718,9 +1744,10 @@ class EdCustomGraderJson:
         self.test_cases: list[EdTestCase] = []
 
     def add_test_case(
-        self, name: str, score: float | int, hidden: bool, private: bool, passed: bool, ok: bool, feedback: str
+        self, name: str, score: float | int, hidden: bool, private: bool, 
+        passed: bool, ok: bool, feedback: str, max_score: float | int | None = None,
     ):
-        test_case = EdTestCase(name, score, hidden, private, passed, ok, feedback)
+        test_case = EdTestCase(name, score, hidden, private, passed, ok, feedback, max_score)
         self.test_cases.append(test_case)
         return test_case
     
@@ -1742,12 +1769,15 @@ class EdTestCase:
         PRIVATE = "private"
         FEEDBACK = "feedback"
         OUTPUT_FILES = "output_files"
+        MAX_SCORE = "max_score"
 
         def __init__(
-            self, name: str, score: float | int, hidden: bool, private: bool, passed: bool, ok: bool, feedback: str
+            self, name: str, score: float | int, hidden: bool, private: bool, 
+            passed: bool, ok: bool, feedback: str, max_score: float | int | None = None,
         ): 
             self.name = name
             self.score = score
+            self.max_score = max_score
             self.hidden = hidden
             self.private = private
             self.passed = passed
@@ -1769,6 +1799,10 @@ class EdTestCase:
                 self.OK : self.ok,
                 self.FEEDBACK : self.feedback,
             }
+
+            if self.max_score is not None and self.max_score != self.score:
+                entry[self.MAX_SCORE] = self.max_score
+
             if self.output_files:
                 output_files_as_dict = []
                 for output_file in self.output_files:
@@ -1945,14 +1979,14 @@ def write_to_test_log(ed_test_obj: EdTestCase, visible_log_fp, private_log_fp, i
         test_visibility = "Private"
 
     pass_or_fail = "FAILED "
-    score_str = f"0 of {ed_test_obj.score}"
+    score_str = f"{ed_test_obj.score} of {ed_test_obj.max_score}"
     if ed_test_obj.passed:
         pass_or_fail = "PASSED "
         score_str = f"{ed_test_obj.score} of {ed_test_obj.score}"
     
     # only show pass or fail if is execution transcript
     if is_test_report:
-        score_str = f"{ed_test_obj.score}"
+        score_str = f"{ed_test_obj.max_score}"
         pass_or_fail = ""
 
     fp = private_log_fp
@@ -2029,6 +2063,15 @@ def create_test_report_testcases(ed_test_grader_output: EdCustomGraderJson):
         False,
     )
 
+def flag_manual_intervention_testcase(ed_test_grader_output: EdCustomGraderJson, test_cases: list[TestData]):
+    no_review = True
+    for test in test_cases:
+        if test.msg.student_file_not_found != "" or test.msg.astcheck != "" or test.msg.memory_error != "":
+            no_review = False
+    ed_test_grader_output.add_test_case(
+        "Flag Manual Intervention", 0, False, True, no_review, True, 
+        "If this testcase has failed, the automated marks will be reviewed for possible partial marks by senior staff."
+    )
 
 def write_test_report_files(ed_test_list: list[EdTestCase]):    
     visible_transcript_fp = open(
@@ -2229,7 +2272,7 @@ import importlib
 from collections import defaultdict
 import resource
 
-memory_limit_bytes = 30 * 1024 * 1024
+memory_limit_bytes = 50 * 1024 * 1024
 fsize_limit_bytes = 1 * 1024 * 1024
 resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
 resource.setrlimit(resource.RLIMIT_FSIZE, (fsize_limit_bytes, fsize_limit_bytes))
@@ -2293,7 +2336,7 @@ try:
     encode_obj_data(recursion_counts, SUBPROC_RECURSION_COUNT_FILENAME)
 
 except Exception as e:
-    encode_obj_data([type(e).__name__, str(e)], SUBPROC_EXC_FILENAME)
+    encode_obj_data(e, SUBPROC_EXC_FILENAME)
     # Print the exception excluding information about this file path
     exit(traceback.format_exc(limit=-1))
 """
