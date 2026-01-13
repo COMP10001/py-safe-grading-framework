@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.2 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.4 safetestingframework.py
 Last Updated: July 2025 
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au> 2025/04/01
 Faculty of Engineering and IT - The University of Melbourne
@@ -980,12 +980,20 @@ def verify_program_output(
     if test_data.custom_verification_function is not None:
         signal.signal(signal.SIGALRM, handle_timeout)
         signal.alarm(test_data.custom_verification_timeout)  # seconds
+        # Store original stdout
+        original_stdout = sys.stdout
+        # Redirect stdout to devnull so it cannot be output from the testbench.
+        sys.stdout = open(os.devnull, 'w')
         try:
             test_data.custom_verification_function(test_data)
         except TimeoutError:
             test_data.success = False
             test_data.msg.custom_verification_hook = test_data.custom_verification_timeout_msg
-        
+        except:
+            test_data.success = False
+
+        sys.stdout = original_stdout
+
     verify_expected_exception(test_data)
     
     # Cannot check expected stderr if checking for an exception
