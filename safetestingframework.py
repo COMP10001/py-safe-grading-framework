@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.7DEV7 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.7DEV8 safetestingframework.py
 Last Updated: 23 Oct 2025
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -260,7 +260,7 @@ class TestData:
             # finished correctly.
             self.returned: Any
             self.failed_return: str
-            self.exception: ExceptionInstance | None = None
+            self.exception: list[str] | None  = None
             self.final_args: list[Any] | tuple[Any]
             self.recursive_call_count: dict[str, int]
             # self.testproc_ret: subprocess.CompletedProcess
@@ -1080,9 +1080,15 @@ def verify_expected_exception(test_data: TestData):
         student code, only the name and the message are checked. Eg for ValueError('ABC')
         compares the strings 'ValueError' and 'ABC' against the expected.
     """
-    
-    if(type(test_data.expected.exception).__name__ != type(test_data.student.exception).__name__
-        or str(test_data.expected.exception) != str(test_data.student.exception)
+    if test_data.student.exception is not None:
+        student_exception_name = test_data.student.exception[0]
+        student_exception_msg = test_data.student.exception[1]
+    else :
+        student_exception_name = ""
+        student_exception_msg = ""
+
+    if(type(test_data.expected.exception).__name__ != student_exception_name
+        or str(test_data.expected.exception) != student_exception_msg
     ):
         
         test_data.success = False
@@ -1091,13 +1097,13 @@ def verify_expected_exception(test_data: TestData):
         else:
             if test_data.expected.exception is None:
                 test_data.msg.student_exception = UNEXPECTED_EXCEPTION_MSG.format(
-                    type(test_data.student.exception).__name__,
-                    repr(str(test_data.student.exception)),
+                    student_exception_name,
+                    repr(student_exception_msg)
                 )
             else:
                 test_data.msg.student_exception = STUDENT_EXCEPTION_MSG.format(
-                    type(test_data.student.exception).__name__,
-                    repr(str(test_data.student.exception)),
+                    student_exception_name,
+                    repr(student_exception_msg)
                 )
     if test_data.expected.exception is not None:
         test_data.msg.expected_exception = EXPECTED_EXCEPTION_MSG.format(
@@ -2287,7 +2293,7 @@ try:
     encode_obj_data(recursion_counts, SUBPROC_RECURSION_COUNT_FILENAME)
 
 except Exception as e:
-    encode_obj_data(e, SUBPROC_EXC_FILENAME)
+    encode_obj_data([type(e).__name__, str(e)], SUBPROC_EXC_FILENAME)
     # Print the exception excluding information about this file path
     exit(traceback.format_exc(limit=-1))
 """
