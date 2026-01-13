@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.7DEV5 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.7DEV7 safetestingframework.py
 Last Updated: 23 Oct 2025
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -365,9 +365,6 @@ class SafeTesting:
             ok, feedback  = True, ""
             try:
                 test.run_test(self.hidden_file_dict, self.format_test_in_out_data_as_str)
-            except MemoryError:
-                test.success = False
-                test.msg.memory_error = MEMORY_ERROR_MSG
             except Exception as e:
                 if self.debug_mode:
                     # Allow exceptions to crash testbench, under normal 
@@ -1013,8 +1010,9 @@ def run_astcheck_test(
     
     if test_data.student.stderr:
         verify_expected_stderr(test_data, format_test_in_out_data_as_str)
-    elif test_data.test_type == TestData.TEST_FUNCTION and test_data.function_name not in function_defs:
-        ast_violations = MISSING_FUNC_DEF_MSG.format(test_data.function_name) + ast_violations
+    
+    if test_data.test_type == TestData.TEST_FUNCTION and test_data.function_name not in function_defs:
+        ast_violations += MISSING_FUNC_DEF_MSG.format(test_data.function_name)
 
     if ast_violations != "":
         ast_violations = AST_VIOLATION_MSG + ast_violations
@@ -1520,7 +1518,6 @@ def recursive_find_local_import_paths(filepath: str) -> list[str]:
 
 
 #######################################################################################
-
 
 def format_test_in_out_data(data: Any, format_as_string: bool) -> str:
     """Format string so it shows invisible characters and line wrapping when printed"""
@@ -2265,6 +2262,19 @@ try:
 
     student_function = getattr(student_module, FUNCTION_NAME)
     got = student_function(*FUNCTION_INPUT)
+
+    # Verify that the str representation of return value is not so big it will cause crashes.
+    # Example would be a = "a"*100000; b = [a for _ in range(10000)]; str(b) much bigger than b
+    if type(got) != str:
+        val_str = None
+        try:
+            val_str = repr(got)
+        except:
+            pass
+        
+        if val_str is None or sys.getsizeof(val_str) >= fsize_limit_bytes:
+            raise MemoryError("Function return value string representation size exceeded allowed limits.")
+        
     try:
         encode_obj_data(got, SUBPROC_FUNC_RETURN_FILENAME)
     except:
@@ -2283,4 +2293,4 @@ except Exception as e:
 """
 )
 
-#######################################################################################
+######################################################################################
