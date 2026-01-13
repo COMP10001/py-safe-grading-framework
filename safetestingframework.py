@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.7DEV3 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.7DEV5 safetestingframework.py
 Last Updated: 23 Oct 2025
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -114,6 +114,11 @@ MAX_FEEDBACK_LEN_EXCEEDED_MSG = (
     "data in the test input/output.\n"
 )
 
+STUDENT_FILE_NOT_FOUND_MSG = (
+    "► Program file {0} could not be found. "
+    "Did you delete the file, or put it into a folder?\n"
+)
+
 #######################################################################################
 
 DEFAULT_STUDENT_FILE_PATH_PREFIX = "/home/"
@@ -220,6 +225,11 @@ class TestData:
         self.student = self.Student()
     
     def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
+        if not os.path.isfile(self.student_file_name):
+            self.msg.student_file_not_found = STUDENT_FILE_NOT_FOUND_MSG.format(self.student_file_name)
+            self.success = False
+            return
+
         if self.test_type == self.TEST_FUNCTION:
             run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
         elif self.test_type == self.TEST_SCRIPT:
@@ -263,6 +273,7 @@ class TestData:
             self.input: str = ""
             self.timeout: str = ""
             self.memory_error: str = ""
+            self.student_file_not_found: str = ""
             self.custom_verification_hook: str = ""
             self.student_recursion_count: str = ""
             self.expected_recursion_count: str = ""
@@ -1785,7 +1796,7 @@ class EdOutputFile:
 #######################################################################################
 
 
-def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
+def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0, include_function_call: bool = True):
     if levels_to_reduce >= 1:
         pep8_truncation_length = max(
             DEFAULT_PEP8_TRUNCATION_LENGTH // levels_to_reduce, 200
@@ -1802,13 +1813,17 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
 
     feedback_priority_order = [
         test_data.msg.pep8,
-        test_data.msg.astcheck,
-        test_data.msg.function_call,
+        test_data.msg.astcheck]
+    
+    if include_function_call:
+        feedback_priority_order.append(test_data.msg.function_call)
+    feedback_priority_order.extend([
         test_data.msg.input,
         test_data.msg.timeout,
         test_data.msg.memory_error,
+        test_data.msg.student_file_not_found,
         test_data.msg.custom_verification_hook,
-    ]
+    ])
     # Only include information about the tests that have failed due to 
     # limitations on stdout.
     if test_data.msg.student_exception:
@@ -1960,6 +1975,7 @@ def generate_test_report_entry(test_data: TestData):
         test_data.msg.input,
         test_data.msg.timeout,
         test_data.msg.memory_error,
+        test_data.msg.student_file_not_found,
         test_data.msg.custom_verification_hook,
         test_data.msg.expected_exception,
         test_data.msg.expected_stderr,
@@ -1979,7 +1995,7 @@ def generate_test_report_entry(test_data: TestData):
 def generate_execution_transcript_entry(test_data: TestData):
     """  """
     # Ed does not display unicode chars in the file preview correctly.
-    return [generate_feedback_level(test_data, 0).replace("►", ">")]
+    return [generate_feedback_level(test_data, 0, include_function_call=False).replace("►", ">")]
 
 
 def create_test_report_testcases(ed_test_grader_output: EdCustomGraderJson):
@@ -2070,7 +2086,7 @@ def set_test_output_files(ed_test_grader_output: EdCustomGraderJson):
 # convient to store it directly in here, to avoid version control inconvenience.
 
 
-# Used to patch the input() function to also print to stdout, when input_echoing is enabled
+# Used to patch the input() function to also print to stdout, when input_echoing is enabled.
 # Patching builtins before loading allows the custom version to be used when the code is run
 # by the import. Stack trace is cleaned up to make it look  almost the same as if not using input_echoing.
 
