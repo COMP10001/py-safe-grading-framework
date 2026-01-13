@@ -1,6 +1,6 @@
 """
-Safe Ed Assignment Testing Library V0.4.5 safetestingframework.py
-Last Updated: 21 Aug 2025 
+Safe Ed Assignment Testing Library V0.4.6 safetestingframework.py
+Last Updated: 9 Oct 2025 
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 The latest version and documentation can be found in the COMP10001 Worksheet Repository
@@ -31,6 +31,10 @@ else:
 # irreplaceably removed, unlike on Ed.
 # Remove the test file after loading by Ed, to prevent ability to print out contents
 #os.remove(__file__)
+
+# Disable Printing to STDOUT as this breaks the Ed integration if done accidentally
+ORIGINAL_STDOUT = sys.stdout
+sys.stdout = open(os.devnull, 'w')
 
 #######################################################################################
 
@@ -111,6 +115,8 @@ SUBPROC_FUNC_RETURN_FILENAME = "subproc-func-return"
 SUBPROC_FUNC_ARGS_FILENAME = "subproc-func-args"
 SUBPROC_EXC_FILENAME = "subproc-exception"
 SUBPROC_RECURSION_COUNT_FILENAME = "subproc-recursion-count"
+SUBPROC_PICKLE_FAILED_FILENAME = 'pickle-failed'
+
 
 SUBPROC_STDOUT_FILENAME = "stdout.txt"
 SUBPROC_STDERR_FILENAME = "stderr.txt"
@@ -229,6 +235,7 @@ class TestData:
             # variable being assigned at confirms whether the student function
             # finished correctly.
             self.returned: Any
+            self.failed_return: str
             self.exception: ExceptionInstance | None = None
             self.final_args: list[Any] | tuple[Any]
             self.recursive_call_count: dict[str, int]
@@ -358,6 +365,9 @@ class SafeTesting:
             write_test_report_files(ed_test_grader_output.test_cases)
 
         ed_test_case_json = set_test_feedback_level(ed_test_grader_output)
+
+        # Re-Enable printing to STDOUT
+        sys.stdout = ORIGINAL_STDOUT
         # Ed reads the test json from stdout
         print(ed_test_case_json)
 
@@ -503,7 +513,16 @@ class SafeTesting:
         test_data.required_functions = required_functions
         test_data.required_methods = required_methods
         test_data.required_imports = required_imports
-        
+
+        # Verify the return object type can be tested, as not all objects can be 
+        # pickled, but this is a requirement for how the testing occurs.
+        try:
+            encode_obj_data(function_expected, "validate-pickleable")
+            os.remove("validate-pickleable")
+        except:
+            raise Exception(
+                f"Setup Issue: Unsupported Function Expected Object Type, cannot be pickled."
+            )
         
         self.test_cases.append(test_data)
 
@@ -749,8 +768,12 @@ def run_function_test(
         )
 
         load_data_object_from_file(
-            test_data.student, "returned", SUBPROC_FUNC_RETURN_FILENAME
+            test_data.student, "failed_return", SUBPROC_PICKLE_FAILED_FILENAME
         )
+        if not hasattr(test_data.student, "failed_return"):
+            load_data_object_from_file(
+                test_data.student, "returned", SUBPROC_FUNC_RETURN_FILENAME
+            )
         load_data_object_from_file(
             test_data.student, "final_args", SUBPROC_FUNC_ARGS_FILENAME
         )
@@ -983,10 +1006,7 @@ def verify_program_output(
     if test_data.custom_verification_function is not None:
         signal.signal(signal.SIGALRM, handle_timeout)
         signal.alarm(test_data.custom_verification_timeout)  # seconds
-        # Store original stdout
-        original_stdout = sys.stdout
-        # Redirect stdout to devnull so it cannot be output from the testbench.
-        sys.stdout = open(os.devnull, 'w')
+
         try:
             test_data.custom_verification_function(test_data)
         except TimeoutError:
@@ -994,8 +1014,6 @@ def verify_program_output(
             test_data.msg.custom_verification_hook = test_data.custom_verification_timeout_msg
         except:
             test_data.success = False
-
-        sys.stdout = original_stdout
 
     verify_expected_exception(test_data)
     
@@ -1018,10 +1036,18 @@ def verify_program_output(
 
 
 def verify_expected_exception(test_data: TestData):
+    """
+    Check if student has raised the correct exception as expected.
+
+    Note:
+        To allow for custom exception checking without needing to import 
+        student code, only the name and the message are checked. Eg for ValueError('ABC')
+        compares the strings 'ValueError' and 'ABC' against the expected.
+    """
     
-    if(type(test_data.expected.exception) != type(test_data.student.exception) 
+    if(type(test_data.expected.exception).__name__ != type(test_data.student.exception).__name__
         or str(test_data.expected.exception) != str(test_data.student.exception)
-        ):
+    ):
         
         test_data.success = False
         if test_data.student.exception is None:
@@ -1042,6 +1068,7 @@ def verify_expected_exception(test_data: TestData):
             type(test_data.expected.exception).__name__,
             str(test_data.expected.exception),
         )
+                 
                             
 
 def verify_expected_stderr(
@@ -1115,7 +1142,13 @@ def verify_function_return(test_data: TestData):
         the test case report.
     """
     if test_data.test_type == TestData.TEST_FUNCTION:
-        if hasattr(test_data.student, "returned"):
+        if hasattr(test_data.student, "failed_return"):
+           data_type, data_str = test_data.student.failed_return.split('\n')
+           test_data.msg.student_return = STUDENT_RETURN_MSG.format(
+                    data_type, data_str
+            ) 
+        
+        elif hasattr(test_data.student, "returned"):
             if test_data.student.returned != test_data.expected.returned:
                 test_data.msg.student_return = STUDENT_RETURN_MSG.format(
                     type(test_data.student.returned).__name__,
@@ -1621,10 +1654,11 @@ def decode_obj_data(filename: str):
 
 
 def load_data_object_from_file(class_obj, attr: str, file: str):
-    obj_exists = os.path.isfile(file) and os.path.getsize(file) > 0
-    if obj_exists:
+    try:
         setattr(class_obj, attr, decode_obj_data(file))
         os.remove(file)
+    except:
+        pass
 
 
 def handle_timeout(signum, frame):
@@ -2122,12 +2156,14 @@ SUBPROC_FUNC_RETURN_FILENAME = "{1}"
 SUBPROC_FUNC_ARGS_FILENAME = "{2}"
 SUBPROC_EXC_FILENAME = "{3}"
 SUBPROC_RECURSION_COUNT_FILENAME = "{4}"
+SUBPROC_PICKLE_FAILED_FILENAME = "{5}"
 """.format(
     SUBPROC_FUNC_INPUT_FILENAME,
     SUBPROC_FUNC_RETURN_FILENAME,
     SUBPROC_FUNC_ARGS_FILENAME,
     SUBPROC_EXC_FILENAME,
     SUBPROC_RECURSION_COUNT_FILENAME,
+    SUBPROC_PICKLE_FAILED_FILENAME,
 )
 
 RUN_FUNCTION_TEST_SUBPROCESS_FILE = (
@@ -2174,8 +2210,11 @@ try:
 
     student_function = getattr(student_module, FUNCTION_NAME)
     got = student_function(*FUNCTION_INPUT)
+    try:
+        encode_obj_data(got, SUBPROC_FUNC_RETURN_FILENAME)
+    except:
+        encode_obj_data(type(got).__name__+'\n'+str(got), SUBPROC_PICKLE_FAILED_FILENAME)
 
-    encode_obj_data(got, SUBPROC_FUNC_RETURN_FILENAME)
     encode_obj_data(FUNCTION_INPUT, SUBPROC_FUNC_ARGS_FILENAME)
     recursion_counts = defaultdict(int)
     for checker in checkers:
