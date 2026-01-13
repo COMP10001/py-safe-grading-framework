@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.6 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.7DEV2 safetestingframework.py
 Last Updated: 9 Oct 2025 
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -101,6 +101,12 @@ TIMEOUT_ERROR_MSG = (
     "► Your program took too long to run and was terminated after {0} second{1}. "
     "Do you have an infinite loop?\n"
 )
+
+MEMORY_ERROR_MSG = (
+    "► Your program used too much memory. "
+    "Do you have an infinite loop?\n"
+)
+
 MAX_FEEDBACK_LEN_EXCEEDED_MSG = (
     "Setup Issue: {0} Reduce the number of test cases or amount of "
     "data in the test input/output.\n"
@@ -248,6 +254,7 @@ class TestData:
             self.function_call: str = ""
             self.input: str = ""
             self.timeout: str = ""
+            self.memory_error: str = ""
             self.custom_verification_hook: str = ""
             self.student_recursion_count: str = ""
             self.expected_recursion_count: str = ""
@@ -326,7 +333,11 @@ class SafeTesting:
         Run all the registered test cases, and produce the execution transcripts, 
         test case reports and output the required json test object for Edstem 
         """
-        
+        import resource
+
+        memory_limit_bytes = 512 * 1024 * 1024
+        resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
+            
         ed_test_grader_output = EdCustomGraderJson()
         if self.show_test_reports:
             create_test_report_testcases(ed_test_grader_output)
@@ -335,13 +346,17 @@ class SafeTesting:
             ok, feedback  = True, ""
             try:
                 test.run_test(self.hidden_file_dict, self.format_test_in_out_data_as_str)
-                
+            
+            except MemoryError:
+                test.success = False
+                test.msg.memory_error = MEMORY_ERROR_MSG
             except Exception as e:
                 if self.debug_mode:
                     # Allow exceptions to crash testbench, under normal 
                     # circumstances there should be no exceptions raised.
                     raise Exception from e
-                test.name = "ERROR CONTACT COURSE COORDINATOR" + test.name
+                test.name = "ERROR CONTACT COURSE COORDINATOR " + test.name
+                test.success = False
                 ok = False  # Test Bench Error.
                 
             if self.debug_mode:
@@ -753,7 +768,7 @@ def run_function_test(
             test_data.function_name,
             str(int(test_data.input_echoing)),
         ]
-
+    
         (
             _,
             test_data.student.stdout,
@@ -1777,6 +1792,7 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0):
         test_data.msg.function_call,
         test_data.msg.input,
         test_data.msg.timeout,
+        test_data.msg.memory_error,
         test_data.msg.custom_verification_hook,
     ]
     # Only include information about the tests that have failed due to 
@@ -1929,6 +1945,7 @@ def generate_test_report_entry(test_data: TestData):
         test_data.msg.function_call,
         test_data.msg.input,
         test_data.msg.timeout,
+        test_data.msg.memory_error,
         test_data.msg.custom_verification_hook,
         test_data.msg.expected_exception,
         test_data.msg.expected_stderr,
@@ -2177,6 +2194,10 @@ import os
 import traceback
 import importlib
 from collections import defaultdict
+import resource
+
+memory_limit_bytes = 30 * 1024 * 1024
+resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
 
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
