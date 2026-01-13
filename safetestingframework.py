@@ -1,6 +1,6 @@
 """
-Safe Ed Assignment Testing Library V0.4.7DEV2 safetestingframework.py
-Last Updated: 9 Oct 2025 
+Safe Ed Assignment Testing Library V0.4.7DEV3 safetestingframework.py
+Last Updated: 23 Oct 2025
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 The latest version and documentation can be found in the COMP10001 Worksheet Repository
@@ -16,6 +16,8 @@ import filecmp
 import sys
 import dill
 import signal
+import resource
+import gc
 
 from pydantic import validate_call, PlainValidator
 from collections.abc import Callable
@@ -150,6 +152,12 @@ EDSTEM_MAX_GRADER_OUTPUT_CHARS = 200000
 EDSTEM_TESTING_FILESYSTEM_MAX_SIZE_MB = 100
 EDSTEM_STUDENT_DATA_MAX_SIZE_MB = 20
 
+EDSTEM_MAX_MEMORY_FOOTPRINT_MB = 512
+# Choose a value underneath the actual maximum.
+EDSTEM_SOFTLIMIT_MEMORY_FOOTPRINT_MB = 480
+
+MEGABYTE_TO_BYTES = 1024*1024
+
 #######################################################################################
 
 def validate_exception_instance(v):
@@ -278,7 +286,7 @@ class SafeTesting:
     "E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503"
     )
     DEFAULT_NON_ALLOWED_NODES = []
-    DEFAULT_NON_ALLOWED_FUNCTIONS = ["exec"]
+    DEFAULT_NON_ALLOWED_FUNCTIONS = ["exec", "eval"]
     DEFAULT_NON_ALLOWED_METHODS = []
     DEFAULT_NON_ALLOWED_IMPORTS = ["sys", "os", "subprocess", "signal", "importlib", "builtins"]
     def __init__(
@@ -333,9 +341,9 @@ class SafeTesting:
         Run all the registered test cases, and produce the execution transcripts, 
         test case reports and output the required json test object for Edstem 
         """
-        import resource
+        
 
-        memory_limit_bytes = 512 * 1024 * 1024
+        memory_limit_bytes = EDSTEM_SOFTLIMIT_MEMORY_FOOTPRINT_MB  * MEGABYTE_TO_BYTES
         resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
             
         ed_test_grader_output = EdCustomGraderJson()
@@ -346,7 +354,6 @@ class SafeTesting:
             ok, feedback  = True, ""
             try:
                 test.run_test(self.hidden_file_dict, self.format_test_in_out_data_as_str)
-            
             except MemoryError:
                 test.success = False
                 test.msg.memory_error = MEMORY_ERROR_MSG
@@ -760,13 +767,17 @@ def run_function_test(
         file_path_to_run = STUDENT_FILE_PATH_PREFIX + RUN_TEST_SUBPROCESS_FILENAME
         with open(file_path_to_run, "w") as fp:
             fp.write(RUN_FUNCTION_TEST_SUBPROCESS_FILE)
-
+        
+        # If there is expected recursion counts, call counting should be enabled
+        # Disabled by default as it is costly, time, and memory wise.
+        enable_call_counting = test_data.expected.recursive_call_counts != []
         command = [
             "python",
             file_path_to_run,
             test_data.student_file_name,
             test_data.function_name,
             str(int(test_data.input_echoing)),
+            str(int(enable_call_counting))
         ]
     
         (
@@ -795,9 +806,10 @@ def run_function_test(
         load_data_object_from_file(
             test_data.student, "exception", SUBPROC_EXC_FILENAME
         )
-        load_data_object_from_file(
-            test_data.student, "recursive_call_count", SUBPROC_RECURSION_COUNT_FILENAME
-        )
+        if enable_call_counting:
+            load_data_object_from_file(
+                test_data.student, "recursive_call_count", SUBPROC_RECURSION_COUNT_FILENAME
+            )
 
         # This must be inside hidden file manager context for expected file checking
         verify_program_output(test_data, format_test_in_out_data_as_str)
@@ -1639,6 +1651,8 @@ def subprocess_run_with_truncated_output(
                     timeout_seconds, timeout_suffix
                 )
 
+    gc.collect()
+
     with open(SUBPROC_STDOUT_FILENAME, "rb") as stdout_fp:
         proc_stdout = stdout_fp.read().decode()
     with open(SUBPROC_STDERR_FILENAME, "rb") as stderr_fp:
@@ -2197,7 +2211,9 @@ from collections import defaultdict
 import resource
 
 memory_limit_bytes = 30 * 1024 * 1024
+fsize_limit_bytes = 1 * 1024 * 1024
 resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
+resource.setrlimit(resource.RLIMIT_FSIZE, (fsize_limit_bytes, fsize_limit_bytes))
 
 # Remove the test file after loading, to prevent ability to print out contents
 os.remove(__file__)
@@ -2205,6 +2221,7 @@ os.remove(__file__)
 STUDENT_FILE_NAME = sys.argv[1]
 FUNCTION_NAME = sys.argv[2]
 INPUT_ECHOING = bool(int(sys.argv[3]))
+COUNT_FUNC_CALLS = bool(int(sys.argv[4]))
 
 FUNCTION_INPUT = decode_obj_data(SUBPROC_FUNC_INPUT_FILENAME)
 os.remove(SUBPROC_FUNC_INPUT_FILENAME)
@@ -2217,13 +2234,14 @@ try:
 
      # Wrap all functions in the call counting decorator.
     checkers = []
-    for attr in dir(student_module):
-        obj = getattr(student_module, attr)
-        if inspect.isfunction(obj):
-            checker = RecursionChecker()
-            checkers.append(checker)
-            wrapped_func = checker(obj)
-            setattr(student_module, attr, wrapped_func)
+    if COUNT_FUNC_CALLS:
+        for attr in dir(student_module):
+            obj = getattr(student_module, attr)
+            if inspect.isfunction(obj):
+                checker = RecursionChecker()
+                checkers.append(checker)
+                wrapped_func = checker(obj)
+                setattr(student_module, attr, wrapped_func)
 
     if INPUT_ECHOING == True:
         # patch the input function to echo the input to stdout
