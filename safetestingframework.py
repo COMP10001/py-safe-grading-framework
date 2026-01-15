@@ -1,10 +1,12 @@
 """
-Safe Ed Assignment Testing Library V0.4.7DEV10 safetestingframework.py
-Last Updated: 30 Oct 2025
+Safe Ed Assignment Testing Library V0.4.7 safetestingframework.py
+Last Updated: 15 Jan 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 The latest version and documentation can be found in the COMP10001 Worksheet Repository
 https://edstem.org/au/courses/20912/lessons/79913/slides/539891
+or on the github organisation:
+https://github.com/COMP10001/safe-testing-framework
 """
 
 import os
@@ -310,6 +312,7 @@ class SafeTesting:
         show_all_passed_tests_first: bool = True,
         show_test_reports: bool = True,
         file_path_prefix: str = os.getcwd()+'/',
+        show_flag_manual_intervention_testcase: bool = False,
     ):
         """
         Testing infrastructure for safely testing student code, with easy access to testing specific functions,
@@ -341,6 +344,7 @@ class SafeTesting:
         self.student_file_path_prefix: str = file_path_prefix
         self.hidden_file_dict = {}
         self.format_test_in_out_data_as_str = format_test_in_out_data_as_str
+        self.show_flag_manual_intervention_testcase = show_flag_manual_intervention_testcase
 
         self.visible_test_count = 0
         self.hidden_test_count = 0
@@ -397,7 +401,8 @@ class SafeTesting:
         if self.show_all_passed_tests_first:
             ed_test_grader_output.test_cases.sort(key=lambda x: not x.passed)
 
-        flag_manual_intervention_testcase(ed_test_grader_output, self.test_cases)
+        if self.show_flag_manual_intervention_testcase:
+            flag_manual_intervention_testcase(ed_test_grader_output, self.test_cases)
 
         set_test_output_files(ed_test_grader_output)
 
