@@ -1,5 +1,5 @@
 """
-Safe Ed Assignment Testing Library V0.4.7 safetestingframework.py
+Safe Ed Assignment Testing Library V0.4.8 safetestingframework.py
 Last Updated: 15 Jan 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -1288,7 +1288,8 @@ def verify_expected_mutated_args(test_data: TestData):
                 format_as_func_arg_string(test_data.student.final_args)
             )
             test_data.success = False
-
+        
+        # Always create expected output string
         test_data.msg.expected_mutated = EXPECTED_MUTATED_ARGS_MSG.format(
             format_as_func_arg_string(test_data.expected.mutated_args)
         )
