@@ -1,6 +1,6 @@
 """
-Safe Ed Assignment Testing Library V0.4.9 safetestingframework.py
-Last Updated: 15 Jan 2026
+Safe Ed Assignment Testing Library V0.4.10 safetestingframework.py
+Last Updated: 29 Jan 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 The latest version and documentation can be found in the COMP10001 Worksheet Repository
@@ -224,6 +224,7 @@ class TestData:
         self.required_imports: list[str]
 
         self.pep8_ignored_tests: str
+        self.pep8_max_line_len: int
         self.msg = self.Messages()
         self.expected = self.Expected()
         self.student = self.Student()
@@ -300,6 +301,7 @@ class SafeTesting:
     "E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225"
     "E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503"
     )
+    DEFAULT_PEP8_MAX_LINE_LEN=79
     DEFAULT_NON_ALLOWED_NODES = []
     DEFAULT_NON_ALLOWED_FUNCTIONS = ["exec", "eval"]
     DEFAULT_NON_ALLOWED_METHODS = []
@@ -724,6 +726,7 @@ class SafeTesting:
         private: bool = False,
         student_file_name: str = "",
         ignored_tests: str = DEFAULT_PEP8_IGNORED,
+        max_line_len: int = DEFAULT_PEP8_MAX_LINE_LEN,
     ) -> None:
         """
         Description:
@@ -743,6 +746,7 @@ class SafeTesting:
         test_data = TestData(name, score, hidden, private, student_file_name, TestData.TEST_PEP8)
         test_data.success = False
         test_data.pep8_ignored_tests = ignored_tests
+        test_data.pep8_max_line_len = max_line_len
 
         self.test_cases.append(test_data)
 
@@ -940,7 +944,8 @@ def run_pep8_test(test_data: TestData) -> TestData:
         if DEFAULT_PEP8_TRUNCATION_LENGTH - len(pep8_violations) <= 0:
             break
 
-        command = ["flake8", "--jobs=1", "--ignore=" + test_data.pep8_ignored_tests, file]
+        command = ["flake8", "--jobs=1", "--ignore=" + test_data.pep8_ignored_tests,
+                   "--max-line-len=" + str(test_data.pep8_max_line_len),  file]
         _, proc_stdout, _, _ = (
             subprocess_run_with_truncated_output(
                 command,
@@ -1282,6 +1287,7 @@ def verify_expected_mutated_args(test_data: TestData):
     if (
         test_data.test_type == TestData.TEST_FUNCTION
         and test_data.expected.mutated_args is not None
+        and hasattr(test_data.student, "final_args")
     ):
         if list(test_data.student.final_args) != list(test_data.expected.mutated_args):
             test_data.msg.student_mutated = RECIEVED_ARGS_MSG.format(
