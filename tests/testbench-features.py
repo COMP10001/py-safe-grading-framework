@@ -6,7 +6,7 @@
 # Faculty of Engineering and IT - The University of Melbourne
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
 # https://edstem.org/au/courses/20911/lessons/79913/slides/539891
-from safetestingframework import *
+from pysafegradingfw import *
 
 ### ENSURE PER TESTCASE SCORING IS ENABLED!
 ### ENSURE TIMEOUT (s) IS SET HIGHER THAN THE SUM OF 'function_timeout_seconds' FOR EACH TEST!

@@ -1,7 +1,18 @@
-# Testbench Template Generator for V.0.4.5 Safe Testing Framework
-# Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
+"""
+Testbench Template Generator for
+Python Safe Grading Framework for Edstem V0.5.0 pysafegradingfw.py
+
+Updated: April 2026
+Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
+Faculty of Engineering and IT - The University of Melbourne
+License: MIT
+The latest version and documentation can be found at:
+https://github.com/COMP10001/py-safe-grading-framework
+"""
+
 # Choose from these options to generate a testbench file template
 ASSIGNMENT_DESC = "Assignment 1 Testbench"
+TESTCASE_AUTHOR = ""
 INCLUDE_PEP8_CHECK = False
 INCLUDE_AST_CHECK = False
 NUM_VISIBLE_FUNCTION_TESTS = 1
@@ -12,7 +23,7 @@ NUM_PRIVATE_FUNCTION_TESTS = 0
 NUM_PRIVATE_SCRIPT_TESTS = 0
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
-STUDENT_FILE_PATH_PREFIX = "/home/" 
+STUDENT_FILE_PATH_PREFIX = "/home/"
 
 
 ############################################################################################
@@ -20,13 +31,15 @@ STUDENT_FILE_PATH_PREFIX = "/home/"
 PREAMBLE = \
 r'''"""
 {0}
+Testcase Author: {1}
 
-Depends on Safe Ed Assignment Unit Testing Framework V0.4.5
-Last Updated: 2025/08/21
+Depends on Python Safe Grading Framework for Edstem V0.5.0 pysafegradingfw.py
+Updated: April 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
-The latest version and documentation can be found in the COMP10001 Worksheet Repository
-https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+License: MIT
+The latest version and documentation can be found at:
+https://github.com/COMP10001/py-safe-grading-framework
 """
 from safetestingframework import *
 
@@ -39,11 +52,11 @@ os.remove(__file__)
 
 # DANGER: Overrides Hidden and Private Tests so they become visible,
 # Need to re-run test cases for all students for it to work
-RELEASE_TEST_CASES = False 
+RELEASE_TEST_CASES = False
 
-STUDENT_FUNCTION = "{1}"
-STUDENT_FILE_NAME = "{2}"
-STUDENT_FILE_PATH_PREFIX = "{3}"
+STUDENT_FUNCTION = "{2}"
+STUDENT_FILE_NAME = "{3}"
+STUDENT_FILE_PATH_PREFIX = "{4}"
 
 # In setup mode all testcases will fail to ensure it is not left enabled
 # Given input and output data will be formatted as a string with no line wrapping for easy copy pasting into testbench
@@ -54,7 +67,7 @@ SHOW_ALL_PASSED_TESTS_FIRST = True
 FILES_TO_HIDE = [] # eg ["abc.txt"]
 HIDDEN_FILE_DICT = cache_hidden_test_files(FILES_TO_HIDE)
 
-class SafeTesting():'''.format(ASSIGNMENT_DESC, STUDENT_FUNCTION, STUDENT_FILE_NAME, STUDENT_FILE_PATH_PREFIX)
+class SafeTesting():'''.format(ASSIGNMENT_DESC, TESTCASE_AUTHOR, STUDENT_FUNCTION, STUDENT_FILE_NAME, STUDENT_FILE_PATH_PREFIX)
 
 SUFFIX = \
 r'''
@@ -79,7 +92,7 @@ TEST_ASTCHECK = \
 r'''
     @setname()
     @score(0)
-    def testAST_Check(self): 
+    def testAST_Check(self):
         run_astcheck_test(
             student_file_name=STUDENT_FILE_NAME,               # File to test function from
             student_file_path_prefix=STUDENT_FILE_PATH_PREFIX, # File path prefix, could change by Ed, but otherwise does not need to be touched
@@ -162,7 +175,7 @@ with open("testbench.txt", "w") as fp:
         fp.write(TEST_PEP8 + '\n')
     if INCLUDE_AST_CHECK:
         fp.write(TEST_ASTCHECK+ '\n')
-    
+
     for i in range(NUM_VISIBLE_FUNCTION_TESTS):
         fp.write(TEST_VISIBLE.format(i+1))
         fp.write(RUN_FUNCTION_TEST + '\n')
@@ -178,7 +191,7 @@ with open("testbench.txt", "w") as fp:
     for i in range(NUM_HIDDEN_SCRIPT_TESTS):
         fp.write(TEST_HIDDEN.format(i+NUM_HIDDEN_FUNCTION_TESTS+1))
         fp.write(RUN_SCRIPT_TEST + '\n')
-        
+
     for i in range(NUM_PRIVATE_FUNCTION_TESTS):
         fp.write(TEST_PRIVATE.format(i+1))
         fp.write(RUN_FUNCTION_TEST + '\n')
@@ -186,5 +199,5 @@ with open("testbench.txt", "w") as fp:
     for i in range(NUM_PRIVATE_SCRIPT_TESTS):
         fp.write(TEST_PRIVATE.format(i+NUM_PRIVATE_FUNCTION_TESTS+1))
         fp.write(RUN_SCRIPT_TEST + '\n')
-    
+
     fp.write(SUFFIX)

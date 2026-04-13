@@ -1,12 +1,11 @@
 """
-Safe Ed Assignment Testing Library V0.4.10 safetestingframework.py
-Last Updated: 29 Jan 2026
+Python Safe Grading Framework for Edstem V0.5.0 pysafegradingfw.py
+Updated: April 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
-The latest version and documentation can be found in the COMP10001 Worksheet Repository
-https://edstem.org/au/courses/20912/lessons/79913/slides/539891
-or on the github organisation:
-https://github.com/COMP10001/safe-testing-framework
+License: MIT
+The latest version and documentation can be found at:
+https://github.com/COMP10001/py-safe-grading-framework
 """
 
 import os
@@ -30,11 +29,10 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import Buffer
 
-
 # DANGER: Be careful if developing locally, as importing this code will cause it to be
 # irreplaceably removed, unlike on Ed.
 # Remove the test file after loading by Ed, to prevent ability to print out contents
-os.remove(__file__)
+# os.remove(__file__)
 
 # Disable Printing to STDOUT as this breaks the Ed integration if done accidentally
 ORIGINAL_STDOUT = sys.stdout

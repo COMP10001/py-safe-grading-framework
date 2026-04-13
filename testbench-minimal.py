@@ -1,14 +1,15 @@
 """
 Minimal Testbench Example
 
-Depends on Safe Ed Assignment Unit Testing Framework V0.4.5
-Last Updated: 2025/08/21
+Depends on Python Safe Grading Framework for Edstem V0.5.0 pysafegradingfw.py
+Updated: April 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
-The latest version and documentation can be found in the COMP10001 Worksheet Repository
-https://edstem.org/au/courses/20911/lessons/79913/slides/539891
+License: MIT
+The latest version and documentation can be found at:
+https://github.com/COMP10001/py-safe-grading-framework
 """
-from safetestingframework import *
+from pysafegradingfw import *
 
 ### ENSURE PER TESTCASE SCORING IS ENABLED!
 ### ENSURE TIMEOUT (s) IS SET HIGHER THAN THE SUM OF 'function_timeout_seconds' FOR EACH TEST!
@@ -19,7 +20,7 @@ from safetestingframework import *
 
 # DANGER: Overrides Hidden and Private Tests so they become visible,
 # Need to re-run test cases for all students for it to work
-RELEASE_TEST_CASES = False 
+RELEASE_TEST_CASES = False
 
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
@@ -27,7 +28,7 @@ FILES_TO_HIDE = [] # eg ["abc.txt"]
 PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 
 test_bench = SafeTesting(
-    setup_mode=False,
+    debug_mode=False,
     make_all_tests_visible=RELEASE_TEST_CASES,
     show_all_passed_tests_first=True,
     show_test_reports=True,
@@ -44,7 +45,7 @@ test_bench.register_pep8_test(
 test_bench.register_ast_test(
     student_file_name=STUDENT_FILE_NAME,
     non_allowed_functions=["print"]
-    
+
 )
 
 test_bench.register_function_test(
