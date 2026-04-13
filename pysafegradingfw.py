@@ -290,15 +290,15 @@ class TestData:
 
 
 class SafeTesting:
-    DEFAULT_PEP8_IGNORED = (
+    _DEFAULT_PEP8_IGNORED = (
     "E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225"
     "E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503"
     )
-    DEFAULT_PEP8_MAX_LINE_LEN=79
-    DEFAULT_NON_ALLOWED_NODES = []
-    DEFAULT_NON_ALLOWED_FUNCTIONS = ["exec", "eval"]
-    DEFAULT_NON_ALLOWED_METHODS = []
-    DEFAULT_NON_ALLOWED_IMPORTS = ["sys", "os", "subprocess", "signal", "importlib", "builtins"]
+    _DEFAULT_PEP8_MAX_LINE_LEN=79
+    _DEFAULT_NON_ALLOWED_NODES = []
+    _DEFAULT_NON_ALLOWED_FUNCTIONS = ["exec", "eval"]
+    _DEFAULT_NON_ALLOWED_METHODS = []
+    _DEFAULT_NON_ALLOWED_IMPORTS = ["sys", "os", "subprocess", "signal", "importlib", "builtins"]
     def __init__(
         self,
         debug_mode: bool = False,
@@ -477,10 +477,10 @@ class SafeTesting:
         custom_verification_data: Any = None,
         custom_verification_timeout: int = 1,
         custom_verification_timeout_msg: str = "",
-        non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
-        non_allowed_functions: list[str] = DEFAULT_NON_ALLOWED_FUNCTIONS,
-        non_allowed_methods: list[str] = DEFAULT_NON_ALLOWED_METHODS,
-        non_allowed_imports: list[str] = DEFAULT_NON_ALLOWED_IMPORTS,
+        non_allowed_nodes: list[type] | dict[type, str] = _DEFAULT_NON_ALLOWED_NODES,
+        non_allowed_functions: list[str] = _DEFAULT_NON_ALLOWED_FUNCTIONS,
+        non_allowed_methods: list[str] = _DEFAULT_NON_ALLOWED_METHODS,
+        non_allowed_imports: list[str] = _DEFAULT_NON_ALLOWED_IMPORTS,
         required_nodes: list[type] | dict[type, str] = [],
         required_functions: list[str] = [],
         required_methods: list[str] = [],
@@ -590,10 +590,10 @@ class SafeTesting:
         custom_verification_data: Any = None,
         custom_verification_timeout: int = 1,
         custom_verification_timeout_msg: str = "",
-        non_allowed_nodes: list[type] | dict[type, str] = DEFAULT_NON_ALLOWED_NODES,
-        non_allowed_functions: list[str] = DEFAULT_NON_ALLOWED_FUNCTIONS,
-        non_allowed_methods: list[str] = DEFAULT_NON_ALLOWED_METHODS,
-        non_allowed_imports: list[str] = DEFAULT_NON_ALLOWED_IMPORTS,
+        non_allowed_nodes: list[type] | dict[type, str] = _DEFAULT_NON_ALLOWED_NODES,
+        non_allowed_functions: list[str] = _DEFAULT_NON_ALLOWED_FUNCTIONS,
+        non_allowed_methods: list[str] = _DEFAULT_NON_ALLOWED_METHODS,
+        non_allowed_imports: list[str] = _DEFAULT_NON_ALLOWED_IMPORTS,
         required_nodes: list[type] | dict[type, str] = [],
         required_functions: list[str] = [],
         required_methods: list[str] = [],
@@ -718,8 +718,8 @@ class SafeTesting:
         hidden: bool = False,
         private: bool = False,
         student_file_name: str = "",
-        ignored_tests: str = DEFAULT_PEP8_IGNORED,
-        max_line_len: int = DEFAULT_PEP8_MAX_LINE_LEN,
+        ignored_tests: str = _DEFAULT_PEP8_IGNORED,
+        max_line_len: int = _DEFAULT_PEP8_MAX_LINE_LEN,
     ) -> None:
         """
         Description:
