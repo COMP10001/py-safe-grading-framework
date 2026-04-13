@@ -29,11 +29,6 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import Buffer
 
-# DANGER: Be careful if developing locally, as importing this code will cause it to be
-# irreplaceably removed, unlike on Ed.
-# Remove the test file after loading by Ed, to prevent ability to print out contents
-# os.remove(__file__)
-
 # Disable Printing to STDOUT as this breaks the Ed integration if done accidentally
 ORIGINAL_STDOUT = sys.stdout
 sys.stdout = open(os.devnull, 'w')
@@ -2140,6 +2135,9 @@ def set_test_output_files(ed_test_grader_output: EdCustomGraderJson):
 #######################################################################################
 # The runtestsubprocess files must be removed from path before running student code, so it is
 # convient to store it directly in here, to avoid version control inconvenience.
+# As runtestsubprocess is a seperate file, it needs to be freshly created after each test run
+# to prevent the ability for it to be modified be a preceding testcase. It must have no
+# dynamic local imports for this same reason, hence all relevant functions are directly embedded into the file.
 
 
 # Used to patch the input() function to also print to stdout, when input_echoing is enabled.
@@ -2234,7 +2232,9 @@ import builtins
 import importlib.util
 from builtins import input
 
-# Remove the test file after loading, to prevent ability to print out contents
+
+# Remove the test file after loading, so it can be regenerated
+# on next iteration, ensuring each test is isolated
 os.remove(__file__)
 
 STUDENT_FILE_NAME = sys.argv[1]
@@ -2287,7 +2287,8 @@ fsize_limit_bytes = 1 * 1024 * 1024
 resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
 resource.setrlimit(resource.RLIMIT_FSIZE, (fsize_limit_bytes, fsize_limit_bytes))
 
-# Remove the test file after loading, to prevent ability to print out contents
+# Remove the test file after loading, so it can be regenerated
+# on next iteration, ensuring each test is isolated
 os.remove(__file__)
 
 STUDENT_FILE_NAME = sys.argv[1]
