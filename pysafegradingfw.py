@@ -1073,6 +1073,18 @@ def verify_program_output(
     verify_expected_mutated_args(test_data)
     verify_expected_files(test_data)
 
+    # If there are no issues with the code except extra printed output, give half marks
+    if (test_data.expected.stdout == ""
+        and test_data.msg.student_stdout != ""
+        and test_data.msg.student_exception == ""
+        and test_data.msg.student_return == ""
+        and test_data.msg.student_recursion_count == ""
+        and test_data.msg.student_stderr == ""
+        and test_data.msg.student_mutated == ""
+
+    ):
+        test_data.give_half_marks = True
+
     if test_data.custom_verification_function is not None:
         signal.signal(signal.SIGALRM, handle_timeout)
         signal.alarm(test_data.custom_verification_timeout)  # seconds
@@ -1085,18 +1097,6 @@ def verify_program_output(
         except:
             test_data.success = False
 
-    # If there are no issues with the code except extra printed output, give half marks
-    if (test_data.expected.stdout == ""
-        and test_data.msg.student_stdout != ""
-        and test_data.msg.student_exception == ""
-        and test_data.msg.student_return == ""
-        and test_data.msg.student_recursion_count == ""
-        and test_data.msg.student_stderr == ""
-        and test_data.msg.student_mutated == ""
-        and test_data.msg.custom_verification_hook == ""
-
-    ):
-        test_data.give_half_marks = True
 
 #######################################################################################
 
