@@ -1,6 +1,6 @@
 """
 Python Safe Grading Framework for Edstem V0.5.1 pysafegradingfw.py
-Updated: April 2026
+Updated: May 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 License: MIT
@@ -1081,21 +1081,21 @@ def verify_program_output(
         and test_data.msg.student_recursion_count == ""
         and test_data.msg.student_stderr == ""
         and test_data.msg.student_mutated == ""
-
     ):
         test_data.give_half_marks = True
 
     if test_data.custom_verification_function is not None:
         signal.signal(signal.SIGALRM, handle_timeout)
-        signal.alarm(test_data.custom_verification_timeout)  # seconds
-
         try:
+            signal.alarm(test_data.custom_verification_timeout)  # seconds
             test_data.custom_verification_function(test_data)
         except TimeoutError:
             test_data.success = False
             test_data.msg.custom_verification_hook = test_data.custom_verification_timeout_msg
         except:
             test_data.success = False
+        finally:
+            signal.alarm(0)
 
 
 #######################################################################################
@@ -1134,7 +1134,6 @@ def verify_expected_exception(test_data: TestData):
             type(test_data.expected.exception).__name__,
             repr(str(test_data.expected.exception)),
         )
-
 
 
 def verify_expected_stderr(
@@ -1195,7 +1194,6 @@ def verify_expected_stdout(
         test_data.msg.expected_stdout = EXPECTED_STDOUT_MSG.format(
             format_test_in_out_data(test_data.expected.stdout, format_test_in_out_data_as_str)
         )
-
 
 
 def verify_function_return(test_data: TestData):
@@ -2136,7 +2134,7 @@ def set_test_output_files(ed_test_grader_output: EdCustomGraderJson):
 # The runtestsubprocess files must be removed from path before running student code, so it is
 # convient to store it directly in here, to avoid version control inconvenience.
 # As runtestsubprocess is a seperate file, it needs to be freshly created after each test run
-# to prevent the ability for it to be modified be a preceding testcase. It must have no
+# to prevent the ability for it to be modified by a preceding testcase. It must have no
 # dynamic local imports for this same reason, hence all relevant functions are directly embedded into the file.
 
 
