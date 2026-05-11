@@ -1,5 +1,5 @@
 """
-Python Safe Grading Framework for Edstem V0.5.0 pysafegradingfw.py
+Python Safe Grading Framework for Edstem V0.5.1 pysafegradingfw.py
 Updated: April 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -1057,18 +1057,6 @@ def verify_program_output(
     if test_data.msg.timeout:
         test_data.success = False
 
-    if test_data.custom_verification_function is not None:
-        signal.signal(signal.SIGALRM, handle_timeout)
-        signal.alarm(test_data.custom_verification_timeout)  # seconds
-
-        try:
-            test_data.custom_verification_function(test_data)
-        except TimeoutError:
-            test_data.success = False
-            test_data.msg.custom_verification_hook = test_data.custom_verification_timeout_msg
-        except:
-            test_data.success = False
-
     verify_expected_exception(test_data)
 
     # Cannot check expected stderr if checking for an exception
@@ -1085,6 +1073,18 @@ def verify_program_output(
     verify_expected_mutated_args(test_data)
     verify_expected_files(test_data)
 
+    if test_data.custom_verification_function is not None:
+        signal.signal(signal.SIGALRM, handle_timeout)
+        signal.alarm(test_data.custom_verification_timeout)  # seconds
+
+        try:
+            test_data.custom_verification_function(test_data)
+        except TimeoutError:
+            test_data.success = False
+            test_data.msg.custom_verification_hook = test_data.custom_verification_timeout_msg
+        except:
+            test_data.success = False
+
     # If there are no issues with the code except extra printed output, give half marks
     if (test_data.expected.stdout == ""
         and test_data.msg.student_stdout != ""
@@ -1093,10 +1093,10 @@ def verify_program_output(
         and test_data.msg.student_recursion_count == ""
         and test_data.msg.student_stderr == ""
         and test_data.msg.student_mutated == ""
+        and test_data.msg.custom_verification_hook == ""
 
     ):
         test_data.give_half_marks = True
-
 
 #######################################################################################
 
