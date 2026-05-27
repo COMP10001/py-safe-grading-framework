@@ -1,5 +1,5 @@
 """
-Python Safe Grading Framework for Edstem V0.5.1 pysafegradingfw.py
+Python Safe Grading Framework for Edstem V0.5.2 pysafegradingfw.py
 Updated: May 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -7,6 +7,9 @@ License: MIT
 The latest version and documentation can be found at:
 https://github.com/COMP10001/py-safe-grading-framework
 """
+import sys
+# Do not allow student files to shadow built in libraries
+LOCAL_DIR = sys.path.pop(0)
 
 import os
 import subprocess
@@ -14,7 +17,7 @@ import ast
 import traceback
 import json
 import filecmp
-import sys
+
 import dill
 import signal
 import resource
@@ -2217,14 +2220,19 @@ SUBPROC_EXC_FILENAME = "{0}"
     SUBPROC_EXC_FILENAME,
 )
 
+REMOVE_CURR_PATH = """
+import sys
+# Do not allow student files to shadow built in libraries
+LOCAL_DIR = sys.path.pop(0)
+"""
 
 RUN_SCRIPT_TEST_SUBPROCESS_FILE = (
-    INPUT_WITH_ECHOING_FUNCTION
+    REMOVE_CURR_PATH
+    + INPUT_WITH_ECHOING_FUNCTION
     + SUBPROC_SCRIPT_FILENAMES
     + ENCODING_FUNCTIONS
     + r"""
 import os
-import sys
 import traceback
 import builtins
 import importlib.util
@@ -2242,6 +2250,9 @@ if INPUT_ECHOING == True:
     builtins.input = input_with_echoing
 
 try:
+    # restore local directory now that all imports are finished
+    sys.path.insert(0, LOCAL_DIR)
+
     # Use importlib instead of import keyword in case the studentfile has dashes eg student-file.py
     student_module = importlib.import_module(STUDENT_FILE_NAME.removesuffix(".py"))
 except Exception as e:
@@ -2268,12 +2279,12 @@ SUBPROC_PICKLE_FAILED_FILENAME = "{5}"
 )
 
 RUN_FUNCTION_TEST_SUBPROCESS_FILE = (
-    INPUT_WITH_ECHOING_FUNCTION
+    REMOVE_CURR_PATH
+    + INPUT_WITH_ECHOING_FUNCTION
     + ENCODING_FUNCTIONS
     + RECURSION_CHECKER_CLASS
     + SUBPROC_FUNC_FILENAMES
     + r"""
-import sys
 import os
 import traceback
 import importlib
@@ -2300,6 +2311,9 @@ os.remove(SUBPROC_FUNC_INPUT_FILENAME)
 # Try import function from student code
 # Run the function and check for timeout and mutating input
 try:
+    # restore local directory now that all imports are finished
+    sys.path.insert(0, LOCAL_DIR)
+
     # Use importlib instead of import keyword in case the studentfile has dashes eg student-file.py
     student_module = importlib.import_module(STUDENT_FILE_NAME.removesuffix(".py"))
 
