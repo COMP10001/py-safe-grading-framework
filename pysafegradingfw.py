@@ -1,5 +1,5 @@
 """
-Python Safe Grading Framework for Edstem V0.5.2 pysafegradingfw.py
+Python Safe Grading Framework for Edstem V0.5.3 pysafegradingfw.py
 Updated: May 2026
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
@@ -2224,6 +2224,7 @@ REMOVE_CURR_PATH = """
 import sys
 # Do not allow student files to shadow built in libraries
 LOCAL_DIR = sys.path.pop(0)
+ORIGINAL_MODULES = sys.modules.copy()
 """
 
 RUN_SCRIPT_TEST_SUBPROCESS_FILE = (
@@ -2308,15 +2309,33 @@ COUNT_FUNC_CALLS = bool(int(sys.argv[4]))
 FUNCTION_INPUT = decode_obj_data(SUBPROC_FUNC_INPUT_FILENAME)
 os.remove(SUBPROC_FUNC_INPUT_FILENAME)
 
+# restore local directory now that all imports are finished
+sys.path.insert(0, LOCAL_DIR)
+
+# Temporarily remove the cached copies of modules from this wrapped file
+# for the duration of loading the student module, so that the student module
+# references will point to shadowed files eg random.py if relevant instead of
+# cached copy of the builtin
+CURR_MODULES = sys.modules.copy()
+wrapper_specific_modules = {}
+for key in CURR_MODULES:
+    if key not in ORIGINAL_MODULES:
+        wrapper_specific_modules[key] = sys.modules.pop(key)
+
 # Try import function from student code
 # Run the function and check for timeout and mutating input
 try:
-    # restore local directory now that all imports are finished
-    sys.path.insert(0, LOCAL_DIR)
-
     # Use importlib instead of import keyword in case the studentfile has dashes eg student-file.py
     student_module = importlib.import_module(STUDENT_FILE_NAME.removesuffix(".py"))
+except Exception as e:
+    encode_obj_data(e, SUBPROC_EXC_FILENAME)
+    # Print the exception excluding information about this file path
+    exit(traceback.format_exc(limit=-1))
+finally:
+    for key, val in wrapper_specific_modules.items():
+        sys.modules[key] = val
 
+try:
      # Wrap all functions in the call counting decorator.
     checkers = []
     if COUNT_FUNC_CALLS:
