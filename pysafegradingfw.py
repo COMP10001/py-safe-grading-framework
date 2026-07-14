@@ -72,7 +72,7 @@ EXPECTED_EXCEPTION_MSG = "► The expected exception is:\n{}({})\n"
 
 ERROR_RETURN_MSG = "► No value was returned due to errors\n"
 WRONG_STDERR_MSG = "► Your program produced the following stderr output:\n{0}\n"
-EXPECTED_STDERR_MSG = "► The expected stderr output is:\n{0}\n"
+EXPECTED_STDERR_MSG = "BREAKING CHANGE► The expected stderr output is:\n{0}\n"
 
 STUDENT_RECURSION_COUNT_MSG = "► Your program produced the following recursive call counts:\n"
 EXPECTED_RECURSION_COUNT_MSG = "► The expected number of recursive calls in a called function is {}.\n"
@@ -950,10 +950,10 @@ def run_function_test(
             test_data.student, "failed_return", SUBPROC_PICKLE_FAILED_FILENAME
         )
 
-        if test_data.student.failed_return == GraderNone:
-            load_data_object_from_file(
-                test_data.student, "returned", SUBPROC_FUNC_RETURN_FILENAME
-            )
+        # if test_data.student.failed_return == GraderNone:
+        load_data_object_from_file(
+            test_data.student, "returned", SUBPROC_FUNC_RETURN_FILENAME
+        )
         load_data_object_from_file(
             test_data.student, "final_args", SUBPROC_FUNC_ARGS_FILENAME
         )
