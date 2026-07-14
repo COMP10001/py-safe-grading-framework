@@ -30,6 +30,24 @@ if "--debug" in sys.argv:
 
 grader_object = json.loads(sp.stdout.decode())
 
+##############
+
+sp = subprocess.run(["python", "testbench-libshadowing.py", "--prod"],
+                    cwd=FILE_PATH_PREFIX,
+                    capture_output=True)
+
+if "--debug" in sys.argv:
+    print(sp.stdout.decode())
+    print(sp.stderr.decode())
+
+
+grader_output = sp.stdout.decode()
+
+grader_object["testcases"].append({"name": "Libshadowing Pass", "feedback": grader_output, "passed":True})
+
+
+##############
+
 fail_count = 0
 possible_fail_count = 0
 success_count = 0
@@ -37,39 +55,49 @@ success_count = 0
 for testcase in grader_object["testcases"]:
     testcase["name"] = testcase["name"].removeprefix("Disable DEBUG_MODE ")
 
-    with open(FILE_PATH_PREFIX + f"/test_feedback/{testcase["name"]}.txt") as fp:
-        expected_test_feedback = fp.read()
-        if not (("Pass" in testcase["name"] and "Fail" not in testcase["name"])
-            or ("Fail" in testcase["name"] and "Pass" not in testcase["name"])):
-            print(f"❌ Fail: {testcase["name"]}")
-            print("  - Testcase name needs to contain 'Pass' or 'Fail' for CI/CD validation")
-            print(f"  - {testcase}")
-            fail_count += 1
-        elif (("Pass" in testcase["name"]) != bool(testcase["passed"])):
-            print(f"❌ Fail: {testcase["name"]}")
-            print("  - Testcase 'passed' parameter does not match expected value based on name.")
-            print(f"  - {testcase}")
-            fail_count += 1
+    # Write feedback to file in case of new tests or changed tests for easy updates.
+    with open(FILE_PATH_PREFIX + f"/current_feedback/{testcase["name"]}.txt", "w") as fp:
+        fp.write(testcase["feedback"])
 
-        elif testcase["feedback"] != expected_test_feedback:
+    try:
+        with open(FILE_PATH_PREFIX + f"/test_feedback/{testcase["name"]}.txt") as fp:
+            expected_test_feedback = fp.read()
+            if not (("Pass" in testcase["name"] and "Fail" not in testcase["name"])
+                or ("Fail" in testcase["name"] and "Pass" not in testcase["name"])):
+                print(f"❌ Fail: {testcase["name"]}")
+                print("  - Testcase name needs to contain 'Pass' or 'Fail' for CI/CD validation")
+                print(f"  - {testcase}")
+                fail_count += 1
+            elif (("Pass" in testcase["name"]) != bool(testcase["passed"])):
+                print(f"❌ Fail: {testcase["name"]}")
+                print("  - Testcase 'passed' parameter does not match expected value based on name.")
+                print(f"  - {testcase}")
+                fail_count += 1
 
-            if testcase["feedback"].replace(FILE_PATH_PREFIX, "/home") != expected_test_feedback:
-                print(f"⚠️ Possible Fail: {testcase["name"]}")
-                print("  - Testcase 'feedback' does not match existing feedback. Verify if intentional and update test file.")
+            elif testcase["feedback"] != expected_test_feedback:
 
-                possible_fail_count += 1
-                diff = unified_diff(testcase["feedback"].splitlines(), expected_test_feedback.splitlines(), lineterm='')
-                print('\n'.join(list(diff)))
+                if testcase["feedback"].replace(FILE_PATH_PREFIX, "/home") != expected_test_feedback:
+                    print(f"⚠️ Possible Fail: {testcase["name"]}")
+                    print("  - Testcase 'feedback' does not match existing feedback. Verify if intentional and update test file.")
+
+                    possible_fail_count += 1
+                    diff = unified_diff(testcase["feedback"].splitlines(), expected_test_feedback.splitlines(), lineterm='')
+                    print('\n'.join(list(diff)))
+                else:
+                    print(f"✅ Success: {testcase["name"]}")
+                    success_count += 1
+
             else:
                 print(f"✅ Success: {testcase["name"]}")
                 success_count += 1
+    except Exception as e:
+        print(str(e))
+        print(f"❌ Fail: {testcase["name"]}")
 
-        else:
-            print(f"✅ Success: {testcase["name"]}")
-            success_count += 1
 
 
 print(f"\n{fail_count} Failing Tests, {possible_fail_count} Possibly Failing Tests, {success_count} Successful Tests")
+
 
 if not docker_mode:
     try:

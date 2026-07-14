@@ -7,12 +7,21 @@ License: MIT
 The latest version and documentation can be found at:
 https://github.com/COMP10001/py-safe-grading-framework
 """
+#######################################################################################
+
 import sys
 # Do not allow student files to shadow built in libraries
 # sys is protected from local file shadowing, as it is a
 # precompiled module built in to the interpretter which has
-# higher import precedence.
+# higher import precedence. Move the local directory to the end
+# of the path variable so all built ins have higher import precendence,
+# while still allowing testbench to reference other test files
+# (which are secure as they will overwrite any student files of same name)
 LOCAL_DIR = sys.path.pop(0)
+sys.path.insert(-1, LOCAL_DIR)
+
+# NOTE: This will be moved back to the start of path when running the tests
+
 import shutil
 import os
 import subprocess
@@ -20,7 +29,6 @@ import ast
 import traceback
 import json
 import filecmp
-
 import dill
 import signal
 import resource
@@ -39,10 +47,11 @@ else:
     from typing_extensions import Buffer
 
 
-# restore local directory now that all imports are finished
-sys.path.insert(0, LOCAL_DIR)
+
+#######################################################################################
 
 # Disable Printing to STDOUT as this breaks the Ed integration if done accidentally
+# as the JSON object must be printed to STDOUT after tests are complete.
 ORIGINAL_STDOUT = sys.stdout
 sys.stdout = open(os.devnull, 'w')
 
@@ -394,6 +403,11 @@ class SafeTesting:
 
         memory_limit_bytes = EDSTEM_SOFTLIMIT_MEMORY_FOOTPRINT_MB  * MEGABYTE_TO_BYTES
         resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
+
+
+        # Restore local path back to default location
+        sys.path.remove(LOCAL_DIR)
+        sys.path.insert(0, LOCAL_DIR)
 
 
         # Prevent possible data leakage from pycache imports containing testcase data
@@ -2346,12 +2360,18 @@ import os
 import traceback
 import builtins
 import importlib.util
+import shutil
 from builtins import input
 
 
 # Remove the test file after loading, so it can be regenerated
 # on next iteration, ensuring each test is isolated
 os.remove(__file__)
+
+try:
+    shutil.rmtree("__pycache__")
+except FileNotFoundError:
+    pass
 
 STUDENT_FILE_NAME = sys.argv[1]
 INPUT_ECHOING = bool(int(sys.argv[2]))
@@ -2400,6 +2420,7 @@ import traceback
 import importlib
 from collections import defaultdict
 import resource
+import shutil
 
 memory_limit_bytes = 50 * 1024 * 1024
 fsize_limit_bytes = 1 * 1024 * 1024
@@ -2409,6 +2430,11 @@ resource.setrlimit(resource.RLIMIT_FSIZE, (fsize_limit_bytes, fsize_limit_bytes)
 # Remove the test file after loading, so it can be regenerated
 # on next iteration, ensuring each test is isolated
 os.remove(__file__)
+
+try:
+    shutil.rmtree("__pycache__")
+except FileNotFoundError:
+    pass
 
 STUDENT_FILE_NAME = sys.argv[1]
 FUNCTION_NAME = sys.argv[2]
@@ -2499,6 +2525,12 @@ def dev_and_prod_mode_options():
     dev_mode = "--dev" in sys.argv
     prod_mode = "--prod" in sys.argv
 
+
+    # Get all the paths of modules imported by testbench and testing framework
+    imported_paths = {x.__file__ for x in sys.modules.values() if hasattr(x, "__file__")}
+
+    # Compare the imported paths and local import paths to only remove files genuinely imported
+    local_import_paths = set(recursive_find_local_import_paths(__main__.__file__)) & imported_paths
     if (not dev_mode and not prod_mode) or (dev_mode and prod_mode):
         print('''
 You must include exclusively one of the following CLI flags:
@@ -2513,10 +2545,10 @@ Example: `python testbench.py --prod`
         exit(1)
     elif dev_mode:
         print(f"DEVMODE - NOT removing the following files referenced by testbench:", file=ORIGINAL_STDOUT)
-        for file_path in recursive_find_local_import_paths(__main__.__file__):
+        for file_path in local_import_paths:
             print(f"> {file_path}", file=ORIGINAL_STDOUT)
     elif prod_mode:
-        for file_path in recursive_find_local_import_paths(__main__.__file__):
+        for file_path in local_import_paths:
             os.remove(file_path)
 
 

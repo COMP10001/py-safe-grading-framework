@@ -13,7 +13,7 @@ STUDENT_FILE_NAME = "program.py"
 FILES_TO_HIDE = ["hidden.txt"] # eg ["abc.txt"]
 
 test_bench = SafeTesting(
-    debug_mode=False,
+    debug_mode=True,
     make_all_tests_visible=False,
     show_all_passed_tests_first=True,
     show_test_reports=False,
@@ -626,6 +626,46 @@ test_bench.register_function_test(
     function_expected = None,
     function_timeout_seconds = 2,
     function_fail_on_mutated_args=False,
+    input_data="",
+    input_echoing = True,
+    expected_stdout="",
+    expected_stderr="",
+    non_allowed_nodes = [],
+    non_allowed_functions=[],
+    non_allowed_imports = [],
+    required_nodes=[],
+    files_to_reveal = [],
+)
+
+test_bench.register_function_test(
+   name = "Function Expected Mutated Args Pass",
+    student_file_name="expected_mutated_args.py",
+    function_name="mutated_args_pass",
+    function_args=[[1,2,3]],
+    function_expected = [1,2,3,5],
+    function_timeout_seconds = 1,
+    function_fail_on_mutated_args=False,
+    function_expected_mutated_args=[[1,2,3,5]],
+    input_data="",
+    input_echoing = True,
+    expected_stdout="",
+    expected_stderr="",
+    non_allowed_nodes = [],
+    non_allowed_functions=[],
+    non_allowed_imports = [],
+    required_nodes=[],
+    files_to_reveal = [],
+)
+
+test_bench.register_function_test(
+   name = "Function Expected Mutated Args Fail",
+    student_file_name="expected_mutated_args.py",
+    function_name="mutated_args_fail",
+    function_args=[[1,2,3]],
+    function_expected = [1,2,3,5],
+    function_timeout_seconds = 1,
+    function_fail_on_mutated_args=False,
+    function_expected_mutated_args=[[1,2,3,5]],
     input_data="",
     input_echoing = True,
     expected_stdout="",
