@@ -420,6 +420,11 @@ class SafeTesting:
         if self.show_test_reports:
             create_test_report_testcases(ed_test_grader_output)
 
+        # All visible tests must be done before any hidden or private tests
+        # or else data could be leaked using a subsequent visible test if
+        # data is cached in a file and printed out during a subsequent test
+        self.test_cases.sort(key=lambda x: x.hidden or x.private)
+
         for test in self.test_cases:
             ok, feedback  = True, ""
             try:
