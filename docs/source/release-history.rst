@@ -73,7 +73,7 @@ V0.4.1 Kacie Beckett (28-07-2025)
 V0.4.0 Kacie Beckett (24-07-2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Change test setup interface to use a custom SafeTesting class with
+- Change test setup interface to use a custom SafeGrading class with
   methods, as no longer need to have a unittest subclass due of
   switching to a custom grader.
 - Add expected mutated argument checking for run_function_test

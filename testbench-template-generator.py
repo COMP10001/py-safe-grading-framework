@@ -55,7 +55,7 @@ RELEASE_TEST_CASES = False
 STUDENT_FUNCTION = "{2}"
 STUDENT_FILE_NAME = "{3}"
 
-test_bench = SafeTesting(
+test_bench = SafeGrading(
     debug_mode = False,
     format_test_in_out_data_as_str = False,
     make_all_tests_visible = False,

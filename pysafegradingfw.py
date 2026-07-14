@@ -1,6 +1,5 @@
 """
-Python Safe Grading Framework for Edstem V0.5.3 pysafegradingfw.py
-Updated: May 2026
+Python Safe Grading Framework for Edstem V0.6.0 pysafegradingfw.py
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 License: MIT
@@ -333,7 +332,7 @@ class TestData:
             run_style_test(self)
 
 
-class SafeTesting:
+class SafeGrading:
     _DEFAULT_STYLE_IGNORED = (
     "E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225"
     "E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503"
@@ -361,7 +360,7 @@ class SafeTesting:
         why their output differs.
 
         Usage Instructions:
-            - create an instance of this class eg: test_bench = SafeTesting(...)
+            - create an instance of this class eg: test_bench = SafeGrading(...)
             - cache any test files used in hidden/private tests remembering to set files_to_reveal for
               the given test eg: test_bench.cache_hidden_test_files(["abc.txt"])
             - register any tests eg: test_bench.register_function_test(...)

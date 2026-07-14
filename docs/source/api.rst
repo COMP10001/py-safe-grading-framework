@@ -1,5 +1,5 @@
 API Reference
 =======================================
-.. autoclass:: pysafegradingfw.SafeTesting
+.. autoclass:: pysafegradingfw.SafeGrading
    :members:
    :no-index:

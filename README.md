@@ -19,7 +19,7 @@ Issues that this project solves:
 - Hidden/Private testcases are possible to leak if not carefully mitigated during setup
     - This project enforces many constraints to prevent data leakage
 
-Configured for use with Edstem, but could be extended to work with other platforms with minimal effort by taking the output json object from `SafeTesting.run_tests` and adjusting the format as required (or creating a further modified version of this function if more access to the internal test_data is required as the output format is seperate from the internal data).
+Configured for use with Edstem, but could be extended to work with other platforms with minimal effort by taking the output json object from `SafeGrading.run_tests` and adjusting the format as required (or creating a further modified version of this function if more access to the internal test_data is required as the output format is seperate from the internal data).
 
 Developed primarily for COMP10001 at the University of Melbourne, but has also been used for other subjects.
 
@@ -42,7 +42,7 @@ Then you can access the documentation on localhost at `http://127.0.0.1:8080`.
 - import safe grading
     - Import priority order is changed so student files cannot shadow built ins
     - Redirect stdout to /dev/null so cannot accidentally print and break the output json format
-- create `SafeTesting` object -> dev_and_prod_mode_options() called. With `--prod` cli flag all python files imported by testbench are removed from path.
+- create `SafeGrading` object -> dev_and_prod_mode_options() called. With `--prod` cli flag all python files imported by testbench are removed from path.
 - Optionally cache hidden test files so they are removed from path until a given test is running (specified to reveal when registering a given test), or else the file contents could be leaked by printing the contents through a visible test.
 - Now all tests are registered before reaching run_tests
 - run_tests() enforces a memory limit below the maximum for the container

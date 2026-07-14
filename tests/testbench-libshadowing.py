@@ -14,7 +14,7 @@ STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
 FILES_TO_HIDE = [] # eg ["abc.txt"]
 
-test_bench = SafeTesting(
+test_bench = SafeGrading(
     debug_mode=False,
     make_all_tests_visible=False,
     show_all_passed_tests_first=True,
