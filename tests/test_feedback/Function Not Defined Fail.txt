@@ -1,0 +1,4 @@
+► The following AST violations were found:
+Your program is not allowed to import sys. Occured in file /home/function_tests.py.
+Your program should define a function named 'missing_function'
+► Called: missing_function('hello')

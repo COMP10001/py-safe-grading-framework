@@ -1,0 +1,6 @@
+► Your program produced the following stderr output:
+hello\n
+1234\t\r\n
+sdfsfds\n
+► The expected stderr output is:
+1234

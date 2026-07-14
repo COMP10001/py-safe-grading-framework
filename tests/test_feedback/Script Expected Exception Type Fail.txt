@@ -1,0 +1,4 @@
+► Your program produced the following Exception:
+Exception('Test exception')
+► The expected exception is:
+ValueError('Test exception')

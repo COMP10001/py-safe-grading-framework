@@ -1,0 +1,14 @@
+► Your program produced the following Exception when no exception was expected:
+FileNotFoundError("[Errno 2] No such file or directory: 'hidden.txt'")
+► Your program produced the following stderr output:
+Traceback (most recent call last):
+  File "/home/script_hidden_files.py", line 1, in <module>
+    with open("hidden.txt") as fp:
+         ~~~~^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'hidden.txt'
+
+
+► Your program printed the following output:
+
+► The expected printed output is:
+verysecretfilecontents\n

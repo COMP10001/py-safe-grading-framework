@@ -1,0 +1,2 @@
+► The following AST violations were found:
+Your program is not allowed to use a for loop. This occurred on line 1 of /home/astcheck_non_allowed_nodes.py.

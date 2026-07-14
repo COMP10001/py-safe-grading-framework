@@ -1,0 +1,5 @@
+► Called: expected_return_str()
+► Returned <str>:
+'abc\ndefgh\t\r\nhello'
+► Expected Return <str>:
+'1234\n1234\n1234'

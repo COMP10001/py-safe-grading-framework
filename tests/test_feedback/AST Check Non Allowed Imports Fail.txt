@@ -1,0 +1,2 @@
+► The following AST violations were found:
+Your program is not allowed to import sys. Occured in file /home/astcheck_non_allowed_imports.py.

@@ -1,0 +1,5 @@
+► Called: timeout_fail()
+► Your program took too long to run and was terminated after 1 second. Do you have an infinite loop?
+► No value was returned due to errors
+► Expected Return <NoneType>:
+None

@@ -1,0 +1,10 @@
+► Called: expected_stdout()
+► Your program printed the following output:
+Abc\n
+abc\t\r\n
+abc\n
+► The expected printed output is:
+1234\n
+1234\n
+\t\r\n
+asdfsdf

@@ -1,0 +1,7 @@
+► The following style errors were found:
+pep8_recursive_import_test.py:4:10: E226 missing whitespace around arithmetic operator
+pep8_recursive_import_test.py:4:12: E226 missing whitespace around arithmetic operator
+pep8_recursive_import_test/recursive_import.py:4:10: E226 missing whitespace around arithmetic operator
+pep8_recursive_import_test/recursive_import.py:4:12: E226 missing whitespace around arithmetic operator
+pep8_recursive_import_test/folder/recursive_import2.py:2:10: E226 missing whitespace around arithmetic operator
+pep8_recursive_import_test/folder/recursive_import2.py:2:12: E226 missing whitespace around arithmetic operator

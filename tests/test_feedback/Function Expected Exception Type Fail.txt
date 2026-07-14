@@ -1,0 +1,5 @@
+► Called: expected_stderr_exception()
+► Your program produced the following Exception:
+Exception('An error occured')
+► The expected exception is:
+ValueError('An error occured')

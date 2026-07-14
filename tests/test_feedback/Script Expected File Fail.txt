@@ -1,0 +1,2 @@
+► The following file issues were found:
+/home/student_file.txt and /home/expected_file2.txt are not equal.

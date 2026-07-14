@@ -1,0 +1,5 @@
+► Called: expected_stderr()
+► Your program produced the following stderr output:
+Fake Error has occurred.\n
+► The expected stderr output is:
+Error

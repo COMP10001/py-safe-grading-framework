@@ -1,0 +1,12 @@
+► Called: expected_return_and_stdout()
+► Your program printed the following output:
+abc\n
+def\n
+► The expected printed output is:
+abc\n
+def\n
+efgh\n
+► Returned <str>:
+'abc'
+► Expected Return <str>:
+'abc1234'

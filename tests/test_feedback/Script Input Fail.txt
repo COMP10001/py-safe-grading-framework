@@ -1,0 +1,13 @@
+► Input:
+1\n
+► Your program produced the following Exception when no exception was expected:
+EOFError('EOF when reading a line')
+► Your program produced the following stderr output:
+Traceback (most recent call last):
+  File "/home/script_input_echoing.py", line 2, in <module>
+    b = input("Type in 2:")
+EOFError: EOF when reading a line
+
+
+► Your program printed the following output when no printing was expected:
+Type in 1:Type in 2:

@@ -1,0 +1,5 @@
+► Called: expected_return_int()
+► Returned <int>:
+1
+► Expected Return <int>:
+4

@@ -1,0 +1,6 @@
+► Your program printed the following output:
+hello\n
+1234\t\r\n
+sdfsfds\n
+► The expected printed output is:
+1234
