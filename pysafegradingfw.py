@@ -234,7 +234,6 @@ class TestData:
         input_echoing: bool
         files_to_reveal: list[str]
         custom_verification_function: Callable[[TestData], None] | None
-        custom_verification_data: Any
         custom_verification_timeout: int
         custom_verification_timeout_msg: str
 
@@ -541,7 +540,6 @@ class SafeTesting:
         expected_files: list[tuple[str, str]] = [],
         files_to_reveal: list[str] = [],
         custom_verification_function: Callable[[TestData],None] | None = None,
-        custom_verification_data: Any = None,
         custom_verification_timeout: int = 1,
         custom_verification_timeout_msg: str = "",
         non_allowed_nodes: list[type] | dict[type, str] = _DEFAULT_NON_ALLOWED_NODES,
@@ -577,7 +575,6 @@ class SafeTesting:
             function_expected_recursive_calls : A list of acceptable recursive call counts, ignored if empty.
             custom_verification_function   : Function object to run during verify_program_output, that can modify the
                 state of the testcase messages etc, and whether the test fails, to patch in extra checks. Takes in TestData instance.
-            custom_verification_data       : Arbitrary data to use inside the custom_verification_function as attribute of TestData
             custom_verification_timeout    : Safety Timeout for the custom_verification_function, to prevent testbench crashing.
             custom_verification_timeout_msg: What to assign to test_data.msg.custom_verification_hook on fail
             input_data                     : Input fed into input(); mmultiple lines separated by newline characters
@@ -622,7 +619,6 @@ class SafeTesting:
                 input_echoing = input_echoing,
                 files_to_reveal = files_to_reveal,
                 custom_verification_function = custom_verification_function,
-                custom_verification_data = custom_verification_data,
                 custom_verification_timeout = custom_verification_timeout,
                 custom_verification_timeout_msg = custom_verification_timeout_msg,
             ),
@@ -668,7 +664,6 @@ class SafeTesting:
         expected_files: list[tuple[str, str]] = [],
         files_to_reveal: list[str] = [],
         custom_verification_function: Callable[[TestData], None] | None = None,
-        custom_verification_data: Any = None,
         custom_verification_timeout: int = 1,
         custom_verification_timeout_msg: str = "",
         non_allowed_nodes: list[type] | dict[type, str] = _DEFAULT_NON_ALLOWED_NODES,
@@ -703,7 +698,6 @@ class SafeTesting:
             files_to_reveal        : Files hidden with self.cache_hidden_test_files() to add back to path
             custom_verification_function   : Function object to run during verify_program_output, that can modify the
                 state of the testcase messages etc, and whether the test fails, to patch in extra checks. Takes in TestData instance.
-            custom_verification_data       : Arbitrary data to use inside the custom_verification_function as attribute of TestData
             custom_verification_timeout    : Safety Timeout for the custom_verification_function, to prevent testbench crashing.
             custom_verification_timeout_msg: What to assign to test_data.msg.custom_verification_hook on fail
 
@@ -730,7 +724,6 @@ class SafeTesting:
                 input_echoing = input_echoing,
                 files_to_reveal = files_to_reveal,
                 custom_verification_function = custom_verification_function,
-                custom_verification_data = custom_verification_data,
                 custom_verification_timeout = custom_verification_timeout,
                 custom_verification_timeout_msg = custom_verification_timeout_msg,
             ),
