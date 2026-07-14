@@ -26,7 +26,9 @@ import signal
 import resource
 import gc
 import __main__
+import enum
 
+from dataclasses import dataclass, field
 from pydantic import validate_call, PlainValidator
 from collections.abc import Callable
 from typing import Any, Annotated
@@ -196,53 +198,116 @@ class GraderNone:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
+class TestTypes(enum.Enum):
+    FUNCTION = enum.auto()
+    SCRIPT = enum.auto()
+    AST = enum.auto()
+    PEP8 = enum.auto()
+
+@dataclass(kw_only=True, slots=True)
 class TestData:
-    TEST_FUNCTION = "function-test"
-    TEST_SCRIPT = "script-test"
-    TEST_AST = "ast-test"
-    TEST_PEP8 = "pep8-test"
 
-    def __init__(self, name, score, hidden, private, student_file_name, test_type):
+    @dataclass(kw_only=True, slots=True)
+    class ASTTestOptions:
+        non_allowed_nodes: list[type] | dict[type, str]
+        non_allowed_functions: list[str]
+        non_allowed_methods: list[str]
+        non_allowed_imports: list[str]
+        required_nodes: list[type] | dict[type, str]
+        required_functions: list[str]
+        required_methods: list[str]
+        required_imports: list[str]
 
-        self.test_type: str  = test_type
-        self.name: str = name
-        self.score: float | int = score
-        self.max_score: float | int = score
-        self.hidden: bool = hidden
-        self.private: bool = private
-        self.student_file_name: str = student_file_name
-        self.success: bool = False
-        self.give_half_marks: bool = False
-        self.test_timeout: int = 1
+    @dataclass(kw_only=True, slots=True)
+    class CodeTestOptions:
+        input_data: str
+        input_echoing: bool
+        files_to_reveal: list[str]
+        custom_verification_function: Callable[[TestData], None] | None
+        custom_verification_data: Any
+        custom_verification_timeout: int
+        custom_verification_timeout_msg: str
 
-        self.input_data: str
-        self.input_echoing: bool
-        self.files_to_reveal: list[str]
-        self.hidden_file_dict: dict[str, str]
+    @dataclass(kw_only=True, slots=True)
+    class FunctionTestOptions:
+        function_name: str
+        function_fail_on_mutated_args: bool
 
-        self.function_name: str
-        self.function_fail_on_mutated_args: bool
+    @dataclass(kw_only=True, slots=True)
+    class PEP8TestOptions:
+        pep8_ignored_tests: str
+        pep8_max_line_len: int
 
-        self.custom_verification_function: Callable[[TestData], None] | None
-        self.custom_verification_data: Any
-        self.custom_verification_timeout: int
-        self.custom_verification_timeout_msg: str
 
-        self.non_allowed_nodes: list[type] | dict[type, str]
-        self.non_allowed_functions: list[str]
-        self.non_allowed_methods: list[str]
-        self.non_allowed_imports: list[str]
+    @dataclass(kw_only=True, slots=True)
+    class Expected:
+        stdout: str = ""
+        stderr: str = ""
+        returned: Any | GraderNone = field(default_factory=GraderNone)
+        exception: ExceptionInstance | None = None
+        original_args: list[Any] | tuple[Any] | None = None
+        mutated_args: list[Any] | tuple[Any] | None = None
+        filenames: list[tuple[str, str]] = field(default_factory=list)
+        recursive_call_counts: list[int] = field(default_factory=list)
 
-        self.required_nodes: list[type] | dict[type, str]
-        self.required_functions: list[str]
-        self.required_methods: list[str]
-        self.required_imports: list[str]
 
-        self.pep8_ignored_tests: str
-        self.pep8_max_line_len: int
-        self.msg = self.Messages()
-        self.expected = self.Expected()
-        self.student = self.Student()
+    @dataclass(kw_only=True, slots=True)
+    class Student:
+        stdout: str | GraderNone = field(default_factory=GraderNone, init=False)
+        stderr: str | GraderNone = field(default_factory=GraderNone, init=False)
+        returned: Any | GraderNone = field(default_factory=GraderNone, init=False)
+        failed_return: str | GraderNone = field(default_factory=GraderNone, init=False)
+        exception: ExceptionInstance | None = field(default=None, init=False)
+        final_args: list[Any] | tuple[Any] | GraderNone = field(default_factory=GraderNone, init=False)
+        recursive_call_count: dict[str, int] | GraderNone = field(default_factory=GraderNone, init=False)
+        # self.testproc_ret: subprocess.CompletedProcess
+
+    @dataclass(kw_only=True, slots=True)
+    class Messages:
+        pep8: str = field(default="", init=False)
+        astcheck: str = field(default="", init=False)
+        function_call: str = field(default="", init=False)
+        input: str = field(default="", init=False)
+        timeout: str = field(default="", init=False)
+        memory_error: str = field(default="", init=False)
+        student_file_not_found: str = field(default="", init=False)
+        custom_verification_hook: str = field(default="", init=False)
+        student_recursion_count: str = field(default="", init=False)
+        expected_recursion_count: str = field(default="", init=False)
+        student_exception: str = field(default="", init=False)
+        expected_exception: str = field(default="", init=False)
+        student_stderr: str = field(default="", init=False)
+        expected_stderr: str = field(default="", init=False)
+        student_stdout: str = field(default="", init=False)
+        expected_stdout: str = field(default="", init=False)
+        student_return: str = field(default="", init=False)
+        expected_return: str = field(default="", init=False)
+        mutation_check: str = field(default="", init=False)
+        student_mutated: str = field(default="", init=False)
+        expected_mutated: str = field(default="", init=False)
+        expected_file: str = field(default="", init=False)
+
+    name: str
+    score: float | int
+    test_type: TestTypes
+    student_file_name: str
+    hidden: bool
+    private: bool
+    test_timeout: int
+
+    code_test_options: CodeTestOptions | None
+    function_test_options: FunctionTestOptions | None
+    pep8_test_options: PEP8TestOptions | None
+    ast_test_options: ASTTestOptions | None
+
+    expected: Expected
+    msg: Messages = field(default_factory=Messages, init=False)
+    student: Student = field(default_factory=Student, init=False)
+
+
+    success: bool = field(default=False, init=False)
+    give_half_marks: bool = field(default=False, init=False)
 
     def run_test(self, hidden_file_dict: dict[str, Buffer], format_test_in_out_data_as_str: bool):
         if not os.path.isfile(self.student_file_name):
@@ -250,62 +315,14 @@ class TestData:
             self.success = False
             return
 
-        if self.test_type == self.TEST_FUNCTION:
+        if self.test_type == TestTypes.FUNCTION:
             run_function_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_SCRIPT:
+        elif self.test_type == TestTypes.SCRIPT:
             run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_AST:
+        elif self.test_type == TestTypes.AST:
             run_astcheck_test(self, format_test_in_out_data_as_str)
-        elif self.test_type == self.TEST_PEP8:
+        elif self.test_type == TestTypes.PEP8:
             run_pep8_test(self)
-
-    class Expected:
-        def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            self.returned: Any
-            self.exception: ExceptionInstance | None = None
-            self.original_args: list[Any] | tuple[Any]
-            self.mutated_args: list[Any] | tuple[Any] | None
-            self.filenames: list[tuple[str, str]]
-            self.recursive_call_counts: list[int]
-
-
-    class Student:
-        def __init__(self):
-            self.stdout: str | GraderNone = GraderNone()
-            self.stderr: str | GraderNone = GraderNone()
-            self.returned: Any | GraderNone = GraderNone()
-            self.failed_return: str | GraderNone = GraderNone()
-            self.exception: ExceptionInstance | None = None
-            self.final_args: list[Any] | tuple[Any] | GraderNone = GraderNone()
-            self.recursive_call_count: dict[str, int] | GraderNone = GraderNone()
-            # self.testproc_ret: subprocess.CompletedProcess
-
-    class Messages:
-        def __init__(self):
-            self.pep8: str = ""
-            self.astcheck: str = ""
-            self.function_call: str = ""
-            self.input: str = ""
-            self.timeout: str = ""
-            self.memory_error: str = ""
-            self.student_file_not_found: str = ""
-            self.custom_verification_hook: str = ""
-            self.student_recursion_count: str = ""
-            self.expected_recursion_count: str = ""
-            self.student_exception: str = ""
-            self.expected_exception: str = ""
-            self.student_stderr: str = ""
-            self.expected_stderr: str = ""
-            self.student_stdout: str = ""
-            self.expected_stdout: str = ""
-            self.student_return: str = ""
-            self.expected_return: str = ""
-            self.mutation_check: str = ""
-            self.student_mutated: str = ""
-            self.expected_mutated: str = ""
-            self.expected_file: str = ""
 
 
 class SafeTesting:
@@ -417,7 +434,7 @@ class SafeTesting:
                     test.score = 0
 
             ed_test_obj = ed_test_grader_output.add_test_case(
-                test.name, test.score, test.hidden, test.private, test.success, ok, feedback, test.max_score
+                test.name, test.score, test.hidden, test.private, test.success, ok, feedback, test.score
             )
             ed_test_obj.test_data = test
 
@@ -556,35 +573,49 @@ class SafeTesting:
                 False
             ), "Setup Issue: can't fail on mutated args, and have expected mutated args."
 
-        name = self._set_default_test_name(name, hidden, private)
-
-        test_data = TestData(name, score, hidden, private, student_file_name, TestData.TEST_FUNCTION)
-        test_data.function_name = function_name
-        test_data.expected.original_args = function_args
-        test_data.expected.returned = function_expected
-        test_data.test_timeout = function_timeout_seconds
-        test_data.expected.mutated_args = function_expected_mutated_args
-        test_data.function_fail_on_mutated_args = function_fail_on_mutated_args
-        test_data.input_data = input_data
-        test_data.input_echoing = input_echoing
-        test_data.expected.stdout = expected_stdout
-        test_data.expected.stderr = expected_stderr
-        test_data.expected.exception = expected_exception
-        test_data.expected.filenames = expected_files
-        test_data.files_to_reveal = files_to_reveal
-        test_data.expected.recursive_call_counts = function_expected_recursive_calls
-        test_data.custom_verification_function = custom_verification_function
-        test_data.custom_verification_data = custom_verification_data
-        test_data.custom_verification_timeout = custom_verification_timeout
-        test_data.custom_verification_timeout_msg = custom_verification_timeout_msg
-        test_data.non_allowed_nodes = non_allowed_nodes
-        test_data.non_allowed_functions = non_allowed_functions
-        test_data.non_allowed_methods = non_allowed_methods
-        test_data.non_allowed_imports = non_allowed_imports
-        test_data.required_nodes = required_nodes
-        test_data.required_functions = required_functions
-        test_data.required_methods = required_methods
-        test_data.required_imports = required_imports
+        test_data = TestData(
+            name=self._set_default_test_name(name, hidden, private),
+            score=score,
+            hidden=hidden,
+            private=private,
+            student_file_name=student_file_name,
+            test_type=TestTypes.FUNCTION,
+            expected = TestData.Expected(
+                original_args = function_args,
+                returned = function_expected,
+                mutated_args = function_expected_mutated_args,
+                stdout = expected_stdout,
+                stderr = expected_stderr,
+                exception = expected_exception,
+                filenames = expected_files,
+                recursive_call_counts = function_expected_recursive_calls
+            ),
+            test_timeout = function_timeout_seconds,
+            function_test_options=TestData.FunctionTestOptions(
+                function_name = function_name,
+                function_fail_on_mutated_args = function_fail_on_mutated_args,
+            ),
+            code_test_options= TestData.CodeTestOptions(
+                input_data = input_data,
+                input_echoing = input_echoing,
+                files_to_reveal = files_to_reveal,
+                custom_verification_function = custom_verification_function,
+                custom_verification_data = custom_verification_data,
+                custom_verification_timeout = custom_verification_timeout,
+                custom_verification_timeout_msg = custom_verification_timeout_msg,
+            ),
+            ast_test_options= TestData.ASTTestOptions(
+                non_allowed_nodes = non_allowed_nodes,
+                non_allowed_functions = non_allowed_functions,
+                non_allowed_methods = non_allowed_methods,
+                non_allowed_imports = non_allowed_imports,
+                required_nodes = required_nodes,
+                required_functions = required_functions,
+                required_methods = required_methods,
+                required_imports = required_imports,
+            ),
+            pep8_test_options = None,
+        )
 
         # Verify the return object type can be tested, as not all objects can be
         # pickled, but this is a requirement for how the testing occurs.
@@ -656,29 +687,43 @@ class SafeTesting:
 
             For ommited ast related parameters see register_ast_test() docstring
         """
-        name = self._set_default_test_name(name, hidden, private)
 
-        test_data = TestData(name, score, hidden, private, student_file_name, TestData.TEST_SCRIPT)
-        test_data.test_timeout = script_timeout_seconds
-        test_data.input_data = input_data
-        test_data.input_echoing = input_echoing
-        test_data.expected.stdout = expected_stdout
-        test_data.expected.stderr = expected_stderr
-        test_data.expected.exception = expected_exception
-        test_data.expected.filenames = expected_files
-        test_data.files_to_reveal = files_to_reveal
-        test_data.custom_verification_function = custom_verification_function
-        test_data.custom_verification_data = custom_verification_data
-        test_data.custom_verification_timeout = custom_verification_timeout
-        test_data.custom_verification_timeout_msg = custom_verification_timeout_msg
-        test_data.non_allowed_nodes = non_allowed_nodes
-        test_data.non_allowed_functions = non_allowed_functions
-        test_data.non_allowed_methods = non_allowed_methods
-        test_data.non_allowed_imports = non_allowed_imports
-        test_data.required_nodes = required_nodes
-        test_data.required_functions = required_functions
-        test_data.required_methods = required_methods
-        test_data.required_imports = required_imports
+        test_data = TestData(
+            name=self._set_default_test_name(name, hidden, private),
+            score=score,
+            hidden=hidden,
+            private=private,
+            student_file_name=student_file_name,
+            test_type=TestTypes.SCRIPT,
+            expected = TestData.Expected(
+                stdout = expected_stdout,
+                stderr = expected_stderr,
+                exception = expected_exception,
+                filenames = expected_files,
+            ),
+            test_timeout = script_timeout_seconds,
+            function_test_options=None,
+            code_test_options= TestData.CodeTestOptions(
+                input_data = input_data,
+                input_echoing = input_echoing,
+                files_to_reveal = files_to_reveal,
+                custom_verification_function = custom_verification_function,
+                custom_verification_data = custom_verification_data,
+                custom_verification_timeout = custom_verification_timeout,
+                custom_verification_timeout_msg = custom_verification_timeout_msg,
+            ),
+            ast_test_options= TestData.ASTTestOptions(
+                non_allowed_nodes = non_allowed_nodes,
+                non_allowed_functions = non_allowed_functions,
+                non_allowed_methods = non_allowed_methods,
+                non_allowed_imports = non_allowed_imports,
+                required_nodes = required_nodes,
+                required_functions = required_functions,
+                required_methods = required_methods,
+                required_imports = required_imports,
+            ),
+            pep8_test_options = None,
+        )
 
         self.test_cases.append(test_data)
 
@@ -725,16 +770,32 @@ class SafeTesting:
         if name is None:
             name = "AST Check"
 
-        test_data = TestData(name, score, hidden, private, student_file_name, TestData.TEST_AST)
-        test_data.non_allowed_nodes = non_allowed_nodes
-        test_data.non_allowed_functions = non_allowed_functions
-        test_data.non_allowed_methods = non_allowed_methods
-        test_data.non_allowed_imports = non_allowed_imports
-        test_data.required_nodes = required_nodes
-        test_data.required_functions = required_functions
-        test_data.required_methods = required_methods
-        test_data.required_imports = required_imports
-        test_data.expected.stderr = ""
+        test_data = TestData(
+            name=name,
+            score=score,
+            hidden=hidden,
+            private=private,
+            student_file_name=student_file_name,
+            test_type=TestTypes.AST,
+            expected = TestData.Expected(
+                stderr=""
+            ),
+            test_timeout = 1,
+            function_test_options=None,
+            code_test_options= None,
+            ast_test_options= TestData.ASTTestOptions(
+                non_allowed_nodes = non_allowed_nodes,
+                non_allowed_functions = non_allowed_functions,
+                non_allowed_methods = non_allowed_methods,
+                non_allowed_imports = non_allowed_imports,
+                required_nodes = required_nodes,
+                required_functions = required_functions,
+                required_methods = required_methods,
+                required_imports = required_imports,
+            ),
+            pep8_test_options = None,
+        )
+
 
         self.test_cases.append(test_data)
 
@@ -764,10 +825,26 @@ class SafeTesting:
         if name is None:
             name = "PEP8 Check"
 
-        test_data = TestData(name, score, hidden, private, student_file_name, TestData.TEST_PEP8)
-        test_data.success = False
-        test_data.pep8_ignored_tests = ignored_tests
-        test_data.pep8_max_line_len = max_line_len
+        test_data = TestData(
+            name=name,
+            score=score,
+            hidden=hidden,
+            private=private,
+            student_file_name=student_file_name,
+            test_type=TestTypes.PEP8,
+            expected = TestData.Expected(
+                stderr=""
+            ),
+            test_timeout = 1,
+            pep8_test_options=TestData.PEP8TestOptions(
+                pep8_ignored_tests = ignored_tests,
+                pep8_max_line_len = max_line_len,
+            ),
+            code_test_options=None,
+            function_test_options=None,
+            ast_test_options=None,
+        )
+
 
         self.test_cases.append(test_data)
 
@@ -791,22 +868,24 @@ def run_function_test(
     Returns:
         Instance of TestData class.
     """
+    assert test_data.function_test_options is not None
+    assert test_data.code_test_options is not None
 
     test_data.msg.function_call = FUNCTION_CALLED_MSG.format(
-        f"{test_data.function_name}{format_as_func_arg_string(test_data.expected.original_args)}"
+        f"{test_data.function_test_options.function_name}{format_as_func_arg_string(test_data.expected.original_args)}"
     )
     test_data.msg.input = (
         INPUT_FEEDBACK_MSG.format(
             format_test_in_out_data(
-                test_data.input_data,
+                test_data.code_test_options.input_data,
                 format_test_in_out_data_as_str
             )
         )
-        if test_data.input_data != ""
+        if test_data.code_test_options.input_data != ""
         else ""
     )
 
-    with HiddenFileManager(hidden_file_dict, test_data.files_to_reveal):
+    with HiddenFileManager(hidden_file_dict, test_data.code_test_options.files_to_reveal):
         run_astcheck_test(test_data, format_test_in_out_data_as_str)
 
         # Stops test, before running student code if unallowed features are used.
@@ -827,8 +906,8 @@ def run_function_test(
             "python",
             file_path_to_run,
             test_data.student_file_name,
-            test_data.function_name,
-            str(int(test_data.input_echoing)),
+            test_data.function_test_options.function_name,
+            str(int(test_data.code_test_options.input_echoing)),
             str(int(enable_call_counting))
         ]
 
@@ -839,7 +918,7 @@ def run_function_test(
             test_data.msg.timeout,
         ) = subprocess_run_with_truncated_output(
             command,
-            test_data.input_data.encode(),
+            test_data.code_test_options.input_data.encode(),
             MAX_SUBPROCESS_STDOUT_CHARS,
             OUTPUT_TRUNCATION_MSG,
             test_data.test_timeout,
@@ -888,19 +967,20 @@ def run_script_test(
     Returns:
         Instance of TestData class.
     """
+    assert test_data.code_test_options is not None
 
     test_data.msg.input = (
         INPUT_FEEDBACK_MSG.format(
             format_test_in_out_data(
-                test_data.input_data,
+                test_data.code_test_options.input_data,
                 format_test_in_out_data_as_str
             )
         )
-        if test_data.input_data != ""
+        if test_data.code_test_options.input_data != ""
         else ""
     )
 
-    with HiddenFileManager(hidden_file_dict, test_data.files_to_reveal):
+    with HiddenFileManager(hidden_file_dict, test_data.code_test_options.files_to_reveal):
 
         run_astcheck_test(test_data, format_test_in_out_data_as_str)
 
@@ -918,7 +998,7 @@ def run_script_test(
             "python",
             file_path_to_run,
             test_data.student_file_name,
-            str(int(test_data.input_echoing)),
+            str(int(test_data.code_test_options.input_echoing)),
         ]
 
         (
@@ -928,7 +1008,7 @@ def run_script_test(
             test_data.msg.timeout,
         ) = subprocess_run_with_truncated_output(
             command,
-            test_data.input_data.encode(),
+            test_data.code_test_options.input_data.encode(),
             MAX_SUBPROCESS_STDOUT_CHARS,
             OUTPUT_TRUNCATION_MSG,
             test_data.test_timeout,
@@ -956,6 +1036,7 @@ def run_pep8_test(test_data: TestData) -> TestData:
         Instance of TestData class.
     """
 
+    assert test_data.pep8_test_options is not None
     test_data.success = True
 
     filepath = STUDENT_FILE_PATH_PREFIX + test_data.student_file_name
@@ -965,9 +1046,8 @@ def run_pep8_test(test_data: TestData) -> TestData:
     for file in files_to_check:
         if DEFAULT_PEP8_TRUNCATION_LENGTH - len(pep8_violations) <= 0:
             break
-
-        command = ["flake8", "--jobs=1", "--ignore=" + test_data.pep8_ignored_tests,
-                   "--max-line-len=" + str(test_data.pep8_max_line_len),  file]
+        command = ["flake8", "--jobs=1", "--ignore=" + test_data.pep8_test_options.pep8_ignored_tests,
+                   "--max-line-len=" + str(test_data.pep8_test_options.pep8_max_line_len),  file]
         _, proc_stdout, _, _ = (
             subprocess_run_with_truncated_output(
                 command,
@@ -1001,15 +1081,16 @@ def run_astcheck_test(
         Instance of TestData class.
     """
 
+    assert test_data.ast_test_options is not None
     test_data.success = True
 
     # node checking allows for both passing an input as a list/tuple of nodes, or a dictionary
     # with node key, and description value. Passing a list uses the node names as the description
-    if type(test_data.required_nodes) != dict:
-        test_data.required_nodes = {node: node.__name__ for node in test_data.required_nodes}
+    if type(test_data.ast_test_options.required_nodes) != dict:
+        test_data.ast_test_options.required_nodes = {node: node.__name__ for node in test_data.ast_test_options.required_nodes}
 
-    if type(test_data.non_allowed_nodes) != dict:
-        test_data.non_allowed_nodes = {node: node.__name__ for node in test_data.non_allowed_nodes}
+    if type(test_data.ast_test_options.non_allowed_nodes) != dict:
+        test_data.ast_test_options.non_allowed_nodes = {node: node.__name__ for node in test_data.ast_test_options.non_allowed_nodes}
 
     filepath = STUDENT_FILE_PATH_PREFIX + test_data.student_file_name
     files_to_check = recursive_find_local_import_paths(filepath)
@@ -1031,35 +1112,37 @@ def run_astcheck_test(
         function_defs |= astchecker.defined_functions
 
         ast_violations += astchecker.astcheck_non_allowed_nodes(
-            test_data.non_allowed_nodes,
+            test_data.ast_test_options.non_allowed_nodes,
         )
         ast_violations += astchecker.astcheck_required_nodes(
-            test_data.required_nodes
+            test_data.ast_test_options.required_nodes
         )
         ast_violations += astchecker.astcheck_non_allowed_functions(
-            test_data.non_allowed_functions,
+            test_data.ast_test_options.non_allowed_functions,
         )
         ast_violations += astchecker.astcheck_required_functions(
-            test_data.required_functions
+            test_data.ast_test_options.required_functions
         )
         ast_violations += astchecker.astcheck_non_allowed_methods(
-            test_data.non_allowed_methods,
+            test_data.ast_test_options.non_allowed_methods,
         )
         ast_violations += astchecker.astcheck_required_methods(
-            test_data.required_methods
+            test_data.ast_test_options.required_methods
         )
         ast_violations += astchecker.astcheck_non_allowed_imports(
-            test_data.non_allowed_imports,
+            test_data.ast_test_options.non_allowed_imports,
         )
         ast_violations += astchecker.astcheck_required_imports(
-            test_data.required_imports
+            test_data.ast_test_options.required_imports
         )
 
     if test_data.student.stderr:
         verify_expected_stderr(test_data, format_test_in_out_data_as_str)
 
-    if test_data.test_type == TestData.TEST_FUNCTION and test_data.function_name not in function_defs:
-        ast_violations += MISSING_FUNC_DEF_MSG.format(test_data.function_name)
+    if test_data.test_type == TestTypes.FUNCTION:
+        assert test_data.function_test_options is not None
+        if test_data.function_test_options.function_name not in function_defs:
+            ast_violations += MISSING_FUNC_DEF_MSG.format(test_data.function_test_options.function_name)
 
     if ast_violations != "":
         ast_violations = AST_VIOLATION_MSG + ast_violations
@@ -1112,15 +1195,15 @@ def verify_program_output(
         and test_data.msg.student_mutated == ""
     ):
         test_data.give_half_marks = True
-
-    if test_data.custom_verification_function is not None:
+    assert test_data.code_test_options is not None
+    if test_data.code_test_options.custom_verification_function is not None:
         signal.signal(signal.SIGALRM, handle_timeout)
         try:
-            signal.alarm(test_data.custom_verification_timeout)  # seconds
-            test_data.custom_verification_function(test_data)
+            signal.alarm(test_data.code_test_options.custom_verification_timeout)  # seconds
+            test_data.code_test_options.custom_verification_function(test_data)
         except TimeoutError:
             test_data.success = False
-            test_data.msg.custom_verification_hook = test_data.custom_verification_timeout_msg
+            test_data.msg.custom_verification_hook = test_data.code_test_options.custom_verification_timeout_msg
         except:
             test_data.success = False
         finally:
@@ -1234,7 +1317,7 @@ def verify_function_return(test_data: TestData):
         in test feedback. The expected output is always formatted for use in
         the test case report.
     """
-    if test_data.test_type == TestData.TEST_FUNCTION:
+    if test_data.test_type == TestTypes.FUNCTION:
         if test_data.student.failed_return != GraderNone:
            data_type, data_str = test_data.student.failed_return.split('\n')
            test_data.msg.student_return = STUDENT_RETURN_MSG.format(
@@ -1264,7 +1347,7 @@ def verify_expected_recursive_call_counts(test_data: TestData):
     Check if the called function or any returned function calls in the called function
     (which could be recursive helper functions) have the expected number of recursive calls
     """
-    if test_data.test_type == TestData.TEST_FUNCTION:
+    if test_data.test_type == TestTypes.FUNCTION:
         if len(test_data.expected.recursive_call_counts) > 0 and test_data.student.recursive_call_count != GraderNone:
             message = STUDENT_RECURSION_COUNT_MSG
             any_matches = False
@@ -1283,16 +1366,16 @@ def verify_expected_recursive_call_counts(test_data: TestData):
 
 def verify_check_mutated_input(test_data: TestData):
     """ Check for mutated input """
-    if (
-        test_data.test_type == TestData.TEST_FUNCTION
-        and test_data.function_fail_on_mutated_args
-        and test_data.student.final_args != GraderNone
-        and test_data.student.final_args != test_data.expected.original_args
-    ):
-        test_data.msg.mutation_check = FAIL_ON_MUTATION_MSG + RECIEVED_ARGS_MSG.format(
-            format_as_func_arg_string(test_data.student.final_args)
-        )
-        test_data.success = False
+    if (test_data.test_type == TestTypes.FUNCTION):
+        assert test_data.function_test_options is not None
+        if (test_data.function_test_options.function_fail_on_mutated_args
+            and test_data.student.final_args != GraderNone
+            and test_data.student.final_args != test_data.expected.original_args
+        ):
+            test_data.msg.mutation_check = FAIL_ON_MUTATION_MSG + RECIEVED_ARGS_MSG.format(
+                format_as_func_arg_string(test_data.student.final_args)
+            )
+            test_data.success = False
 
 
 def verify_expected_mutated_args(test_data: TestData):
@@ -1305,7 +1388,7 @@ def verify_expected_mutated_args(test_data: TestData):
         the test case report.
     """
     if (
-        test_data.test_type == TestData.TEST_FUNCTION
+        test_data.test_type == TestTypes.FUNCTION
         and test_data.expected.mutated_args is not None
         and test_data.student.final_args != GraderNone
     ):
@@ -1988,8 +2071,8 @@ def set_test_feedback_level(ed_test_grader_output: EdCustomGraderJson):
 def find_relevant_output_files(test_data: TestData):
     output_files = []
     if (
-        test_data.test_type == TestData.TEST_FUNCTION
-        or test_data.test_type == TestData.TEST_SCRIPT
+        test_data.test_type == TestTypes.FUNCTION
+        or test_data.test_type == TestTypes.SCRIPT
     ):
         for student_file, expected_file in test_data.expected.filenames:
             student_file_path = STUDENT_FILE_PATH_PREFIX + student_file
@@ -2152,8 +2235,8 @@ def set_test_output_files(ed_test_grader_output: EdCustomGraderJson):
     for ed_test_obj in ed_test_grader_output.test_cases:
         if ed_test_obj.test_data is not None:
             if (
-                ed_test_obj.test_data.test_type == TestData.TEST_FUNCTION
-                or ed_test_obj.test_data.test_type == TestData.TEST_SCRIPT
+                ed_test_obj.test_data.test_type == TestTypes.FUNCTION
+                or ed_test_obj.test_data.test_type == TestTypes.SCRIPT
             ):
                 for file_name in find_relevant_output_files(ed_test_obj.test_data):
                     ed_test_obj.add_output_file(file_name, "", False)
