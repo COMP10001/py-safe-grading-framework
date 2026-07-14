@@ -1626,8 +1626,10 @@ class CustomNodeVisitor(ast.NodeVisitor):
             self.imports.append(alias.name)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        for alias in node.names:
-            self.imports.append(alias.name)
+        self.imports.append(node.module)
+        # # This gets the function/variable/etc to import
+        # for alias in node.names:
+        #     self.imports.append(alias.name)
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         self.defined_functions.add(node.name)
