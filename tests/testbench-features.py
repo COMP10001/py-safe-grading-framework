@@ -21,19 +21,19 @@ test_bench = SafeTesting(
 
 test_bench.cache_hidden_test_files(FILES_TO_HIDE)
 
-test_bench.register_pep8_test(
-   name = "PEP8 Pass",
-    student_file_name="pep8_pass.py",
+test_bench.register_style_test(
+   name = "Style Pass",
+    student_file_name="style_pass.py",
 )
 
-test_bench.register_pep8_test(
-   name = "PEP8 Fail",
-    student_file_name="pep8_fail.py",
+test_bench.register_style_test(
+   name = "Style Fail",
+    student_file_name="style_fail.py",
 )
 
-test_bench.register_pep8_test(
-   name = "PEP8 Recursive File Check Fail",
-    student_file_name="pep8_recursive_import_test.py",
+test_bench.register_style_test(
+   name = "Style Recursive File Check Fail",
+    student_file_name="style_recursive_import_test.py",
 )
 
 

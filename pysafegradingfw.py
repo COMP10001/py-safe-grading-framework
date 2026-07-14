@@ -83,7 +83,7 @@ UNEXPECTED_STDOUT_MSG = (
 WRONG_STDOUT_MSG = "► Your program printed the following output:\n{0}\n"
 EXPECTED_STDOUT_MSG = "► The expected printed output is:\n{0}\n"
 
-PEP8_ERROR_MSG = "► The following style errors were found:\n"
+STYLE_ERROR_MSG = "► The following style errors were found:\n"
 AST_VIOLATION_MSG = "► The following AST violations were found:\n"
 FILE_CHECK_ERROR_MSG = "► The following expected file errors were found:\n"
 
@@ -160,7 +160,7 @@ RUN_TEST_SUBPROCESS_FILENAME = "runtestsubprocess.py"
 #######################################################################################
 
 MAX_SUBPROCESS_STDOUT_CHARS = 10000
-DEFAULT_PEP8_TRUNCATION_LENGTH = 1000
+DEFAULT_STYLE_TRUNCATION_LENGTH = 1000
 DEFAULT_AST_TRUNCATION_LENGTH = 1000
 
 # This is the maximum amount of output that can be printed by test code
@@ -212,7 +212,7 @@ class TestTypes(enum.Enum):
     FUNCTION = enum.auto()
     SCRIPT = enum.auto()
     AST = enum.auto()
-    PEP8 = enum.auto()
+    STYLE = enum.auto()
 
 @dataclass(kw_only=True, slots=True)
 class TestData:
@@ -243,9 +243,9 @@ class TestData:
         function_fail_on_mutated_args: bool
 
     @dataclass(kw_only=True, slots=True)
-    class PEP8TestOptions:
-        pep8_ignored_tests: str
-        pep8_max_line_len: int
+    class StyleTestOptions:
+        style_ignored_tests: str
+        style_max_line_len: int
 
 
     @dataclass(kw_only=True, slots=True)
@@ -273,7 +273,7 @@ class TestData:
 
     @dataclass(kw_only=True, slots=True)
     class Messages:
-        pep8: str = field(default="", init=False)
+        style: str = field(default="", init=False)
         astcheck: str = field(default="", init=False)
         function_call: str = field(default="", init=False)
         input: str = field(default="", init=False)
@@ -306,7 +306,7 @@ class TestData:
 
     code_test_options: CodeTestOptions | None
     function_test_options: FunctionTestOptions | None
-    pep8_test_options: PEP8TestOptions | None
+    style_test_options: StyleTestOptions | None
     ast_test_options: ASTTestOptions | None
 
     expected: Expected
@@ -329,16 +329,16 @@ class TestData:
             run_script_test(self, hidden_file_dict, format_test_in_out_data_as_str)
         elif self.test_type == TestTypes.AST:
             run_astcheck_test(self, format_test_in_out_data_as_str)
-        elif self.test_type == TestTypes.PEP8:
-            run_pep8_test(self)
+        elif self.test_type == TestTypes.STYLE:
+            run_style_test(self)
 
 
 class SafeTesting:
-    _DEFAULT_PEP8_IGNORED = (
+    _DEFAULT_STYLE_IGNORED = (
     "E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225"
     "E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503"
     )
-    _DEFAULT_PEP8_MAX_LINE_LEN=79
+    _DEFAULT_STYLE_MAX_LINE_LEN=79
     _DEFAULT_NON_ALLOWED_NODES = []
     _DEFAULT_NON_ALLOWED_FUNCTIONS = ["exec", "eval"]
     _DEFAULT_NON_ALLOWED_METHODS = []
@@ -632,7 +632,7 @@ class SafeTesting:
                 required_methods = required_methods,
                 required_imports = required_imports,
             ),
-            pep8_test_options = None,
+            style_test_options = None,
         )
 
         # Verify the return object type can be tested, as not all objects can be
@@ -737,7 +737,7 @@ class SafeTesting:
                 required_methods = required_methods,
                 required_imports = required_imports,
             ),
-            pep8_test_options = None,
+            style_test_options = None,
         )
 
         self.test_cases.append(test_data)
@@ -808,37 +808,37 @@ class SafeTesting:
                 required_methods = required_methods,
                 required_imports = required_imports,
             ),
-            pep8_test_options = None,
+            style_test_options = None,
         )
 
 
         self.test_cases.append(test_data)
 
     @validate_call
-    def register_pep8_test(
+    def register_style_test(
         self,
         name: str | None = None,
         score: float | int  = 0,
         hidden: bool = False,
         private: bool = False,
         student_file_name: str = "",
-        ignored_tests: str = _DEFAULT_PEP8_IGNORED,
-        max_line_len: int = _DEFAULT_PEP8_MAX_LINE_LEN,
+        ignored_tests: str = _DEFAULT_STYLE_IGNORED,
+        max_line_len: int = _DEFAULT_STYLE_MAX_LINE_LEN,
     ) -> None:
         """
         Description:
-            Run PEP8 style checks on the student submission file, and any local imports
+            Run style checks on the student submission file, and any local imports
 
         Parameters:
             name                : Test visible name. Default to "Visible/Hidden/Private {n_tests}" if None
             score               : Points to give testcase pass if Ed's Per-Testcase scoring is enabled
             hidden              : Hidden tests have pass/fail visible; students cannot see the input/output
             private             : Private tests are completely invisible to students
-            student_file_name   : Root file to run pep8 check on
+            student_file_name   : Root file to run style check on
             ignored_tests       : Names of tests to ignore when run with `flake8 --ignore={ignored_tests}`
         """
         if name is None:
-            name = "PEP8 Check"
+            name = "Style Check"
 
         test_data = TestData(
             name=name,
@@ -846,14 +846,14 @@ class SafeTesting:
             hidden=hidden,
             private=private,
             student_file_name=student_file_name,
-            test_type=TestTypes.PEP8,
+            test_type=TestTypes.STYLE,
             expected = TestData.Expected(
                 stderr=""
             ),
             test_timeout = 1,
-            pep8_test_options=TestData.PEP8TestOptions(
-                pep8_ignored_tests = ignored_tests,
-                pep8_max_line_len = max_line_len,
+            style_test_options=TestData.StyleTestOptions(
+                style_ignored_tests = ignored_tests,
+                style_max_line_len = max_line_len,
             ),
             code_test_options=None,
             function_test_options=None,
@@ -1042,40 +1042,40 @@ def run_script_test(
 #######################################################################################
 
 
-def run_pep8_test(test_data: TestData) -> TestData:
+def run_style_test(test_data: TestData) -> TestData:
     """
     Description:
-        Run PEP8 style checks on the student submission file, and any local imports
+        Run style checks on the student submission file, and any local imports
 
     Returns:
         Instance of TestData class.
     """
 
-    assert test_data.pep8_test_options is not None
+    assert test_data.style_test_options is not None
     test_data.success = True
 
     filepath = STUDENT_FILE_PATH_PREFIX + test_data.student_file_name
     files_to_check = recursive_find_local_import_paths(filepath)
 
-    pep8_violations = ""
+    style_violations = ""
     for file in files_to_check:
-        if DEFAULT_PEP8_TRUNCATION_LENGTH - len(pep8_violations) <= 0:
+        if DEFAULT_STYLE_TRUNCATION_LENGTH - len(style_violations) <= 0:
             break
-        command = ["flake8", "--jobs=1", "--ignore=" + test_data.pep8_test_options.pep8_ignored_tests,
-                   "--max-line-len=" + str(test_data.pep8_test_options.pep8_max_line_len),  file]
+        command = ["flake8", "--jobs=1", "--ignore=" + test_data.style_test_options.style_ignored_tests,
+                   "--max-line-len=" + str(test_data.style_test_options.style_max_line_len),  file]
         _, proc_stdout, _, _ = (
             subprocess_run_with_truncated_output(
                 command,
                 "".encode(),
-                DEFAULT_PEP8_TRUNCATION_LENGTH - len(pep8_violations),
+                DEFAULT_STYLE_TRUNCATION_LENGTH - len(style_violations),
                 OUTPUT_TRUNCATION_MSG,
             )
         )
 
-        pep8_violations += proc_stdout.replace(STUDENT_FILE_PATH_PREFIX, "")
+        style_violations += proc_stdout.replace(STUDENT_FILE_PATH_PREFIX, "")
 
-    if pep8_violations != "":
-        test_data.msg.pep8 = PEP8_ERROR_MSG + pep8_violations
+    if style_violations != "":
+        test_data.msg.style = STYLE_ERROR_MSG + style_violations
         test_data.success = False
 
     return test_data
@@ -1967,21 +1967,21 @@ class EdOutputFile:
 
 def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0, include_function_call: bool = True):
     if levels_to_reduce >= 1:
-        pep8_truncation_length = max(
-            DEFAULT_PEP8_TRUNCATION_LENGTH // levels_to_reduce, 200
+        style_truncation_length = max(
+            DEFAULT_STYLE_TRUNCATION_LENGTH // levels_to_reduce, 200
         )
         ast_truncation_length = max(
             DEFAULT_AST_TRUNCATION_LENGTH // levels_to_reduce, 200
         )
-        test_data.msg.pep8 = truncate_string(
-            test_data.msg.pep8, pep8_truncation_length, OUTPUT_TRUNCATION_MSG
+        test_data.msg.style = truncate_string(
+            test_data.msg.style, style_truncation_length, OUTPUT_TRUNCATION_MSG
         )
         test_data.msg.astcheck = truncate_string(
             test_data.msg.astcheck, ast_truncation_length, OUTPUT_TRUNCATION_MSG
         )
 
     feedback_priority_order = [
-        test_data.msg.pep8,
+        test_data.msg.style,
         test_data.msg.astcheck]
 
     if include_function_call:

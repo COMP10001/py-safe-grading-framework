@@ -1,3 +1,0 @@
-► The following style errors were found:
-pep8_fail.py:2:10: E226 missing whitespace around arithmetic operator
-pep8_fail.py:2:12: E226 missing whitespace around arithmetic operator

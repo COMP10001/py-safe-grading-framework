@@ -1,0 +1,3 @@
+► The following style errors were found:
+style_fail.py:2:10: E226 missing whitespace around arithmetic operator
+style_fail.py:2:12: E226 missing whitespace around arithmetic operator

@@ -119,6 +119,7 @@ for testcase in grader_object["testcases"]:
     except Exception as e:
         print(str(e))
         print(f"❌ Fail: {testcase["name"]}")
+        fail_count += 1
 
 
 
