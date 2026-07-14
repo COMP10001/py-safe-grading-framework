@@ -8,7 +8,7 @@ from difflib import unified_diff
 docker_mode = "--docker" in sys.argv
 
 FILE_PATH_PREFIX = "/home" if docker_mode else os.getcwd() + "/build/tests"
-print(os.listdir("/home"))
+# print(os.listdir("/home"))
 if not docker_mode:
     try:
         shutil.rmtree("build/tests")
@@ -17,7 +17,22 @@ if not docker_mode:
 
     shutil.copytree("tests", "build/tests")
     shutil.copy("pysafegradingfw.py", "build/tests/pysafegradingfw.py")
+else:
+    shutil.copy("/pysafegradingfw.py", "/home/pysafegradingfw.py")
 
+
+
+##############
+
+sp = subprocess.run(["python", "test-node-visitor.py"],
+                    cwd=FILE_PATH_PREFIX,
+                    capture_output=True)
+
+node_test = {"name": "Custom Node Visitor Pass", "feedback": sp.stdout.decode(), "passed":True}
+# print(node_test)
+
+
+##############
 
 sp = subprocess.run(["python", "testbench-features.py", "--prod"],
                     cwd=FILE_PATH_PREFIX,
@@ -30,7 +45,15 @@ if "--debug" in sys.argv:
 
 grader_object = json.loads(sp.stdout.decode())
 
+grader_object["testcases"].append(node_test)
+
 ##############
+
+# library file will be removed on running other testbench
+if not docker_mode:
+    shutil.copy("pysafegradingfw.py", "build/tests/pysafegradingfw.py")
+else:
+    shutil.copy("/pysafegradingfw.py", "/home/pysafegradingfw.py")
 
 sp = subprocess.run(["python", "testbench-libshadowing.py", "--prod"],
                     cwd=FILE_PATH_PREFIX,
@@ -39,7 +62,6 @@ sp = subprocess.run(["python", "testbench-libshadowing.py", "--prod"],
 if "--debug" in sys.argv:
     print(sp.stdout.decode())
     print(sp.stderr.decode())
-
 
 grader_output = sp.stdout.decode()
 
@@ -83,6 +105,10 @@ for testcase in grader_object["testcases"]:
                     possible_fail_count += 1
                     diff = unified_diff(testcase["feedback"].splitlines(), expected_test_feedback.splitlines(), lineterm='')
                     print('\n'.join(list(diff)))
+                    print("---------------------------")
+                    print(testcase["feedback"])
+                    print("---------------------------")
+                    print(expected_test_feedback)
                 else:
                     print(f"✅ Success: {testcase["name"]}")
                     success_count += 1
@@ -114,5 +140,5 @@ else:
 
 
 
-exit(fail_count)
+exit(fail_count + possible_fail_count)
 

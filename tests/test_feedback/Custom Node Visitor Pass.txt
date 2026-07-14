@@ -1,0 +1,7 @@
+Imports ['random', 'sys', 'importlib']
+Function Calls [('func', 11), ('print', 20), ('random', 17), ('range', 19)]
+Method Calls [('append', 15)]
+Attributes Called [('append', 15), ('random', 17)]
+Attribute Paths [('a', 'append'), ('random', 'random')]
+Defined Functions ['func']
+Nodes [For(target=Name(id='i', ctx=Store()), iter=Call(func=Name(id='range', ctx=Load(...)), args=[Constant(value=5, kind=None)], keywords=[]), body=[Expr(value=Call(func=Name(...), args=[Name(...)], keywords=[]))], orelse=[], type_comment=None)]
