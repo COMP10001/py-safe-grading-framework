@@ -395,7 +395,7 @@ class SafeTesting:
 
         dev_and_prod_mode_options()
 
-    def run_tests(self):
+    def run_tests(self, print_test_output=True):
         """
         Run all the registered test cases, and produce the execution transcripts,
         test case reports and output the required json test object for Edstem
@@ -474,10 +474,13 @@ class SafeTesting:
 
         ed_test_case_json = set_test_feedback_level(ed_test_grader_output)
 
-        # Re-Enable printing to STDOUT
-        sys.stdout = ORIGINAL_STDOUT
-        # Ed reads the test json from stdout
-        print(ed_test_case_json)
+        if print_test_output:
+            # Re-Enable printing to STDOUT
+            sys.stdout = ORIGINAL_STDOUT
+            # Ed reads the test json from stdout
+            print(ed_test_case_json)
+
+        return ed_test_case_json
 
     @validate_call
     def cache_hidden_test_files(self, files: list[str]) -> None:
