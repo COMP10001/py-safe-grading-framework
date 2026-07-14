@@ -9,8 +9,11 @@ https://github.com/COMP10001/py-safe-grading-framework
 """
 import sys
 # Do not allow student files to shadow built in libraries
+# sys is protected from local file shadowing, as it is a
+# precompiled module built in to the interpretter which has
+# higher import precedence.
 LOCAL_DIR = sys.path.pop(0)
-
+import shutil
 import os
 import subprocess
 import ast
@@ -22,6 +25,7 @@ import dill
 import signal
 import resource
 import gc
+import __main__
 
 from pydantic import validate_call, PlainValidator
 from collections.abc import Callable
@@ -31,6 +35,10 @@ if sys.version_info >= (3, 12):
     from collections.abc import Buffer
 else:
     from typing_extensions import Buffer
+
+
+# restore local directory now that all imports are finished
+sys.path.insert(0, LOCAL_DIR)
 
 # Disable Printing to STDOUT as this breaks the Ed integration if done accidentally
 ORIGINAL_STDOUT = sys.stdout
@@ -351,6 +359,8 @@ class SafeTesting:
         global STUDENT_FILE_PATH_PREFIX
         STUDENT_FILE_PATH_PREFIX = self.student_file_path_prefix
 
+        dev_and_prod_mode_options()
+
     def run_tests(self):
         """
         Run all the registered test cases, and produce the execution transcripts,
@@ -359,6 +369,13 @@ class SafeTesting:
 
         memory_limit_bytes = EDSTEM_SOFTLIMIT_MEMORY_FOOTPRINT_MB  * MEGABYTE_TO_BYTES
         resource.setrlimit(resource.RLIMIT_AS, (memory_limit_bytes, memory_limit_bytes))
+
+
+        # Prevent possible data leakage from pycache imports containing testcase data
+        try:
+            shutil.rmtree("__pycache__")
+        except FileNotFoundError:
+            pass
 
         ed_test_grader_output = EdCustomGraderJson()
         if self.show_test_reports:
@@ -2385,3 +2402,29 @@ except Exception as e:
 )
 
 ######################################################################################
+
+def dev_and_prod_mode_options():
+    dev_mode = "--dev" in sys.argv
+    prod_mode = "--prod" in sys.argv
+
+    if (not dev_mode and not prod_mode) or (dev_mode and prod_mode):
+        print('''
+You must include exclusively one of the following CLI flags:
+> `--dev`: For local development only, this will NOT delete the testbench
+            file and all local imports.
+> `--prod`: For deployment onto Edstem/other. This WILL remove the testbench
+            file and all local imports from disk, so that the contents cannot
+            be read by student code leaking testcase information.
+
+Example: `python testbench.py --prod`
+''',file=ORIGINAL_STDOUT)
+        exit(1)
+    elif dev_mode:
+        print(f"DEVMODE - NOT removing the following files referenced by testbench:", file=ORIGINAL_STDOUT)
+        for file_path in recursive_find_local_import_paths(__main__.__file__):
+            print(f"> {file_path}", file=ORIGINAL_STDOUT)
+    elif prod_mode:
+        for file_path in recursive_find_local_import_paths(__main__.__file__):
+            os.remove(file_path)
+
+
