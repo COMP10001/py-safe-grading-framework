@@ -184,6 +184,17 @@ ExceptionInstance = Annotated[Exception, PlainValidator(validate_exception_insta
 
 #######################################################################################
 
+class GraderNone:
+    """
+    Custom None type differentiated from the default python None type to allow
+    validation for values that should be set by student code but possibly are not
+    or would conflict (eg return value could be None)
+    """
+    def __eq__(self, other):
+        return isinstance(other, GraderNone) or other == GraderNone
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 class TestData:
     TEST_FUNCTION = "function-test"
@@ -262,16 +273,13 @@ class TestData:
 
     class Student:
         def __init__(self):
-            self.stdout: str
-            self.stderr: str
-            # Note that because returned can be Any type, the absence of this
-            # variable being assigned at confirms whether the student function
-            # finished correctly.
-            self.returned: Any
-            self.failed_return: str
+            self.stdout: str | GraderNone = GraderNone()
+            self.stderr: str | GraderNone = GraderNone()
+            self.returned: Any | GraderNone = GraderNone()
+            self.failed_return: str | GraderNone = GraderNone()
             self.exception: ExceptionInstance | None = None
-            self.final_args: list[Any] | tuple[Any]
-            self.recursive_call_count: dict[str, int]
+            self.final_args: list[Any] | tuple[Any] | GraderNone = GraderNone()
+            self.recursive_call_count: dict[str, int] | GraderNone = GraderNone()
             # self.testproc_ret: subprocess.CompletedProcess
 
     class Messages:
@@ -840,7 +848,8 @@ def run_function_test(
         load_data_object_from_file(
             test_data.student, "failed_return", SUBPROC_PICKLE_FAILED_FILENAME
         )
-        if not hasattr(test_data.student, "failed_return"):
+
+        if test_data.student.failed_return == GraderNone:
             load_data_object_from_file(
                 test_data.student, "returned", SUBPROC_FUNC_RETURN_FILENAME
             )
@@ -1226,13 +1235,13 @@ def verify_function_return(test_data: TestData):
         the test case report.
     """
     if test_data.test_type == TestData.TEST_FUNCTION:
-        if hasattr(test_data.student, "failed_return"):
+        if test_data.student.failed_return != GraderNone:
            data_type, data_str = test_data.student.failed_return.split('\n')
            test_data.msg.student_return = STUDENT_RETURN_MSG.format(
                     data_type, data_str
             )
 
-        elif hasattr(test_data.student, "returned"):
+        elif test_data.student.returned != GraderNone:
             if test_data.student.returned != test_data.expected.returned:
                 test_data.msg.student_return = STUDENT_RETURN_MSG.format(
                     type(test_data.student.returned).__name__,
@@ -1256,7 +1265,7 @@ def verify_expected_recursive_call_counts(test_data: TestData):
     (which could be recursive helper functions) have the expected number of recursive calls
     """
     if test_data.test_type == TestData.TEST_FUNCTION:
-        if len(test_data.expected.recursive_call_counts) > 0 and hasattr(test_data.student, "recursive_call_count"):
+        if len(test_data.expected.recursive_call_counts) > 0 and test_data.student.recursive_call_count != GraderNone:
             message = STUDENT_RECURSION_COUNT_MSG
             any_matches = False
             for func_name, call_count in test_data.student.recursive_call_count.items():
@@ -1277,7 +1286,7 @@ def verify_check_mutated_input(test_data: TestData):
     if (
         test_data.test_type == TestData.TEST_FUNCTION
         and test_data.function_fail_on_mutated_args
-        and hasattr(test_data.student, "final_args")
+        and test_data.student.final_args != GraderNone
         and test_data.student.final_args != test_data.expected.original_args
     ):
         test_data.msg.mutation_check = FAIL_ON_MUTATION_MSG + RECIEVED_ARGS_MSG.format(
@@ -1298,7 +1307,7 @@ def verify_expected_mutated_args(test_data: TestData):
     if (
         test_data.test_type == TestData.TEST_FUNCTION
         and test_data.expected.mutated_args is not None
-        and hasattr(test_data.student, "final_args")
+        and test_data.student.final_args != GraderNone
     ):
         if list(test_data.student.final_args) != list(test_data.expected.mutated_args):
             test_data.msg.student_mutated = RECIEVED_ARGS_MSG.format(
