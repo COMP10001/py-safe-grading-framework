@@ -8,62 +8,43 @@
 # https://edstem.org/au/courses/20911/lessons/79913/slides/539891
 from pysafegradingfw import *
 
-### ENSURE PER TESTCASE SCORING IS ENABLED!
-### ENSURE TIMEOUT (s) IS SET HIGHER THAN THE SUM OF 'function_timeout_seconds' FOR EACH TEST!
-### SEE TESTBENCH EXAMPLE FOR MORE EXPLANATION
-
-# Remove the test file after loading by Ed, to prevent ability to print out contents
-# os.remove(__file__)
-
-# DANGER: Overrides Hidden and Private Tests so they become visible,
-# Need to re-run test cases for all students for it to work
-RELEASE_TEST_CASES = False
-
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
 FILES_TO_HIDE = ["hidden.txt"] # eg ["abc.txt"]
-PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 
 test_bench = SafeTesting(
-    setup_mode=True,
-    make_all_tests_visible=RELEASE_TEST_CASES,
+    debug_mode=False,
+    make_all_tests_visible=False,
     show_all_passed_tests_first=True,
-    show_test_reports=True,
-    file_path_prefix='/home/',
+    show_test_reports=False,
 )
 
 test_bench.cache_hidden_test_files(FILES_TO_HIDE)
 
-PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 test_bench.register_pep8_test(
    name = "PEP8 Pass",
     student_file_name="pep8_pass.py",
-    ignored_tests=PEP8_IGNORED
 )
 
-PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 test_bench.register_pep8_test(
    name = "PEP8 Fail",
     student_file_name="pep8_fail.py",
-    ignored_tests=PEP8_IGNORED
 )
 
-PEP8_IGNORED = 'E121,E123,E125,E126,E127,E128,E129,E221,E222,E223,E224,E225,E131,E133,E301,E302,E303,E304,E731,F401,F403,W2,W3,W503'
 test_bench.register_pep8_test(
    name = "PEP8 Recursive File Check Fail",
     student_file_name="pep8_recursive_import_test.py",
-    ignored_tests=PEP8_IGNORED
 )
 
 
 test_bench.register_ast_test(
-   name = "AST Check Non Allowed Functions Pass ",
+   name = "AST Check Non Allowed Functions Pass",
     student_file_name="astcheck_non_allowed_functions.py",
 )
 
 
 test_bench.register_ast_test(
-   name = "AST Check Non Allowed Functions Fail ",
+   name = "AST Check Non Allowed Functions Fail",
     student_file_name="astcheck_non_allowed_functions.py",
     non_allowed_functions=["print"],
 )
@@ -83,7 +64,7 @@ test_bench.register_ast_test(
 
 
 test_bench.register_ast_test(
-   name = "AST Check Non Allowed Imports Recursive Check Pass ",
+   name = "AST Check Non Allowed Imports Recursive Check Pass",
     student_file_name="astcheck_recursive_import_test.py",
     non_allowed_imports = ["signal", "subprocess"],
 
@@ -91,7 +72,7 @@ test_bench.register_ast_test(
 
 
 test_bench.register_ast_test(
-   name = "AST Check Non Allowed Imports Recursive Check Fail ",
+   name = "AST Check Non Allowed Imports Recursive Check Fail",
     student_file_name="astcheck_recursive_import_test.py",
     non_allowed_imports = ["sys","subprocess"],
 
@@ -99,21 +80,21 @@ test_bench.register_ast_test(
 
 
 test_bench.register_ast_test(
-   name = "AST Check Non Allowed Nodes Pass ",
+   name = "AST Check Non Allowed Nodes Pass",
     student_file_name="astcheck_non_allowed_nodes.py",
     non_allowed_nodes = [ast.While],
 )
 
 
 test_bench.register_ast_test(
-   name = "AST Check Non Allowed Nodes Fail ",
+   name = "AST Check Non Allowed Nodes Fail",
     student_file_name="astcheck_non_allowed_nodes.py",
     non_allowed_nodes = [ast.For],
 )
 
 
 test_bench.register_ast_test(
-   name = "AST Check Required Nodes Pass ",
+   name = "AST Check Required Nodes Pass",
     student_file_name="astcheck_required_nodes.py",
     required_nodes=[ast.For],
 )
@@ -134,28 +115,28 @@ test_bench.register_ast_test(
 
 
 test_bench.register_ast_test(
-   name = "AST Check Non Allowed Nodes Custom Name Fail ",
+   name = "AST Check Non Allowed Nodes Custom Name Fail",
     student_file_name="astcheck_non_allowed_nodes.py",
     non_allowed_nodes = {ast.For: "for loop"},
 )
 
 
 test_bench.register_ast_test(
-   name = "AST Check Required Nodes Custom Name Pass ",
+   name = "AST Check Required Nodes Custom Name Pass",
     student_file_name="astcheck_required_nodes.py",
     required_nodes={ast.For: "for loop"},
 )
 
 
 test_bench.register_ast_test(
-   name = "AST Check Required Nodes Custom Name Fail ",
+   name = "AST Check Required Nodes Custom Name Fail",
     student_file_name="astcheck_required_nodes.py",
     required_nodes={ast.For: "for loop", ast.While: "while loop"},
 )
 
 
 test_bench.register_function_test(
-   name = "Function Not Defined",
+   name = "Function Not Defined Fail",
     student_file_name="function_tests.py",
     function_name="missing_function",
     function_args=["hello"],
@@ -277,7 +258,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-   name = "Function  Str Pass",
+   name = "Function Str Pass",
     student_file_name="function_tests.py",
     function_name="expected_return_str",
     function_args=[],
@@ -517,7 +498,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-   name = "Function Expected Stderr Exception Pass",
+   name = "Function Expected Exception Pass",
     student_file_name="function_tests.py",
     function_name="expected_stderr_exception",
     function_args=[],
@@ -527,7 +508,8 @@ test_bench.register_function_test(
     input_data="",
     input_echoing = True,
     expected_stdout="",
-    expected_stderr='Traceback (most recent call last):\n  File "/home/function_tests.py", line 34, in expected_stderr_exception\n    raise Exception("An error occured")\nException: An error occured\n\n',
+    expected_stderr="",
+    expected_exception=Exception("An error occured"),
     non_allowed_nodes = [],
     non_allowed_functions=[],
     non_allowed_imports = [],
@@ -537,7 +519,7 @@ test_bench.register_function_test(
 
 
 test_bench.register_function_test(
-   name = "Function Expected Stderr Exception Fail",
+   name = "Function Expected Exception Type Fail",
     student_file_name="function_tests.py",
     function_name="expected_stderr_exception",
     function_args=[],
@@ -548,6 +530,7 @@ test_bench.register_function_test(
     input_echoing = True,
     expected_stdout="",
     expected_stderr="Error",
+    expected_exception=ValueError("An error occured"),
     non_allowed_nodes = [],
     non_allowed_functions=[],
     non_allowed_imports = [],
@@ -555,6 +538,25 @@ test_bench.register_function_test(
     files_to_reveal = [],
 )
 
+test_bench.register_function_test(
+   name = "Function Expected Exception Message Fail",
+    student_file_name="function_tests.py",
+    function_name="expected_stderr_exception",
+    function_args=[],
+    function_expected = None,
+    function_timeout_seconds = 1,
+    function_fail_on_mutated_args=False,
+    input_data="",
+    input_echoing = True,
+    expected_stdout="",
+    expected_stderr="Error",
+    expected_exception=Exception("Wrong Message"),
+    non_allowed_nodes = [],
+    non_allowed_functions=[],
+    non_allowed_imports = [],
+    required_nodes=[],
+    files_to_reveal = [],
+)
 
 test_bench.register_function_test(
    name = "Function Expected Return and Stdout Pass",
@@ -1025,7 +1027,8 @@ test_bench.register_script_test(
     input_data="",
     input_echoing = True,
     expected_stdout="",
-    expected_stderr='Traceback (most recent call last):\n  File "/home/script_expected_stderr_exception.py", line 1, in <module>\n    raise Exception("Test exception")\nException: Test exception\n\n',
+    expected_stderr="",
+    expected_exception=Exception("Test exception"),
     non_allowed_nodes = [],
     non_allowed_functions=[],
     non_allowed_imports=[],
@@ -1035,13 +1038,14 @@ test_bench.register_script_test(
 
 
 test_bench.register_script_test(
-   name = "Script Expected Stderr Exception Fail",
+   name = "Script Expected Exception Type Fail",
     student_file_name="script_expected_stderr_exception.py",
     script_timeout_seconds=1,
     input_data="",
     input_echoing = True,
     expected_stdout="",
-    expected_stderr="1234",
+    expected_stderr="",
+    expected_exception=ValueError("Test exception"),
     non_allowed_nodes = [],
     non_allowed_functions=[],
     non_allowed_imports=[],
@@ -1049,6 +1053,21 @@ test_bench.register_script_test(
     files_to_reveal = [],
     )
 
+test_bench.register_script_test(
+   name = "Script Expected Exception Message Fail",
+    student_file_name="script_expected_stderr_exception.py",
+    script_timeout_seconds=1,
+    input_data="",
+    input_echoing = True,
+    expected_stdout="",
+    expected_stderr="",
+    expected_exception=Exception("wrong message"),
+    non_allowed_nodes = [],
+    non_allowed_functions=[],
+    non_allowed_imports=[],
+    required_nodes=[],
+    files_to_reveal = [],
+    )
 
 test_bench.register_script_test(
    name = "Script Hidden File Valid Access Pass",
@@ -1130,28 +1149,6 @@ test_bench.register_script_test(
     required_nodes=[],
     files_to_reveal = [],
 )
-
-
-# @hidden[]
-
-# testHidden
-# pass
-
-
-# @private[]
-
-# testPrivate
-# pass
-
-
-# @score(1)
-# testInt_Score
-# pass
-
-
-# @score(0.5)
-# testFloat_Score
-# pass
 
 if __name__ == "__main__":
     test_bench.run_tests()
