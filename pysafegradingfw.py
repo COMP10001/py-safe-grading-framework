@@ -1218,8 +1218,9 @@ def verify_program_output(
         except TimeoutError:
             test_data.success = False
             test_data.msg.custom_verification_hook = test_data.code_test_options.custom_verification_timeout_msg
-        except:
+        except Exception as e:
             test_data.success = False
+            raise Exception from e
         finally:
             signal.alarm(0)
 
