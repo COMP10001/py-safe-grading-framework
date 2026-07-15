@@ -2329,10 +2329,17 @@ class RecursionChecker:
 
 ENCODING_FUNCTIONS = r"""
 import dill
+ORIGINAL_STDERR = sys.stderr
+DEV_NULL = open("/dev/null")
+
 
 def encode_obj_data(input_data, filename):
+    # Work around for dill complaining about
+    # recursive imports to stderr
+    sys.stderr = DEV_NULL
     with open(filename,"wb") as f:
         dill.dump(input_data, f)
+    sys.stderr = ORIGINAL_STDERR
 
 def decode_obj_data(filename):
     with open(filename,"rb") as f:
