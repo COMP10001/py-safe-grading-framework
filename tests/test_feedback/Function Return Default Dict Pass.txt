@@ -1,0 +1,5 @@
+► Called: return_defaultdict_pass()
+► Returned <defaultdict>:
+defaultdict(<class 'int'>, {})
+► Expected Return <defaultdict>:
+defaultdict(<class 'int'>, {})

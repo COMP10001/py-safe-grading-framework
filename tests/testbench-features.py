@@ -7,6 +7,7 @@
 # The latest version and documentation can be found in the COMP10001 Worksheet Repository
 # https://edstem.org/au/courses/20911/lessons/79913/slides/539891
 from pysafegradingfw import *
+from collections import defaultdict
 
 STUDENT_FUNCTION = "test"
 STUDENT_FILE_NAME = "program.py"
@@ -892,6 +893,26 @@ test_bench.register_function_test(
     expected_stdout="",
     expected_stderr="",
     expected_files=[("student_file.txt", "expected_file2.txt")],
+    non_allowed_nodes = [],
+    non_allowed_functions=[],
+    non_allowed_imports = [],
+    required_nodes=[],
+    files_to_reveal = [],
+)
+
+test_bench.register_function_test(
+   name = "Function Return Default Dict Pass",
+    student_file_name="return_default_dict.py",
+    function_name="return_defaultdict_pass",
+    function_args=[],
+    function_expected = defaultdict(int),
+    function_timeout_seconds = 1,
+    function_fail_on_mutated_args=False,
+    input_data="",
+    input_echoing = True,
+    expected_stdout="",
+    expected_stderr="",
+    expected_files=[],
     non_allowed_nodes = [],
     non_allowed_functions=[],
     non_allowed_imports = [],
