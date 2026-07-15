@@ -16,6 +16,7 @@ if not docker_mode:
         pass
 
     shutil.copytree("tests", "build/tests")
+    os.mkdir("build/tests/current_feedback")
     shutil.copy("pysafegradingfw.py", "build/tests/pysafegradingfw.py")
 else:
     shutil.copy("/pysafegradingfw.py", "/home/pysafegradingfw.py")
