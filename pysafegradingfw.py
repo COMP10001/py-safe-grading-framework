@@ -1,5 +1,5 @@
 """
-Python Safe Grading Framework for Edstem V0.6.0 pysafegradingfw.py
+Python Safe Grading Framework V0.6.1 pysafegradingfw.py
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 License: MIT
@@ -134,6 +134,8 @@ STUDENT_FILE_NOT_FOUND_MSG = (
     "► Program file {0} could not be found. "
     "Did you delete the file, or put it into a folder?\n"
 )
+
+NON_ALLOWED_FILENAMES_MSG = "► The following python filenames would override standard library functions and are not allowed:\n"
 
 #######################################################################################
 
@@ -279,6 +281,7 @@ class TestData:
         timeout: str = field(default="", init=False)
         memory_error: str = field(default="", init=False)
         student_file_not_found: str = field(default="", init=False)
+        non_allowed_filenames: str = field(default="", init=False)
         custom_verification_hook: str = field(default="", init=False)
         student_recursion_count: str = field(default="", init=False)
         expected_recursion_count: str = field(default="", init=False)
@@ -901,9 +904,10 @@ def run_function_test(
 
     with HiddenFileManager(hidden_file_dict, test_data.code_test_options.files_to_reveal):
         run_astcheck_test(test_data, format_test_in_out_data_as_str)
+        libshadowing_protection(test_data)
 
         # Stops test, before running student code if unallowed features are used.
-        if test_data.msg.astcheck:
+        if test_data.msg.astcheck or test_data.msg.non_allowed_filenames:
             test_data.success = False
             return test_data
 
@@ -997,9 +1001,10 @@ def run_script_test(
     with HiddenFileManager(hidden_file_dict, test_data.code_test_options.files_to_reveal):
 
         run_astcheck_test(test_data, format_test_in_out_data_as_str)
+        libshadowing_protection(test_data)
 
         # Stops test, before running student code if unallowed features are used.
-        if test_data.msg.astcheck:
+        if test_data.msg.astcheck or test_data.msg.non_allowed_filenames:
             test_data.success = False
             return test_data
 
@@ -1450,6 +1455,22 @@ def verify_expected_files(test_data: TestData):
     test_data.msg.expected_file = expected_file_feedback
 
 
+def libshadowing_protection(test_data: TestData):
+    """
+    Disallow any student files which have the same name as a standard library
+    module.
+    """
+    local_files = set(os.listdir())
+    non_allowed_files = {module + ".py" for module in sys.stdlib_module_names}
+
+    intersection = local_files & non_allowed_files
+
+    if intersection:
+        test_data.success = False
+        test_data.msg.non_allowed_filenames = NON_ALLOWED_FILENAMES_MSG
+        test_data.msg.non_allowed_filenames += "\n".join(intersection)+"\n"
+
+
 #######################################################################################
 
 
@@ -1711,7 +1732,7 @@ def truncate_string(
             )
         return string[:truncation_length] + truncation_message
     return string
-#
+
 
 #######################################################################################
 
@@ -1991,6 +2012,7 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0, incl
         test_data.msg.timeout,
         test_data.msg.memory_error,
         test_data.msg.student_file_not_found,
+        test_data.msg.non_allowed_filenames,
         test_data.msg.custom_verification_hook,
     ])
     # Only include information about the tests that have failed due to
@@ -2145,6 +2167,7 @@ def generate_test_report_entry(test_data: TestData):
         test_data.msg.timeout,
         test_data.msg.memory_error,
         test_data.msg.student_file_not_found,
+        test_data.msg.non_allowed_filenames,
         test_data.msg.custom_verification_hook,
         test_data.msg.expected_exception,
         test_data.msg.expected_stderr,
@@ -2457,16 +2480,6 @@ os.remove(SUBPROC_FUNC_INPUT_FILENAME)
 # restore local directory now that all imports are finished
 sys.path.insert(0, LOCAL_DIR)
 
-# Temporarily remove the cached copies of modules from this wrapped file
-# for the duration of loading the student module, so that the student module
-# references will point to shadowed files eg random.py if relevant instead of
-# cached copy of the builtin
-CURR_MODULES = sys.modules.copy()
-wrapper_specific_modules = {}
-for key in CURR_MODULES:
-    if key not in ORIGINAL_MODULES:
-        wrapper_specific_modules[key] = sys.modules.pop(key)
-
 # Try import function from student code
 # Run the function and check for timeout and mutating input
 try:
@@ -2476,9 +2489,7 @@ except Exception as e:
     encode_obj_data(e, SUBPROC_EXC_FILENAME)
     # Print the exception excluding information about this file path
     exit(traceback.format_exc(limit=-1))
-finally:
-    for key, val in wrapper_specific_modules.items():
-        sys.modules[key] = val
+
 
 try:
      # Wrap all functions in the call counting decorator.
@@ -2560,5 +2571,3 @@ Example: `python testbench.py --prod`
     elif prod_mode:
         for file_path in local_import_paths:
             os.remove(file_path)
-
-
