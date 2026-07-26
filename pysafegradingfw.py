@@ -257,23 +257,33 @@ class TestData:
         exception: ExceptionInstance | None = None
         original_args: list[Any] | tuple[Any] | None = None
         mutated_args: list[Any] | tuple[Any] | None = None
-        filenames: list[tuple[str, str]] = field(default_factory=list)
+        files: list[tuple[str, str]] = field(default_factory=list)
         recursive_call_counts: list[int] = field(default_factory=list)
 
 
     @dataclass(kw_only=True, slots=True)
-    class Student:
+    class Recieved:
         stdout: str | GraderNone = field(default_factory=GraderNone, init=False)
         stderr: str | GraderNone = field(default_factory=GraderNone, init=False)
         returned: Any | GraderNone = field(default_factory=GraderNone, init=False)
-        failed_return: str | GraderNone = field(default_factory=GraderNone, init=False)
+        return_pickle_failed: str | GraderNone = field(default_factory=GraderNone, init=False)
         exception: ExceptionInstance | None = field(default=None, init=False)
         final_args: list[Any] | tuple[Any] | GraderNone = field(default_factory=GraderNone, init=False)
         recursive_call_count: dict[str, int] | GraderNone = field(default_factory=GraderNone, init=False)
-        # self.testproc_ret: subprocess.CompletedProcess
+
 
     @dataclass(kw_only=True, slots=True)
     class Messages:
+        @dataclass(kw_only=True, slots=True)
+        class DataMessage:
+            recursion_count: str = field(default="", init=False)
+            exception: str = field(default="", init=False)
+            stderr: str = field(default="", init=False)
+            stdout: str = field(default="", init=False)
+            returned: str = field(default="", init=False)
+            mutated_args: str = field(default="", init=False)
+            files: str = field(default="", init=False)
+
         style: str = field(default="", init=False)
         astcheck: str = field(default="", init=False)
         function_call: str = field(default="", init=False)
@@ -283,20 +293,10 @@ class TestData:
         student_file_not_found: str = field(default="", init=False)
         non_allowed_filenames: str = field(default="", init=False)
         custom_verification_hook: str = field(default="", init=False)
-        student_recursion_count: str = field(default="", init=False)
-        expected_recursion_count: str = field(default="", init=False)
-        student_exception: str = field(default="", init=False)
-        expected_exception: str = field(default="", init=False)
-        student_stderr: str = field(default="", init=False)
-        expected_stderr: str = field(default="", init=False)
-        student_stdout: str = field(default="", init=False)
-        expected_stdout: str = field(default="", init=False)
-        student_return: str = field(default="", init=False)
-        expected_return: str = field(default="", init=False)
         mutation_check: str = field(default="", init=False)
-        student_mutated: str = field(default="", init=False)
-        expected_mutated: str = field(default="", init=False)
-        expected_file: str = field(default="", init=False)
+
+        expected: DataMessage = field(default_factory=DataMessage, init=False)
+        incorrect: DataMessage = field(default_factory=DataMessage, init=False)
 
     name: str
     score: float | int
@@ -313,8 +313,7 @@ class TestData:
 
     expected: Expected
     msg: Messages = field(default_factory=Messages, init=False)
-    student: Student = field(default_factory=Student, init=False)
-
+    recieved: Recieved = field(default_factory=Recieved, init=False)
 
     success: bool = field(default=False, init=False)
     give_half_marks: bool = field(default=False, init=False)
@@ -608,7 +607,7 @@ class SafeGrading:
                 stdout = expected_stdout,
                 stderr = expected_stderr,
                 exception = expected_exception,
-                filenames = expected_files,
+                files = expected_files,
                 recursive_call_counts = function_expected_recursive_calls
             ),
             test_timeout = function_timeout_seconds,
@@ -717,7 +716,7 @@ class SafeGrading:
                 stdout = expected_stdout,
                 stderr = expected_stderr,
                 exception = expected_exception,
-                filenames = expected_files,
+                files = expected_files,
             ),
             test_timeout = script_timeout_seconds,
             function_test_options=None,
@@ -931,8 +930,8 @@ def run_function_test(
 
         (
             _,
-            test_data.student.stdout,
-            test_data.student.stderr,
+            test_data.recieved.stdout,
+            test_data.recieved.stderr,
             test_data.msg.timeout,
         ) = subprocess_run_with_truncated_output(
             command,
@@ -943,22 +942,22 @@ def run_function_test(
         )
 
         load_data_object_from_file(
-            test_data.student, "failed_return", SUBPROC_PICKLE_FAILED_FILENAME
+            test_data.recieved, "return_pickle_failed", SUBPROC_PICKLE_FAILED_FILENAME
         )
 
-        if test_data.student.failed_return == GraderNone:
+        if test_data.recieved.return_pickle_failed == GraderNone:
             load_data_object_from_file(
-                test_data.student, "returned", SUBPROC_FUNC_RETURN_FILENAME
+                test_data.recieved, "returned", SUBPROC_FUNC_RETURN_FILENAME
             )
         load_data_object_from_file(
-            test_data.student, "final_args", SUBPROC_FUNC_ARGS_FILENAME
+            test_data.recieved, "final_args", SUBPROC_FUNC_ARGS_FILENAME
         )
         load_data_object_from_file(
-            test_data.student, "exception", SUBPROC_EXC_FILENAME
+            test_data.recieved, "exception", SUBPROC_EXC_FILENAME
         )
         if enable_call_counting:
             load_data_object_from_file(
-                test_data.student, "recursive_call_count", SUBPROC_RECURSION_COUNT_FILENAME
+                test_data.recieved, "recursive_call_count", SUBPROC_RECURSION_COUNT_FILENAME
             )
 
         # This must be inside hidden file manager context for expected file checking
@@ -1022,8 +1021,8 @@ def run_script_test(
 
         (
             _,
-            test_data.student.stdout,
-            test_data.student.stderr,
+            test_data.recieved.stdout,
+            test_data.recieved.stderr,
             test_data.msg.timeout,
         ) = subprocess_run_with_truncated_output(
             command,
@@ -1034,7 +1033,7 @@ def run_script_test(
         )
 
         load_data_object_from_file(
-            test_data.student, "exception", SUBPROC_EXC_FILENAME
+            test_data.recieved, "exception", SUBPROC_EXC_FILENAME
         )
 
         # This must be inside hidden file manager context for expected file checking
@@ -1115,14 +1114,14 @@ def run_astcheck_test(
     files_to_check = recursive_find_local_import_paths(filepath)
 
     ast_violations = ""
-    test_data.student.stderr = ""
+    test_data.recieved.stderr = ""
     function_defs = set()
 
     for student_file in files_to_check:
         tree, ast_exception = create_ast_object(student_file)
         if tree is None:
             if ast_exception is not None:
-                test_data.student.stderr += ast_exception
+                test_data.recieved.stderr += ast_exception
             ast_violations += f"Checking {student_file} caused errors.\n"
             test_data.success = False
             continue
@@ -1155,7 +1154,7 @@ def run_astcheck_test(
             test_data.ast_test_options.required_imports
         )
 
-    if test_data.student.stderr:
+    if test_data.recieved.stderr:
         verify_expected_stderr(test_data, format_test_in_out_data_as_str)
 
     if test_data.test_type == TestTypes.FUNCTION:
@@ -1206,12 +1205,12 @@ def verify_program_output(
 
     # If there are no issues with the code except extra printed output, give half marks
     if (test_data.expected.stdout == ""
-        and test_data.msg.student_stdout != ""
-        and test_data.msg.student_exception == ""
-        and test_data.msg.student_return == ""
-        and test_data.msg.student_recursion_count == ""
-        and test_data.msg.student_stderr == ""
-        and test_data.msg.student_mutated == ""
+        and test_data.msg.incorrect.stdout != ""
+        and test_data.msg.incorrect.exception == ""
+        and test_data.msg.incorrect.returned == ""
+        and test_data.msg.incorrect.recursion_count == ""
+        and test_data.msg.incorrect.stderr == ""
+        and test_data.msg.incorrect.mutated_args == ""
     ):
         test_data.give_half_marks = True
     assert test_data.code_test_options is not None
@@ -1243,26 +1242,26 @@ def verify_expected_exception(test_data: TestData):
         compares the strings 'ValueError' and 'ABC' against the expected.
     """
 
-    if(type(test_data.expected.exception).__name__ != type(test_data.student.exception).__name__
-        or str(test_data.expected.exception) != str(test_data.student.exception)
+    if(type(test_data.expected.exception).__name__ != type(test_data.recieved.exception).__name__
+        or str(test_data.expected.exception) != str(test_data.recieved.exception)
     ):
 
         test_data.success = False
-        if test_data.student.exception is None:
-            test_data.msg.student_exception = MISSING_EXCEPTION_MSG
+        if test_data.recieved.exception is None:
+            test_data.msg.incorrect.exception = MISSING_EXCEPTION_MSG
         else:
             if test_data.expected.exception is None:
-                test_data.msg.student_exception = UNEXPECTED_EXCEPTION_MSG.format(
-                    type(test_data.student.exception).__name__,
-                    repr(str(test_data.student.exception))
+                test_data.msg.incorrect.exception = UNEXPECTED_EXCEPTION_MSG.format(
+                    type(test_data.recieved.exception).__name__,
+                    repr(str(test_data.recieved.exception))
                 )
             else:
-                test_data.msg.student_exception = STUDENT_EXCEPTION_MSG.format(
-                    type(test_data.student.exception).__name__,
-                    repr(str(test_data.student.exception))
+                test_data.msg.incorrect.exception = STUDENT_EXCEPTION_MSG.format(
+                    type(test_data.recieved.exception).__name__,
+                    repr(str(test_data.recieved.exception))
                 )
     if test_data.expected.exception is not None:
-        test_data.msg.expected_exception = EXPECTED_EXCEPTION_MSG.format(
+        test_data.msg.expected.exception = EXPECTED_EXCEPTION_MSG.format(
             type(test_data.expected.exception).__name__,
             repr(str(test_data.expected.exception)),
         )
@@ -1283,19 +1282,19 @@ def verify_expected_stderr(
 
     if test_data.expected.stderr == "":
         if format_test_in_out_data_as_str:
-             formatted_proc_stderr = format_test_in_out_data(test_data.student.stderr, format_test_in_out_data_as_str)
+             formatted_proc_stderr = format_test_in_out_data(test_data.recieved.stderr, format_test_in_out_data_as_str)
         else:
-            formatted_proc_stderr = test_data.student.stderr
+            formatted_proc_stderr = test_data.recieved.stderr
     else:
-        formatted_proc_stderr = format_test_in_out_data(test_data.student.stderr, format_test_in_out_data_as_str)
-        test_data.msg.expected_stderr = (
+        formatted_proc_stderr = format_test_in_out_data(test_data.recieved.stderr, format_test_in_out_data_as_str)
+        test_data.msg.expected.stderr = (
             EXPECTED_STDERR_MSG.format(
                 format_test_in_out_data(test_data.expected.stderr, format_test_in_out_data_as_str)
             )
         )
 
-    if test_data.student.stderr != test_data.expected.stderr:
-        test_data.msg.student_stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
+    if test_data.recieved.stderr != test_data.expected.stderr:
+        test_data.msg.incorrect.stderr = WRONG_STDERR_MSG.format(formatted_proc_stderr)
         test_data.success = False
 
 
@@ -1311,19 +1310,19 @@ def verify_expected_stdout(
         in test feedback. The expected output is always formatted for use in
         the test case report.
     """
-    if test_data.student.stdout != test_data.expected.stdout:
+    if test_data.recieved.stdout != test_data.expected.stdout:
         if test_data.expected.stdout != "":
-            test_data.msg.student_stdout = WRONG_STDOUT_MSG.format(
-                format_test_in_out_data(test_data.student.stdout, format_test_in_out_data_as_str)
+            test_data.msg.incorrect.stdout = WRONG_STDOUT_MSG.format(
+                format_test_in_out_data(test_data.recieved.stdout, format_test_in_out_data_as_str)
             )
         else:
-            test_data.msg.student_stdout = UNEXPECTED_STDOUT_MSG.format(
-                format_test_in_out_data(test_data.student.stdout, format_test_in_out_data_as_str)
+            test_data.msg.incorrect.stdout = UNEXPECTED_STDOUT_MSG.format(
+                format_test_in_out_data(test_data.recieved.stdout, format_test_in_out_data_as_str)
             )
         test_data.success = False
 
     if test_data.expected.stdout != "":
-        test_data.msg.expected_stdout = EXPECTED_STDOUT_MSG.format(
+        test_data.msg.expected.stdout = EXPECTED_STDOUT_MSG.format(
             format_test_in_out_data(test_data.expected.stdout, format_test_in_out_data_as_str)
         )
 
@@ -1338,27 +1337,27 @@ def verify_function_return(test_data: TestData):
         the test case report.
     """
     if test_data.test_type == TestTypes.FUNCTION:
-        if test_data.student.failed_return != GraderNone:
-           data_type, data_str = test_data.student.failed_return.split('\n')
-           test_data.msg.student_return = STUDENT_RETURN_MSG.format(
+        if test_data.recieved.return_pickle_failed != GraderNone:
+           data_type, data_str = test_data.recieved.return_pickle_failed.split('\n')
+           test_data.msg.incorrect.returned = STUDENT_RETURN_MSG.format(
                     data_type, data_str
             )
 
-        elif test_data.student.returned != GraderNone:
-            if test_data.student.returned != test_data.expected.returned:
-                test_data.msg.student_return = STUDENT_RETURN_MSG.format(
-                    type(test_data.student.returned).__name__,
-                    repr(test_data.student.returned),
+        elif test_data.recieved.returned != GraderNone:
+            if test_data.recieved.returned != test_data.expected.returned:
+                test_data.msg.incorrect.returned = STUDENT_RETURN_MSG.format(
+                    type(test_data.recieved.returned).__name__,
+                    repr(test_data.recieved.returned),
                 )
         else:
-            test_data.msg.student_return = ERROR_RETURN_MSG
+            test_data.msg.incorrect.returned = ERROR_RETURN_MSG
 
-        test_data.msg.expected_return = EXPECTED_RETURN_MSG.format(
+        test_data.msg.expected.returned = EXPECTED_RETURN_MSG.format(
             type(test_data.expected.returned).__name__,
             repr(test_data.expected.returned),
         )
 
-    if test_data.msg.student_return:
+    if test_data.msg.incorrect.returned:
         test_data.success = False
 
 
@@ -1368,18 +1367,18 @@ def verify_expected_recursive_call_counts(test_data: TestData):
     (which could be recursive helper functions) have the expected number of recursive calls
     """
     if test_data.test_type == TestTypes.FUNCTION:
-        if len(test_data.expected.recursive_call_counts) > 0 and test_data.student.recursive_call_count != GraderNone:
+        if len(test_data.expected.recursive_call_counts) > 0 and test_data.recieved.recursive_call_count != GraderNone:
             message = STUDENT_RECURSION_COUNT_MSG
             any_matches = False
-            for func_name, call_count in test_data.student.recursive_call_count.items():
+            for func_name, call_count in test_data.recieved.recursive_call_count.items():
                     message += f"{func_name} has {call_count} recursive calls\n"
                     if (call_count in test_data.expected.recursive_call_counts):
                         any_matches = True
 
             test_data.success = any_matches
             if not any_matches:
-                test_data.msg.student_recursion_count = message
-            test_data.msg.expected_recursion_count = EXPECTED_RECURSION_COUNT_MSG.format(
+                test_data.msg.incorrect.recursion_count = message
+            test_data.msg.expected.recursion_count = EXPECTED_RECURSION_COUNT_MSG.format(
                 str(test_data.expected.recursive_call_counts)[1:-1].replace(",", " or")
             )
 
@@ -1389,11 +1388,11 @@ def verify_check_mutated_input(test_data: TestData):
     if (test_data.test_type == TestTypes.FUNCTION):
         assert test_data.function_test_options is not None
         if (test_data.function_test_options.function_fail_on_mutated_args
-            and test_data.student.final_args != GraderNone
-            and test_data.student.final_args != test_data.expected.original_args
+            and test_data.recieved.final_args != GraderNone
+            and test_data.recieved.final_args != test_data.expected.original_args
         ):
             test_data.msg.mutation_check = FAIL_ON_MUTATION_MSG + RECIEVED_ARGS_MSG.format(
-                format_as_func_arg_string(test_data.student.final_args)
+                format_as_func_arg_string(test_data.recieved.final_args)
             )
             test_data.success = False
 
@@ -1410,16 +1409,16 @@ def verify_expected_mutated_args(test_data: TestData):
     if (
         test_data.test_type == TestTypes.FUNCTION
         and test_data.expected.mutated_args is not None
-        and test_data.student.final_args != GraderNone
+        and test_data.recieved.final_args != GraderNone
     ):
-        if list(test_data.student.final_args) != list(test_data.expected.mutated_args):
-            test_data.msg.student_mutated = RECIEVED_ARGS_MSG.format(
-                format_as_func_arg_string(test_data.student.final_args)
+        if list(test_data.recieved.final_args) != list(test_data.expected.mutated_args):
+            test_data.msg.incorrect.mutated_args = RECIEVED_ARGS_MSG.format(
+                format_as_func_arg_string(test_data.recieved.final_args)
             )
             test_data.success = False
 
         # Always create expected output string
-        test_data.msg.expected_mutated = EXPECTED_MUTATED_ARGS_MSG.format(
+        test_data.msg.expected.mutated_args = EXPECTED_MUTATED_ARGS_MSG.format(
             format_as_func_arg_string(test_data.expected.mutated_args)
         )
 
@@ -1440,8 +1439,8 @@ def check_files_equal(student_file_path, expected_file_path):
 def verify_expected_files(test_data: TestData):
     """ Check for files matching the expected files """
     expected_file_feedback = ""
-    if len(test_data.expected.filenames) > 0:
-        for student_file, expected_file in test_data.expected.filenames:
+    if len(test_data.expected.files) > 0:
+        for student_file, expected_file in test_data.expected.files:
             student_file_path = STUDENT_FILE_PATH_PREFIX + student_file
             expected_file_path = STUDENT_FILE_PATH_PREFIX  + expected_file
             expected_file_feedback += check_files_equal(
@@ -1452,7 +1451,7 @@ def verify_expected_files(test_data: TestData):
         expected_file_feedback = EXPECTED_FILES_MSG + expected_file_feedback
         test_data.success = False
 
-    test_data.msg.expected_file = expected_file_feedback
+    test_data.msg.expected.files = expected_file_feedback
 
 
 def libshadowing_protection(test_data: TestData):
@@ -1884,7 +1883,7 @@ def load_data_object_from_file(class_obj, attr: str, file: str):
 
 
 def handle_timeout(signum, frame):
-        raise TimeoutError
+    raise TimeoutError
 
 
 #######################################################################################
@@ -2017,59 +2016,59 @@ def generate_feedback_level(test_data: TestData, levels_to_reduce: int = 0, incl
     ])
     # Only include information about the tests that have failed due to
     # limitations on stdout.
-    if test_data.msg.student_exception:
-        feedback_priority_order.append(test_data.msg.student_exception)
-        feedback_priority_order.append(test_data.msg.expected_exception)
-    if test_data.msg.student_stderr:
-        feedback_priority_order.append(test_data.msg.student_stderr)
-        feedback_priority_order.append(test_data.msg.expected_stderr)
-    if test_data.msg.student_stdout:
-        feedback_priority_order.append(test_data.msg.student_stdout)
-        feedback_priority_order.append(test_data.msg.expected_stdout)
-    if test_data.msg.student_return:
-        feedback_priority_order.append(test_data.msg.student_return)
-        feedback_priority_order.append(test_data.msg.expected_return)
-    if test_data.msg.student_recursion_count:
-        feedback_priority_order.append(test_data.msg.student_recursion_count)
-        feedback_priority_order.append(test_data.msg.expected_recursion_count)
+    if test_data.msg.incorrect.exception:
+        feedback_priority_order.append(test_data.msg.incorrect.exception)
+        feedback_priority_order.append(test_data.msg.expected.exception)
+    if test_data.msg.incorrect.stderr:
+        feedback_priority_order.append(test_data.msg.incorrect.stderr)
+        feedback_priority_order.append(test_data.msg.expected.stderr)
+    if test_data.msg.incorrect.stdout:
+        feedback_priority_order.append(test_data.msg.incorrect.stdout)
+        feedback_priority_order.append(test_data.msg.expected.stdout)
+    if test_data.msg.incorrect.returned:
+        feedback_priority_order.append(test_data.msg.incorrect.returned)
+        feedback_priority_order.append(test_data.msg.expected.returned)
+    if test_data.msg.incorrect.recursion_count:
+        feedback_priority_order.append(test_data.msg.incorrect.recursion_count)
+        feedback_priority_order.append(test_data.msg.expected.recursion_count)
     feedback_priority_order.append(test_data.msg.mutation_check)
-    if test_data.msg.student_mutated:
-        feedback_priority_order.append(test_data.msg.student_mutated)
-        feedback_priority_order.append(test_data.msg.expected_mutated)
-    feedback_priority_order.append(test_data.msg.expected_file)
+    if test_data.msg.incorrect.mutated_args:
+        feedback_priority_order.append(test_data.msg.incorrect.mutated_args)
+        feedback_priority_order.append(test_data.msg.expected.mutated_args)
+    feedback_priority_order.append(test_data.msg.expected.files)
 
     if levels_to_reduce > len(feedback_priority_order):
         # Upper bound just to prevent infinite loop if something goes wrong
         return ""
 
     if levels_to_reduce == 1:
-        student_stderr_truncation_length = max(len(test_data.msg.expected_stderr), 200)
-        test_data.msg.student_stderr = truncate_string(
-            test_data.msg.student_stderr,
+        student_stderr_truncation_length = max(len(test_data.msg.expected.stderr), 200)
+        test_data.msg.incorrect.stderr = truncate_string(
+            test_data.msg.incorrect.stderr,
             student_stderr_truncation_length,
             OUTPUT_TRUNCATION_FROM_START_MSG,
             from_start=True,
         )
-        test_data.msg.student_stdout = truncate_string(
-            test_data.msg.student_stdout,
-            len(test_data.msg.expected_stdout),
+        test_data.msg.incorrect.stdout = truncate_string(
+            test_data.msg.incorrect.stdout,
+            len(test_data.msg.expected.stdout),
             OUTPUT_TRUNCATION_MSG,
         )
-        test_data.msg.student_return = truncate_string(
-            test_data.msg.student_return,
-            len(test_data.msg.expected_return),
+        test_data.msg.incorrect.returned = truncate_string(
+            test_data.msg.incorrect.returned,
+            len(test_data.msg.expected.returned),
             OUTPUT_TRUNCATION_MSG,
         )
-        test_data.msg.student_mutated = truncate_string(
-            test_data.msg.student_mutated,
-            len(test_data.msg.expected_mutated),
+        test_data.msg.incorrect.mutated_args = truncate_string(
+            test_data.msg.incorrect.mutated_args,
+            len(test_data.msg.expected.mutated_args),
             OUTPUT_TRUNCATION_MSG,
         )
     elif levels_to_reduce == 2:
         test_data.msg.custom_verification_hook = ""
-        test_data.msg.student_stdout = ""
-        test_data.msg.student_return = ""
-        test_data.msg.student_mutated = ""
+        test_data.msg.incorrect.stdout = ""
+        test_data.msg.incorrect.returned = ""
+        test_data.msg.incorrect.mutated_args = ""
 
     # remove all empty feedback messages, so they are not considered in the priority ordering
     for i in range(0, len(feedback_priority_order), -1):
@@ -2113,7 +2112,7 @@ def find_relevant_output_files(test_data: TestData):
         test_data.test_type == TestTypes.FUNCTION
         or test_data.test_type == TestTypes.SCRIPT
     ):
-        for student_file, expected_file in test_data.expected.filenames:
+        for student_file, expected_file in test_data.expected.files:
             student_file_path = STUDENT_FILE_PATH_PREFIX + student_file
             expected_file_path = STUDENT_FILE_PATH_PREFIX + expected_file
 
@@ -2169,14 +2168,13 @@ def generate_test_report_entry(test_data: TestData):
         test_data.msg.student_file_not_found,
         test_data.msg.non_allowed_filenames,
         test_data.msg.custom_verification_hook,
-        test_data.msg.expected_exception,
-        test_data.msg.expected_stderr,
-        test_data.msg.expected_stdout,
-        test_data.msg.expected_return,
-        test_data.msg.expected_recursion_count,
-        test_data.msg.mutation_check,
-        test_data.msg.expected_mutated,
-        test_data.msg.expected_file,
+        test_data.msg.expected.exception,
+        test_data.msg.expected.stderr,
+        test_data.msg.expected.stdout,
+        test_data.msg.expected.returned,
+        test_data.msg.expected.recursion_count,
+        test_data.msg.expected.mutated_args,
+        test_data.msg.expected.files,
 
     ]
     # Ed does not display unicode chars in the file preview correctly.
@@ -2258,7 +2256,7 @@ def write_test_report_files(ed_test_list: list[EdTestCase]):
                 *generate_execution_transcript_entry(ed_test_obj.test_data)
             )
             # Free up space as these are not used again later, only msg fields
-            del ed_test_obj.test_data.student
+            del ed_test_obj.test_data.recieved
             del ed_test_obj.test_data.expected
 
     visible_transcript_fp.close()
@@ -2571,3 +2569,4 @@ Example: `python testbench.py --prod`
     elif prod_mode:
         for file_path in local_import_paths:
             os.remove(file_path)
+
