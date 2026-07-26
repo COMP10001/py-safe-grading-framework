@@ -2,3 +2,4 @@ dill
 pydantic
 typing_extensions
 flake8
+pylint
