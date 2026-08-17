@@ -9,7 +9,7 @@
 project = 'Safe Grading Framework'
 copyright = '2026, Kacie Beckett - University of Melbourne'
 author = 'Kacie Beckett'
-release = 'V0.5.0'
+release = 'V0.7.0'
 
 import sys
 from pathlib import Path

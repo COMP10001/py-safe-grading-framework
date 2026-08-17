@@ -1,5 +1,5 @@
 """
-Python Safe Grading Framework V0.6.1 pysafegradingfw.py
+Python Safe Grading Framework V0.7.0 pysafegradingfw.py
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 License: MIT

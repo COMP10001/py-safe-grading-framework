@@ -9,7 +9,7 @@ Edstem Setup
     :alt: Edstem Run Commanddocs/source/api.rst
 
 - Choose “Custom” Test Method
-- Add the Mark Command as python testbench.py or whatever the test file
+- Add the Mark Command as `python testbench.py --prod` or whatever the test file
 
   .. image:: ../images/mark-command.png
     :alt: Edstem Mark Command
