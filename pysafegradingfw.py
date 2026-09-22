@@ -1,5 +1,5 @@
 """
-Python Safe Grading Framework V0.7.0 pysafegradingfw.py
+Python Safe Grading Framework V0.7.1 pysafegradingfw.py
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 License: MIT
@@ -1096,7 +1096,7 @@ def run_style_test(test_data: TestData) -> TestData:
             command = ["flake8", "--jobs=1", "--ignore=" + test_data.style_test_options.flake8_ignored_tests,
                     "--max-line-len=" + str(test_data.style_test_options.style_max_line_len),  file]
         elif test_data.style_test_options.linter == StyleLinters.PYLINT:
-            command = ["pylint", "--score=False", "--disable=" + test_data.style_test_options.pylint_ignored_tests,
+            command = ["pylint", "--score=False","--enable=locally-disabled", "--disable=" + test_data.style_test_options.pylint_ignored_tests,
                     "--max-line-len=" + str(test_data.style_test_options.style_max_line_len),  file]
 
         assert command is not None, "Undefined StyleLinter Option"
