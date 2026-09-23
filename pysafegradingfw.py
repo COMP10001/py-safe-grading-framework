@@ -1,5 +1,5 @@
 """
-Python Safe Grading Framework V0.7.1 pysafegradingfw.py
+Python Safe Grading Framework V0.7.2 pysafegradingfw.py
 Author: Kacie Beckett <kacie.beckett@unimelb.edu.au>
 Faculty of Engineering and IT - The University of Melbourne
 License: MIT
@@ -307,6 +307,7 @@ class TestData:
 
     name: str
     score: float | int
+    max_score: float | int
     test_type: TestTypes
     student_file_name: str
     hidden: bool
@@ -456,12 +457,12 @@ class SafeGrading:
 
             if test.success == False:
                 if test.give_half_marks:
-                    test.score /= 2
+                    test.score = test.max_score / 2
                 else:
                     test.score = 0
 
             ed_test_obj = ed_test_grader_output.add_test_case(
-                test.name, test.score, test.hidden, test.private, test.success, ok, feedback, test.score
+                test.name, test.score, test.hidden, test.private, test.success, ok, feedback, test.max_score
             )
             ed_test_obj.test_data = test
 
@@ -609,6 +610,7 @@ class SafeGrading:
         test_data = TestData(
             name=self._set_default_test_name(name, hidden, private),
             score=score,
+            max_score=score,
             hidden=hidden,
             private=private,
             student_file_name=student_file_name,
@@ -727,6 +729,7 @@ class SafeGrading:
         test_data = TestData(
             name=self._set_default_test_name(name, hidden, private),
             score=score,
+            max_score=score,
             hidden=hidden,
             private=private,
             student_file_name=student_file_name,
@@ -808,6 +811,7 @@ class SafeGrading:
         test_data = TestData(
             name=name,
             score=score,
+            max_score=score,
             hidden=hidden,
             private=private,
             student_file_name=student_file_name,
@@ -868,6 +872,7 @@ class SafeGrading:
         test_data = TestData(
             name=name,
             score=score,
+            max_score=score,
             hidden=hidden,
             private=private,
             student_file_name=student_file_name,
